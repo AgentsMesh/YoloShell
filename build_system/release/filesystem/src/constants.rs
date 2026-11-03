@@ -1,0 +1,24 @@
+pub const CURRENT_DIRECTORY_COMPONENT: &str = ".";
+pub const PARENT_DIRECTORY_COMPONENT: &str = "..";
+pub const DIRECTORY_STREAM_END: libc::c_int = 0;
+pub const USER_WRITE_PERMISSION: u32 = 0o200;
+pub const WRITE_PERMISSION_MASK: u32 = 0o222;
+pub const DIRECTORY_LOCK_ERROR: &str = "lock retained directory for publication";
+pub(crate) const TEMPORARY_DIRECTORY_MODE: u32 = 0o700;
+pub(crate) const TEMPORARY_SEALED_MODE: u32 = 0o500;
+pub(crate) const TEMPORARY_NO_FLAGS: u32 = 0;
+pub(crate) const TEMPORARY_RANDOM_BYTES: usize = 16;
+
+pub(crate) const ACL_TYPE_EXTENDED: libc::c_int = 0x0000_0100;
+pub(crate) const ACL_FIRST_ENTRY: libc::c_int = 0;
+pub(crate) const ACL_SUCCESS: libc::c_int = 0;
+pub(crate) const ACL_ABSENT_ERROR: libc::c_int = libc::ENOENT;
+pub(crate) const DURABILITY_BARRIER_SUCCESS: libc::c_int = 0;
+pub(crate) const DIRECTORY_LOCK_SUCCESS: libc::c_int = 0;
+pub(crate) const DIRECTORY_DURABILITY_ERROR: &str = "fully sync retained directory";
+pub(crate) const DIRECTORY_LOCK_IDENTITY_ERROR: &str = "retained directory lock identity changed";
+pub(crate) const DIRECTORY_LOCK_OPEN_ERROR: &str = "open retained directory publication lock";
+pub(crate) const RETAINED_DIRECTORY_SELF_NAME: &str = CURRENT_DIRECTORY_COMPONENT;
+pub(crate) const TREE_MANIFEST_FIELD_SEPARATOR: &[u8] = b"\0";
+pub(crate) const TREE_MANIFEST_FILE_MARKER: &[u8] = b"file";
+pub(crate) const TREE_MANIFEST_DIRECTORY_MARKER: &[u8] = b"directory";

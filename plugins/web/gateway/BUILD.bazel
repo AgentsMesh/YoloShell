@@ -1,0 +1,71 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+load("//build_system/bazel:version.bzl", "YOLO_MARKETING_VERSION")
+
+package(default_visibility = ["//visibility:public"])
+
+_DEPS = [
+    "//core/crates/plugin/client/contract:yolo_builtin_client_contract",
+    "//core/crates/hub/client:yolo_hub_client",
+    "//core/crates/hub/client/access/protocol:yolo_hub_client_access_protocol",
+    "//core/crates/hub/client/transport:yolo_hub_client_transport",
+    "//core/crates/hub/jsonrpc/protocol:yolo_hub_jsonrpc_protocol",
+    "//core/crates/hub/rpc/protocol:yolo_hub_rpc_protocol",
+    "@crates//:anyhow",
+    "@crates//:futures",
+    "@crates//:russh",
+    "@crates//:serde",
+    "@crates//:serde_json",
+    "@crates//:sha2",
+    "@crates//:subtle",
+    "@crates//:tokio",
+    "@crates//:tokio-tungstenite",
+    "@crates//:tracing",
+    "@crates//:url",
+    "@crates//:uuid",
+    "@crates//:zeroize",
+]
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = glob(["**/*.rs"]) + ["BUILD.bazel", "//plugins/web/gateway/cli:architecture_check_data"],
+)
+
+rust_library(
+    name = "yolo_web_gateway",
+    srcs = glob(["src/**/*.rs"]),
+    crate_name = "yolo_web_gateway",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    version = YOLO_MARKETING_VERSION,
+    deps = _DEPS,
+)
+
+rust_test(
+    name = "unit_tests",
+    srcs = glob(["unit_tests/**/*.rs"]),
+    crate_name = "yolo_web_gateway_unit_tests",
+    crate_root = "unit_tests/lib.rs",
+    edition = "2024",
+    deps = _DEPS + [":yolo_web_gateway"],
+)
+
+rust_test(
+    name = "integration_tests",
+    srcs = glob(["integration_tests/**/*.rs", "test_support/**/*.rs"]) + ["src/bridge.rs"],
+    crate_name = "yolo_web_gateway_integration_tests",
+    crate_root = "integration_tests/lib.rs",
+    edition = "2024",
+    deps = _DEPS + [
+        ":yolo_web_gateway",
+        "//core/crates/hub/identity:yolo_hub_identity",
+        "//core/crates/hub/client/access/registry:yolo_hub_client_access_registry",
+        "//core/crates/hub/client/access/dispatch:yolo_hub_client_access_dispatch",
+        "//core/crates/hub/dispatch:yolo_hub_dispatch",
+        "//core/crates/hub/jsonrpc/transport:yolo_hub_jsonrpc_transport",
+        "//core/crates/hub/routing:yolo_hub_routing",
+        "//core/crates/hub/terminal/protocol:yolo_hub_terminal_protocol",
+        "//core/crates/hub/terminal/wire:yolo_hub_terminal_wire",
+        "@crates//:ring",
+        "@crates//:tempfile",
+    ],
+)

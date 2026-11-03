@@ -1,0 +1,12 @@
+pub const CRATE_NAME_ATTRIBUTE: &str = "crate_name";
+pub const CRATE_ROOT_ATTRIBUTE: &str = "crate_root";
+pub const NAME_ATTRIBUTE: &str = "name";
+pub const TESTONLY_ATTRIBUTE: &str = "testonly";
+pub const REPOSITORY_NAME_ATTRIBUTE: &str = "repo_name";
+pub const RUST_BINARY_RULE: &str = "rust_binary";
+pub const RUST_LIBRARY_RULE: &str = "rust_library";
+pub const RUST_PROC_MACRO_RULE: &str = "rust_proc_macro";
+pub const RUST_SHARED_LIBRARY_RULE: &str = "rust_shared_library";
+pub const RUST_STATIC_LIBRARY_RULE: &str = "rust_static_library";
+pub const RUST_TEST_RULE: &str = "rust_test";
+pub const CFG_ATTR_ATTRIBUTE: &str = "cfg_attr";

@@ -1,0 +1,15 @@
+repository = "https://github.com/rust-lang/rust.git"
+version = "1.93.1"
+commit = "01f6ddf7588f42ae2d7eb0a2f21d44e8e96674cf"
+host = "aarch64-apple-darwin"
+llvm_version = "21.1.8"
+stage0_version = "1.92.0"
+stage0_commit = "ded5c06cf21d2b93bffd5d884aa6e96934ee4234"
+description = "yolo-direct-coverage-v1"
+source_directory = ".build/coverage-rustc-1.93.1"
+patches = ["0001-direct-counter-mode.patch", "0002-physical-bcb-counters.patch"]
+required_submodules = ["library/backtrace", "src/llvm-project"]
+
+[submodule_commits]
+"library/backtrace" = "b65ab935fb2e0d59dba8966ffca09c9cc5a5f57c"
+"src/llvm-project" = "85a90d119deb25b518867cd37d62c7b93b575a6f"

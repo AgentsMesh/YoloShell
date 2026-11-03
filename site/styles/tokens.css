@@ -1,0 +1,98 @@
+/* DESIGN DIRECTION: terminal-native editorial — warm Gruvbox dark, dense mono, no ornament. */
+:root {
+  color-scheme: dark;
+  --bg: #0d100e;
+  --bg-soft: #131713;
+  --panel: #191e18;
+  --panel-2: #20261f;
+  --ink: #f2ead6;
+  --muted: #b9b19d;
+  --faint: #8e897b;
+  --line: #343b32;
+  --line-soft: #272d26;
+  --amber: #f0b64b;
+  --green: #9ec97a;
+  --cyan: #8cc8c0;
+  --red: #f0735f;
+  --mono: "Berkeley Mono", "JetBrains Mono", "IBM Plex Mono", ui-monospace,
+    SFMono-Regular, Menlo, Consolas, monospace;
+  --max: 1160px;
+  --radius: 14px;
+  --gutter: clamp(1rem, 4vw, 2.5rem);
+  --shadow: 0 24px 80px rgb(0 0 0 / 0.35);
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    color-scheme: light;
+    --bg: #f4efe3;
+    --bg-soft: #ece5d6;
+    --panel: #fbf7ed;
+    --panel-2: #f0e9da;
+    --ink: #20231e;
+    --muted: #5e6156;
+    --faint: #78796c;
+    --line: #c9c0ab;
+    --line-soft: #ddd5c4;
+    --amber: #9a6400;
+    --green: #47712d;
+    --cyan: #1f6e69;
+    --red: #a63a2d;
+    --shadow: 0 24px 70px rgb(72 59 33 / 0.14);
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 16px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: var(--amber);
+  color: var(--bg);
+}
+
+a {
+  color: var(--amber);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+}
+
+a:hover {
+  color: var(--ink);
+}
+
+:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

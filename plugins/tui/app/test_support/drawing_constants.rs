@@ -1,0 +1,10 @@
+pub const WIDTH: u16 = 120;
+pub const HEIGHT: u16 = 32;
+pub const NEXT_WIDTH: u16 = 160;
+pub const NEXT_HEIGHT: u16 = 40;
+pub const SOURCE_NAME: &str = "Query source";
+pub const BACKGROUND_NAME: &str = "Other source";
+pub const LABEL_SEPARATOR: &str = " | ";
+pub const WRITING_LABEL: &str = "Control: this UI";
+pub const ZERO_SEQUENCE: u64 = 0;
+pub const FOCUSED_RATIO_STEP: u16 = 100;

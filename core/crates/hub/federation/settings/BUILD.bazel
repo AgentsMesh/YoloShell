@@ -1,0 +1,53 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+load("//build_system/bazel:version.bzl", "YOLO_MARKETING_VERSION")
+
+package(default_visibility = ["//visibility:public"])
+
+_DEPS = [
+    "//core/crates/transport/ssh/profile/protocol:yolo_ssh_profile_protocol",
+    "//core/crates/hub/delegation:yolo_hub_delegation",
+    "//core/crates/hub/identity:yolo_hub_identity",
+    "//core/crates/hub/file/protocol:yolo_hub_file_protocol",
+    "//core/crates/hub/routing:yolo_hub_routing",
+    "@crates//:serde",
+    "@crates//:anyhow",
+]
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = glob(
+        [
+            "src/**/*.rs",
+            "unit_tests/**/*.rs",
+        ],
+        allow_empty = True,
+    ) + ["BUILD.bazel"],
+)
+
+rust_library(
+    name = "yolo_hub_federation_settings",
+    srcs = glob(["src/**/*.rs"]),
+    crate_name = "yolo_hub_federation_settings",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    version = YOLO_MARKETING_VERSION,
+    deps = _DEPS,
+)
+
+rust_test(
+    name = "unit_tests",
+    srcs = glob(
+        ["unit_tests/**/*.rs"],
+        allow_empty = True,
+    ),
+    crate_name = "yolo_hub_federation_settings_unit_tests",
+    crate_root = "unit_tests/lib.rs",
+    edition = "2024",
+    deps = _DEPS + [
+        ":yolo_hub_federation_settings",
+        "//core/crates/hub/delegation:test_support",
+        "@crates//:ring",
+        "@crates//:serde_json",
+        "@crates//:uuid",
+    ],
+)

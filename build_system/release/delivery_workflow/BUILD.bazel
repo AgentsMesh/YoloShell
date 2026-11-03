@@ -1,0 +1,58 @@
+load("@rules_rust//rust:defs.bzl", "rust_library")
+load("//build_system/platform/macos:config.bzl", "RELEASE_EVIDENCE_MACOS_MINIMUM_OS_ENV")
+
+package(default_visibility = ["//visibility:public"])
+
+_SOURCES = glob(["src/*.rs"])
+
+_DEPS = [
+    "//build_system/release/acceptance_receipt:library",
+    "//build_system/release/contracts:library",
+    "//build_system/release/delivery_foundation:library",
+    "//build_system/release/evidence_model:library",
+    "//build_system/release/filesystem:library",
+    "//build_system/release/foundation:library",
+    "//build_system/release/gate_system:library",
+    "//build_system/release/verification:library",
+    "@crates//:anyhow",
+    "@crates//:libc",
+    "@crates//:serde",
+]
+
+_TEST_DEPS = [
+    dependency
+    for dependency in _DEPS
+    if dependency not in [
+        "//build_system/release/delivery_foundation:library",
+        "//build_system/release/verification:library",
+    ]
+] + [
+    "//build_system/release/delivery_foundation:test_support",
+    "//build_system/release/verification:test_support",
+]
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = _SOURCES + ["BUILD.bazel"],
+)
+
+rust_library(
+    name = "library",
+    srcs = _SOURCES,
+    crate_name = "yolo_release_delivery_workflow",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    rustc_env = RELEASE_EVIDENCE_MACOS_MINIMUM_OS_ENV,
+    deps = _DEPS,
+)
+
+rust_library(
+    name = "test_support",
+    testonly = True,
+    srcs = _SOURCES,
+    crate_name = "yolo_release_delivery_workflow",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    rustc_env = RELEASE_EVIDENCE_MACOS_MINIMUM_OS_ENV,
+    deps = _TEST_DEPS,
+)

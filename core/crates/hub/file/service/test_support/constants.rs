@@ -1,0 +1,1 @@
+pub const HELPER_ENV: &str = "YOLO_FILE_HELPER_TEST_BINARY";

@@ -1,0 +1,12 @@
+{
+  "name": "yolo-web-client",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "start": "bun scripts/plugin.ts start",
+    "status": "bun scripts/plugin.ts status",
+    "stop": "bun scripts/plugin.ts stop",
+    "test": "bun test"
+  }
+}

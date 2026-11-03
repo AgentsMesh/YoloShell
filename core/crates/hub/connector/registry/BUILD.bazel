@@ -1,0 +1,30 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+package(default_visibility = ["//visibility:public"])
+
+_DEPS = [
+    "//core/crates/hub/agent/protocol:yolo_hub_agent_protocol",
+    "//core/crates/hub/connector/protocol:yolo_hub_connector_protocol",
+    "//core/crates/hub/connector/store:yolo_hub_connector_store",
+    "//core/crates/hub/delegation:yolo_hub_delegation",
+    "//core/crates/hub/identity:yolo_hub_identity",
+    "//core/crates/persistence/paths:yolo_paths",
+    "//core/crates/crypto:yolo_crypto",
+    "@crates//:anyhow", "@crates//:serde", "@crates//:uuid",
+]
+rust_library(
+    name = "yolo_hub_connector_registry", crate_name = "yolo_hub_connector_registry",
+    srcs = glob(["src/**/*.rs"]), crate_root = "src/lib.rs", edition = "2024", deps = _DEPS,
+)
+rust_test(
+    name = "unit_tests", crate_name = "yolo_hub_connector_registry_unit_tests",
+    srcs = glob(["src/**/*.rs", "unit_tests/**/*.rs", "test_support/**/*.rs"]),
+    crate_root = "src/lib.rs", edition = "2024",
+    deps = _DEPS + ["@crates//:tempfile", "@crates//:serde_json", "//core/crates/hub/delegation:test_support"],
+)
+filegroup(name = "architecture_check_data", srcs = glob(["**/*.rs"]) + ["BUILD.bazel"])
+rust_test(
+    name = "integration_tests", crate_name = "yolo_hub_connector_registry_integration_tests",
+    srcs = glob(["integration_tests/**/*.rs", "test_support/**/*.rs"]),
+    crate_root = "integration_tests/lib.rs", edition = "2024",
+    deps = _DEPS + [":yolo_hub_connector_registry", "@crates//:tempfile", "@crates//:serde_json"],
+)

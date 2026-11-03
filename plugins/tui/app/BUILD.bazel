@@ -1,0 +1,96 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+load("//build_system/bazel:version.bzl", "YOLO_MARKETING_VERSION")
+load("//build_system/bazel/rust:test_features.bzl", "INTEGRATION_TEST_FEATURES")
+
+package(default_visibility = ["//visibility:public"])
+
+_DEPS = [
+    "//core/crates/conversation/protocol:yolo_conversation_protocol",
+    "//core/crates/crypto:yolo_crypto",
+    "//core/crates/hub/conversation/client:yolo_hub_conversation_client",
+    "//plugins/tui/chat:yolo_tui_chat",
+    "//plugins/tui/constants:yolo_tui_app_constants",
+    "//core/crates/hub/catalog/client:yolo_hub_catalog_client",
+    "//core/crates/hub/client/channels:yolo_hub_client_channels",
+    "//core/crates/hub/agent/protocol:yolo_hub_agent_protocol",
+    "//core/crates/hub/client:yolo_hub_client",
+    "//core/crates/hub/identity:yolo_hub_identity",
+    "//core/crates/hub/management/client:yolo_hub_management_client",
+    "//core/crates/hub/management/protocol:yolo_hub_management_protocol",
+    "//core/crates/hub/rpc/protocol:yolo_hub_rpc_protocol",
+    "//core/crates/hub/terminal/protocol:yolo_hub_terminal_protocol",
+    "//core/crates/hub/workspace/protocol:yolo_hub_workspace_protocol",
+    "//core/crates/hub/terminal/client:yolo_hub_terminal_client",
+    "//plugins/tui/input:yolo_tui_input",
+    "//plugins/tui/local/startup:yolo_tui_local_startup",
+    "//plugins/tui/input/line:yolo_tui_line_input",
+    "//plugins/tui/creation/journal:yolo_tui_creation_journal",
+    "//plugins/tui/creation/recovery:yolo_tui_creation_recovery",
+    "//plugins/tui/document:yolo_tui_document",
+    "//plugins/tui/hub/manager:yolo_tui_hub_manager",
+    "//plugins/tui/inventory:yolo_tui_inventory",
+    "//core/crates/presentation/layout:yolo_presentation_layout",
+    "//core/crates/presentation/protocol:yolo_presentation_protocol",
+    "//core/crates/plugin/client/contract:yolo_builtin_client_contract",
+    "//core/crates/plugin/client/host:yolo_builtin_client_host",
+    "//plugins/catalog:yolo_builtin_catalog",
+    "//plugins/tui/lifecycle:yolo_tui_lifecycle",
+    "//plugins/tui/notification:yolo_tui_notification",
+    "//plugins/tui/render:yolo_tui_render",
+    "//plugins/tui/screen:yolo_tui_screen",
+    "//plugins/tui/terminal:yolo_tui_terminal",
+    "//plugins/tui/workspace:yolo_tui_workspace",
+    "//plugins/tui/terminal/control:yolo_tui_terminal_control",
+    "//plugins/tui/selection:yolo_tui_selection",
+    "//plugins/tui/tab:yolo_tui_tab",
+    "//plugins/tui/client/control:yolo_tui_client_control",
+    "//plugins/tui/tab/manager:yolo_tui_tab_manager",
+    "@crates//:anyhow",
+    "@crates//:crossterm",
+    "@crates//:futures",
+    "@crates//:ratatui",
+    "@crates//:tokio",
+    "@crates//:uuid",
+    "@crates//:vt100",
+]
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = glob(
+        ["**/*"],
+        exclude = ["BUILD.bazel"],
+    ) + ["BUILD.bazel"],
+)
+
+rust_library(
+    name = "yolo_tui_app",
+    srcs = glob(["src/**/*.rs"]),
+    crate_name = "yolo_tui_app",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    version = YOLO_MARKETING_VERSION,
+    deps = _DEPS,
+)
+
+rust_test(
+    name = "unit_tests",
+    srcs = glob([
+        "src/**/*.rs",
+        "unit_tests/**/*.rs",
+        "test_support/**/*.rs",
+    ]),
+    crate_name = "yolo_tui_app_unit_tests",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    deps = _DEPS + ["@crates//:tempfile"],
+)
+
+rust_test(
+    name = "integration_tests",
+    srcs = glob(["src/**/*.rs", "integration_tests/**/*.rs", "test_support/**/*.rs"]),
+    crate_name = "yolo_tui_app_integration_tests",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    crate_features = INTEGRATION_TEST_FEATURES,
+    deps = _DEPS + ["@crates//:tempfile", "//core/crates/hub/jsonrpc/transport:yolo_hub_jsonrpc_transport", "//core/crates/hub/jsonrpc/protocol:yolo_hub_jsonrpc_protocol"],
+)
