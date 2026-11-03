@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "id": "web.client",
+  "name": "Yolo Web Client",
+  "version": "0.1.0",
+  "description": "Read-only trusted web client canary for Yolo",
+  "platforms": ["linux", "macos"],
+  "startup": {"command": ["bun", "scripts/plugin.ts", "start"]},
+  "actions": [
+    {"id": "status", "title": "Status", "command": ["bun", "scripts/plugin.ts", "status"]},
+    {"id": "stop", "title": "Stop", "command": ["bun", "scripts/plugin.ts", "stop"]}
+  ],
+  "web": {"title": "Yolo Web Client"},
+  "api": {
+    "protocol_version": 18,
+    "required_methods": ["hello", "list", "list_agents"],
+    "optional_methods": [],
+    "features": []
+  }
+}

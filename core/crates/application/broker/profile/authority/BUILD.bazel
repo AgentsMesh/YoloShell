@@ -1,0 +1,56 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+load("//build_system/bazel/rust:isolated_test.bzl", "isolated_rust_test")
+load("//build_system/bazel/rust:test_features.bzl", "INTEGRATION_TEST_FEATURES", "UNIT_TEST_FEATURES")
+
+package(default_visibility = ["//visibility:public"])
+
+_SOURCES = glob(["src/**/*.rs"])
+
+_SUPPORT = glob(["test_support/**/*.rs"])
+
+_DEPS = [
+    "//core/crates/wire:yolo_wire",
+    "@crates//:anyhow",
+    "@crates//:libc",
+    "@crates//:serde",
+    "@crates//:serde_json",
+    "@crates//:sha2",
+    "@crates//:uuid",
+]
+
+rust_library(
+    name = "yolo_broker_profile_authority",
+    srcs = _SOURCES,
+    crate_name = "yolo_broker_profile_authority",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    deps = _DEPS,
+)
+
+rust_test(
+    name = "unit_tests",
+    srcs = _SOURCES + _SUPPORT + glob(["unit_tests/**/*.rs"]),
+    crate_features = UNIT_TEST_FEATURES,
+    crate_name = "yolo_broker_profile_authority_unit_tests",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    deps = _DEPS + ["@crates//:tempfile"],
+)
+
+isolated_rust_test(
+    name = "integration_tests",
+    srcs = _SOURCES + _SUPPORT + glob(["integration_tests/**/*.rs"]),
+    crate_features = INTEGRATION_TEST_FEATURES,
+    crate_name = "yolo_broker_profile_authority_integration_tests",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    deps = _DEPS + ["@crates//:tempfile"],
+)
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = _SOURCES + _SUPPORT + glob([
+        "unit_tests/**/*.rs",
+        "integration_tests/**/*.rs",
+    ]) + ["BUILD.bazel"],
+)

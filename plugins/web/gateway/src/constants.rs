@@ -1,0 +1,24 @@
+use std::time::Duration;
+
+pub const WEB_PATH: &str = "/hub";
+pub const WEB_SUBPROTOCOL: &str = "yolo.hub.stream.v1";
+pub const READY_TYPE: &str = "ready";
+pub const TOKEN_BYTES: usize = 32;
+pub const TOKEN_HEX_BYTES: usize = TOKEN_BYTES * 2;
+pub const MAX_ORIGIN_BYTES: usize = 512;
+pub const MAX_ORIGINS: usize = 32;
+pub const STREAM_CHUNK_BYTES: usize = 64 * 1_024;
+pub const INPUT_QUEUE_CAPACITY: usize = 8;
+pub const PING_QUEUE_CAPACITY: usize = 1;
+pub const MAX_AUTH_BYTES: usize = 1_024;
+pub const MAX_PRIVATE_KEY_BYTES: u64 = 64 * 1_024;
+pub const MAX_PROFILE_BYTES: u64 = 16 * 1_024;
+pub const DEFAULT_MAX_CONNECTIONS: usize = 32;
+pub const MAX_CONNECTIONS: usize = 256;
+pub const DEFAULT_SESSION_LIFETIME: Duration = Duration::from_secs(30 * 60);
+pub const MAX_SESSION_LIFETIME: Duration = Duration::from_secs(24 * 60 * 60);
+pub const HANDSHAKE_TIMEOUT: Duration = Duration::from_secs(10);
+pub const CONNECT_TIMEOUT: Duration = Duration::from_secs(10);
+pub const ACCEPT_RETRY_DELAY: Duration = Duration::from_millis(50);
+pub const ORIGIN_HEADER: &str = "origin";
+pub const PROTOCOL_HEADER: &str = "sec-websocket-protocol";

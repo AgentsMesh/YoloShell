@@ -1,0 +1,53 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+load("//build_system/bazel:version.bzl", "YOLO_MARKETING_VERSION")
+
+package(default_visibility = ["//visibility:public"])
+
+_DEPS = [
+    "//core/crates/transport/capnp/codec",
+    "//plugins/tui/tab:yolo_tui_tab",
+    "//core/crates/transport/local/unix:yolo_local_unix",
+    "//plugins/tui/client/control/protocol:yolo_tui_client_control_protocol",
+    "//core/crates/persistence/paths:yolo_paths",
+    "@crates//:anyhow",
+    "@crates//:libc",
+    "@crates//:serde",
+    "@crates//:serde_json",
+    "@crates//:tokio",
+    "@crates//:uuid",
+]
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = glob(["src/**/*.rs", "unit_tests/**/*.rs", "integration_tests/**/*.rs", "test_support/**/*.rs"]) + ["BUILD.bazel"],
+)
+
+rust_library(
+    name = "yolo_tui_client_control",
+    srcs = glob(["src/**/*.rs"]),
+    crate_name = "yolo_tui_client_control",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    version = YOLO_MARKETING_VERSION,
+    deps = _DEPS,
+)
+
+rust_test(
+    name = "unit_tests",
+    srcs = glob(["src/**/*.rs", "unit_tests/**/*.rs"]),
+    crate_name = "yolo_tui_client_control_unit_tests",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    version = YOLO_MARKETING_VERSION,
+    deps = _DEPS,
+)
+
+rust_test(
+    name = "integration_tests",
+    srcs = glob(["integration_tests/**/*.rs", "test_support/**/*.rs"]),
+    crate_name = "yolo_tui_client_control_integration_tests",
+    crate_root = "integration_tests/lib.rs",
+    edition = "2024",
+    version = YOLO_MARKETING_VERSION,
+    deps = _DEPS + [":yolo_tui_client_control", "@crates//:tempfile", "//core/crates/hub/identity:yolo_hub_identity"],
+)

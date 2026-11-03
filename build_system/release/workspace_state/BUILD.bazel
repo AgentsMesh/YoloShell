@@ -1,0 +1,65 @@
+load("@rules_rust//rust:defs.bzl", "rust_library")
+load("//build_system/platform/macos:config.bzl", "RELEASE_EVIDENCE_MACOS_MINIMUM_OS_ENV")
+load("//build_system/bazel/rust:config.bzl", "RUST_UNIT_TEST_THREAD_COUNT")
+load("//build_system/bazel/rust:isolated_test.bzl", "isolated_rust_test")
+load("//build_system/bazel/rust:test_features.bzl", "INTEGRATION_TEST_FEATURES")
+
+package(default_visibility = ["//visibility:public"])
+
+_SOURCES = glob(["src/*.rs"])
+
+_INTEGRATION_TEST_SOURCES = glob(["integration_tests/*.rs"])
+
+_TEST_SUPPORT_SOURCES = glob(["test_support/*.rs"])
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = _SOURCES + _INTEGRATION_TEST_SOURCES + _TEST_SUPPORT_SOURCES + ["BUILD.bazel"],
+)
+
+rust_library(
+    name = "library",
+    srcs = _SOURCES,
+    crate_name = "yolo_release_workspace_state",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    rustc_env = RELEASE_EVIDENCE_MACOS_MINIMUM_OS_ENV,
+    deps = [
+        "//build_system/release/filesystem:library",
+        "//build_system/release/foundation:library",
+        "//build_system/release/process_execution:library",
+        "@crates//:anyhow",
+    ],
+)
+
+rust_library(
+    name = "test_support",
+    testonly = True,
+    srcs = _TEST_SUPPORT_SOURCES,
+    crate_name = "yolo_release_workspace_state_test_support",
+    crate_root = "test_support/fixture.rs",
+    edition = "2024",
+    deps = [
+        ":library",
+        "@crates//:tempfile",
+    ],
+)
+
+isolated_rust_test(
+    name = "integration_tests",
+    srcs = _SOURCES + _INTEGRATION_TEST_SOURCES + ["test_support/support.rs"],
+    crate_features = INTEGRATION_TEST_FEATURES,
+    crate_name = "yolo_release_workspace_state_integration_tests",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    env = {"RUST_TEST_THREADS": RUST_UNIT_TEST_THREAD_COUNT},
+    rustc_env = RELEASE_EVIDENCE_MACOS_MINIMUM_OS_ENV,
+    deps = [
+        ":test_support",
+        "//build_system/release/filesystem:library",
+        "//build_system/release/foundation:library",
+        "//build_system/release/process_execution:library",
+        "@crates//:anyhow",
+        "@crates//:tempfile",
+    ],
+)

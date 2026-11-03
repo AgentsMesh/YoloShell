@@ -1,0 +1,28 @@
+load("@rules_rust//rust:defs.bzl", "rust_library")
+
+package(default_visibility = ["//visibility:public"])
+
+# The bootstrap/enrollment DTOs moved to yolo_remote_provisioning_protocol.
+# This package keeps only the shared test fixtures used by Hub setup tests.
+_DEPS = [
+    "//core/crates/build_image:yolo_build_image",
+    "//core/crates/distribution/bundle:yolo_distribution_bundle",
+    "//core/crates/hub/build/protocol:yolo_hub_build_protocol",
+    "//core/crates/hub/delegation:yolo_hub_delegation",
+    "//core/crates/hub/identity:yolo_hub_identity",
+    "//core/crates/hub/routing:yolo_hub_routing",
+    "//core/crates/transport/remote/provisioning/protocol:yolo_remote_provisioning_protocol",
+    "@crates//:uuid",
+]
+
+filegroup(name = "architecture_check_data", srcs = glob(["**/*.rs"]) + ["BUILD.bazel"])
+
+rust_library(
+    name = "test_support",
+    testonly = True,
+    srcs = glob(["test_support/**/*.rs"]),
+    crate_root = "test_support/fixtures.rs",
+    crate_name = "yolo_hub_remote_startup_test_support",
+    edition = "2024",
+    deps = _DEPS,
+)

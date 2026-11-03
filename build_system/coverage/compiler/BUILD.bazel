@@ -1,0 +1,84 @@
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_test")
+load("//build_system/coverage/instrumentation:defs.bzl", "MACOS", "profile_link_flags")
+load("//build_system/coverage/instrumentation:test_support/fixture.bzl", "coverage_fixture")
+
+package(default_visibility = ["//visibility:public"])
+
+# Experimental producer inputs only; this does not register a Bazel toolchain.
+filegroup(
+    name = "sources",
+    srcs = glob([
+        "*.patch",
+        "*.toml",
+        "*.md",
+        "*.bzl",
+        "*.tpl",
+        "test_support/*.rs",
+        "integration_tests/*.rs",
+    ]),
+)
+
+coverage_fixture(name = "probe_tools", testonly = True)
+
+_VARIANTS = {
+    "o0_default": ["-Copt-level=0"],
+    "o0_single": ["-Copt-level=0", "-Ccodegen-units=1"],
+    "o3_default": ["-Copt-level=3"],
+    "o3_single": ["-Copt-level=3", "-Ccodegen-units=1"],
+    "o3_thin_lto": ["-Copt-level=3", "-Clto=thin", "-Cembed-bitcode=yes"],
+    "o3_fat_lto": ["-Copt-level=3", "-Clto=fat", "-Cembed-bitcode=yes"],
+}
+
+_PROBE_ENV = {
+    "YOLO_COVERAGE_PROBE_TOOLS": "$(rootpath :probe_tools)",
+    "RUST_TEST_THREADS": "1",
+}
+_PROBE_ENV.update({
+    "YOLO_CANCELLATION_" + variant.upper(): "$(rootpath :cancellation_" + variant + ")"
+    for variant in _VARIANTS
+})
+
+[rust_binary(
+    name = "cancellation_" + variant,
+    testonly = True,
+    srcs = ["test_support/cancellation_probe.rs"],
+    crate_root = "test_support/cancellation_probe.rs",
+    edition = "2024",
+    rustc_env = {"RUSTC_BOOTSTRAP": "1"},
+    rustc_flags = flags + ["-Cinstrument-coverage", "-Zcoverage-options=branch"] + profile_link_flags(MACOS),
+    target_compatible_with = ["@platforms//os:macos"],
+) for variant, flags in _VARIANTS.items()]
+
+rust_test(
+    name = "integration_tests",
+    srcs = glob(["integration_tests/*.rs", "test_support/*.rs"]),
+    crate_name = "yolo_coverage_producer_tests",
+    crate_root = "integration_tests/cancellation.rs",
+    edition = "2024",
+    data = [":cancellation_" + variant for variant in _VARIANTS] + [":probe_tools"],
+    env = _PROBE_ENV,
+    tags = ["exclusive"],
+    target_compatible_with = ["@platforms//os:macos"],
+    deps = [
+        "//core/crates/runtime/engine/process:yolo_process",
+        "@crates//:serde_json",
+        "@crates//:tempfile",
+        "@crates//:tokio",
+        "@rules_rust//rust/runfiles",
+    ],
+)
+
+exports_files(glob([
+    "*.patch",
+    "*.toml",
+    "*.bzl",
+    "*.tpl",
+]))
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = [
+        "BUILD.bazel",
+        ":sources",
+    ],
+)

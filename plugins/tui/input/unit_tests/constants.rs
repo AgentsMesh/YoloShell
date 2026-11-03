@@ -1,0 +1,13 @@
+pub const ROWS: u16 = 24;
+pub const COLUMNS: u16 = 80;
+pub const ENABLE_APPLICATION_CURSOR: &[u8] = b"\x1b[?1h";
+pub const ENABLE_APPLICATION_KEYPAD: &[u8] = b"\x1b=";
+pub const ESCAPE: &[u8] = b"\x1b";
+pub const UP: &[u8] = b"\x1b[A";
+pub const APPLICATION_UP: &[u8] = b"\x1bOA";
+pub const MODIFIED_UP: &[u8] = b"\x1b[1;8A";
+pub const BRACKETED: &[u8] = b"\x1b[200~hello\nworld\x1b[201~";
+pub const PASTE_TEXT: &str = "hello\nworld";
+pub const PASTE_CONTROL: &str = "\x1b[201~exit\n";
+pub const PASTE_NUL: &str = "hello\0world";
+pub const MAX_FUNCTION_KEY: u8 = 12;
