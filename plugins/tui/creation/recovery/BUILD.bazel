@@ -1,0 +1,48 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+load("//build_system/bazel:version.bzl", "YOLO_MARKETING_VERSION")
+
+package(default_visibility = ["//visibility:public"])
+
+_DEPS = [
+    "//core/crates/hub/client:yolo_hub_client",
+    "//core/crates/hub/client/channels:yolo_hub_client_channels",
+    "//core/crates/hub/identity:yolo_hub_identity",
+    "//core/crates/hub/rpc/protocol:yolo_hub_rpc_protocol",
+    "//core/crates/hub/terminal/protocol:yolo_hub_terminal_protocol",
+    "//plugins/tui/creation/journal:yolo_tui_creation_journal",
+    "@crates//:anyhow",
+    "@crates//:uuid",
+]
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = glob(["**/*.rs"]) + ["BUILD.bazel"],
+)
+
+rust_library(
+    name = "yolo_tui_creation_recovery",
+    srcs = glob(["src/**/*.rs"]),
+    crate_name = "yolo_tui_creation_recovery",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    version = YOLO_MARKETING_VERSION,
+    deps = _DEPS,
+)
+
+rust_test(
+    name = "unit_tests",
+    srcs = glob(["src/**/*.rs", "unit_tests/**/*.rs", "test_support/**/*.rs"]),
+    crate_name = "yolo_tui_creation_recovery_unit_tests",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    deps = _DEPS,
+)
+
+rust_test(
+    name = "integration_tests",
+    srcs = glob(["integration_tests/**/*.rs", "test_support/**/*.rs"]),
+    crate_name = "yolo_tui_creation_recovery_integration_tests",
+    crate_root = "integration_tests/lib.rs",
+    edition = "2024",
+    deps = _DEPS + [":yolo_tui_creation_recovery"],
+)

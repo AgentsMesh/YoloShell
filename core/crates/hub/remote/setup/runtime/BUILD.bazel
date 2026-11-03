@@ -1,0 +1,49 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+load("//build_system/bazel:version.bzl", "YOLO_MARKETING_VERSION")
+package(default_visibility = ["//visibility:public"])
+_DEPS = [
+    "//core/crates/hub/identity:yolo_hub_identity",
+    "//core/crates/hub/dispatch:yolo_hub_dispatch",
+    "//core/crates/hub/delegation:yolo_hub_delegation",
+    "//core/crates/hub/management/protocol:yolo_hub_management_protocol",
+    "//core/crates/hub/remote/setup/protocol:yolo_hub_remote_setup_protocol",
+    "//core/crates/hub/remote/setup/store:yolo_hub_remote_setup_store",
+    "//core/crates/hub/rpc/protocol:yolo_hub_rpc_protocol",
+    "//core/crates/hub/terminal/protocol:yolo_hub_terminal_protocol",
+    "//core/crates/hub/ssh/profile/runtime:yolo_hub_ssh_profile_runtime",
+    "//core/crates/hub/ssh/profile/protocol:yolo_hub_ssh_profile_protocol",
+    "//core/crates/hub/state:yolo_hub_state",
+    "//core/crates/persistence/paths:yolo_paths",
+    "//core/crates/transport/remote/broker:yolo_remote_broker",
+    "//core/crates/transport/remote/provisioning/protocol:yolo_remote_provisioning_protocol",
+    "@crates//:anyhow", "@crates//:tokio", "@crates//:tracing", "@crates//:uuid", "@crates//:zeroize",
+]
+filegroup(name = "architecture_check_data", srcs = glob(["**/*.rs"]) + ["BUILD.bazel"])
+rust_library(name = "yolo_hub_remote_setup_runtime", srcs = glob(["src/**/*.rs"]), crate_name = "yolo_hub_remote_setup_runtime", crate_root = "src/lib.rs", edition = "2024", version = YOLO_MARKETING_VERSION, deps = _DEPS)
+
+rust_test(
+    name = "unit_tests",
+    srcs = glob(["src/**/*.rs", "unit_tests/**/*.rs"]),
+    crate_root = "src/lib.rs",
+    crate_name = "yolo_hub_remote_setup_runtime_unit_tests",
+    edition = "2024",
+    deps = _DEPS + ["//core/crates/hub/remote/setup/protocol:test_support", "@crates//:tempfile"],
+)
+
+rust_test(
+    name = "integration_tests",
+    srcs = glob(["integration_tests/**/*.rs", "test_support/**/*.rs"]),
+    crate_root = "integration_tests/lib.rs", crate_name = "yolo_hub_remote_setup_runtime_integration_tests", edition = "2024",
+    deps = _DEPS + [
+        ":yolo_hub_remote_setup_runtime",
+        "//core/crates/hub/client:yolo_hub_client",
+        "//core/crates/hub/local/backend:yolo_hub_local_backend",
+        "//core/crates/hub/management/runtime:yolo_hub_management_runtime",
+        "//core/crates/hub/remote/setup/protocol:test_support",
+        "//core/crates/hub/remote/startup/protocol:test_support",
+        "//core/crates/hub/server:yolo_hub_server",
+        "//core/crates/transport/broker/hub/protocol:yolo_broker_hub_protocol",
+        "//core/crates/wire:yolo_wire",
+        "@crates//:tempfile",
+    ],
+)

@@ -1,0 +1,79 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+load("//build_system/bazel:version.bzl", "YOLO_MARKETING_VERSION")
+load("//build_system/bazel/rust:component_test_graph.bzl", "COMPONENT_TEST_FEATURES", "component_test_aliases", "component_test_dependencies")
+
+package(default_visibility = ["//visibility:public"])
+
+_IDENTITY_DEPS = [
+    "//core/crates/agent/contract:yolo_agent_contract",
+    "//core/crates/plugin/provider:yolo_plugin_provider",
+]
+
+_POLICY_DEPS = [
+    ":yolo_gemini_identity",
+    "//core/crates/agent/contract:yolo_agent_contract",
+    "//core/crates/agent/providers/gemini:yolo_gemini",
+    "//core/crates/agent/providers/gemini/hooks:yolo_gemini_hooks",
+    "//core/crates/agent/system/hooks/installation/contract:yolo_hook_installation_contract",
+    "//core/crates/agent/system/provider/contract:yolo_agent_provider_contract",
+    "//core/crates/agent/system/provider/runtime:yolo_agent_provider_runtime",
+    "//core/crates/conversation/protocol:yolo_conversation_protocol",
+    "//core/crates/agent/providers/gemini/parser:yolo_conversation_gemini",
+    "//core/crates/conversation/source:yolo_conversation_source",
+    "//core/crates/conversation/transcript:yolo_conversation_transcript",
+    "@crates//:anyhow",
+]
+
+_POLICY_SOURCES = [
+    "src/conversation.rs",
+    "src/install.rs",
+    "src/lib.rs",
+    "src/package.rs",
+]
+
+rust_library(
+    name = "yolo_gemini_identity",
+    srcs = ["src/constants.rs"],
+    crate_name = "yolo_gemini_identity",
+    crate_root = "src/constants.rs",
+    edition = "2024",
+    version = YOLO_MARKETING_VERSION,
+    deps = _IDENTITY_DEPS,
+)
+
+rust_library(
+    name = "yolo_gemini_provider",
+    srcs = _POLICY_SOURCES,
+    crate_name = "yolo_gemini_provider",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    version = YOLO_MARKETING_VERSION,
+    deps = _POLICY_DEPS,
+)
+
+rust_test(
+    name = "unit_tests",
+    srcs = _POLICY_SOURCES + glob(["unit_tests/**/*.rs"]),
+    crate_name = "yolo_gemini_provider_unit_tests",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    deps = _POLICY_DEPS,
+)
+
+rust_library(
+    name = "yolo_gemini_provider_component_test_support",
+    testonly = True,
+    srcs = _POLICY_SOURCES,
+    aliases = component_test_aliases(_POLICY_DEPS),
+    crate_features = COMPONENT_TEST_FEATURES,
+    crate_name = "yolo_gemini_provider",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    version = YOLO_MARKETING_VERSION,
+    deps = component_test_dependencies(_POLICY_DEPS),
+)
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = glob(["**/*"], exclude = ["BUILD.bazel"]) + ["BUILD.bazel"],
+)

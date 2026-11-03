@@ -1,0 +1,33 @@
+package(default_visibility = ["//visibility:public"])
+
+TRANSPORT_ARCHITECTURE_DATA = [
+    "//core/crates/transport/capnp/argument:architecture_check_data",
+    "//core/crates/transport/capnp/codec:architecture_check_data",
+    "//core/crates/transport/capnp/native/bridge:architecture_check_data",
+    "//core/crates/transport/capnp/rpc:architecture_check_data",
+    "//core/crates/transport/capnp/schema:architecture_check_data",
+    "//core/crates/transport/capnp/sensitive:architecture_check_data",
+    "//core/crates/transport/capnp/value:architecture_check_data",
+    "//core/crates/transport/runtime/rpc:architecture_check_data",
+    "//core/crates/transport/runtime/testing:architecture_check_data",
+    "//core/crates/transport/protocol/validation:architecture_check_data",
+    "//core/crates/transport/broker/launch/authority:architecture_check_data",
+    "//core/crates/transport/remote/provisioning/protocol:architecture_check_data",
+    "//core/crates/transport/remote/provisioning:architecture_check_data",
+    "//core/crates/transport/ssh/profile/protocol:architecture_check_data",
+    "//core/crates/transport/broker/hub/protocol:architecture_check_data",
+    "//core/crates/transport/broker/tunnel:architecture_check_data",
+    "//core/crates/transport/client:architecture_check_data",
+    "//core/crates/transport/core:architecture_check_data",
+    "//core/crates/transport/local/unix:architecture_check_data",
+    "//core/crates/transport/relay:architecture_check_data",
+    "//core/crates/transport/remote:architecture_check_data",
+    "//core/crates/transport/remote/bundle:architecture_check_data",
+    "//core/crates/transport/remote/broker:architecture_check_data",
+    "//core/crates/transport/session:architecture_check_data",
+]
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = TRANSPORT_ARCHITECTURE_DATA + ["BUILD.bazel"],
+)

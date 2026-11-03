@@ -1,0 +1,11 @@
+pub const DEFAULT_JSON_MAX_BYTES: usize = 1_048_576;
+pub const SESSION_DIRECTORY_NAME: &str = "sessions";
+pub const SESSION_MANIFEST_NAME: &str = "manifest.json";
+pub const TEMP_FILE_PREFIX: &str = ".yolo-storage-";
+pub const DEFAULT_STATE_FILE_NAME: &str = "state";
+pub const ROOT_DIRECTORY: &str = "/";
+pub const DUPLICATE_PATH_SEPARATOR: &str = "//";
+pub const FILE_MODE_PRIVATE: u32 = 0o600;
+pub const DIRECTORY_MODE_PRIVATE: u32 = 0o700;
+pub const READ_BUFFER_CAPACITY_BYTES: usize = 8 * 1_024;
+pub const READ_LIMIT_SENTINEL_BYTES: u64 = 1;

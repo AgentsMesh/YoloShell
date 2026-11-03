@@ -1,0 +1,12 @@
+pub const RECORD_FILE: &str = "profiles.json";
+pub const DISPLACED: &str = "displaced";
+pub const REPLACEMENT: &str = "replacement";
+pub const CLONE: &str = "clone";
+pub const FILE_MODE: u32 = 0o600;
+pub const INVALID_BYTES: &[u8] = b"{";
+pub const LOST_ACK: &str = "injected registry acknowledgement loss";
+pub const STATE_KEY: &str = "state";
+pub const SCHEMA_KEY: &str = "schema_version";
+pub const DIRECTORY_KEY: &str = "directory";
+pub const REVISION_KEY: &str = "revision";
+pub const TWO_CLIENTS: usize = 2;

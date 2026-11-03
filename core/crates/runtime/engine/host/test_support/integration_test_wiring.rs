@@ -1,0 +1,18 @@
+#[cfg(all(test, feature = "yolo-integration-tests"))] #[path = "../integration_tests/sockets.rs"] mod sockets;
+#[cfg(all(test, feature = "yolo-integration-tests"))] #[path = "../integration_tests/socket_namespace_lifecycle.rs"] mod socket_namespace_lifecycle;
+#[cfg(all(test, feature = "yolo-integration-tests"))] #[path = "../integration_tests/idle_admission_race.rs"] mod idle_admission_race;
+#[cfg(all(test, feature = "yolo-integration-tests"))] #[path = "../integration_tests/instance_lock_spawn_fence_process_tests.rs"] mod instance_lock_spawn_fence_process_tests;
+#[cfg(all(test, feature = "yolo-integration-tests"))] #[path = "../integration_tests/socket_namespace_selection.rs"] mod socket_namespace_selection;
+#[cfg(all(test, feature = "yolo-integration-tests"))] #[path = "../integration_tests/ipc.rs"] mod ipc;
+#[cfg(feature = "yolo-integration-tests")] #[path = "../integration_tests/archive_worker_process_fixture.rs"] mod archive_worker_process_fixture;
+#[cfg(all(test, feature = "yolo-integration-tests"))] #[path = "../integration_tests/archive_safety.rs"] mod archive_safety;
+#[cfg(all(test, feature = "yolo-integration-tests"))] #[path = "../integration_tests/released_worker_retirement.rs"] mod released_worker_retirement;
+#[cfg(all(test, feature = "yolo-integration-tests"))] #[path = "../integration_tests/archive_evidence_matrix.rs"] mod archive_evidence_matrix;
+#[cfg(all(test, feature = "yolo-integration-tests"))] #[path = "../integration_tests/lifecycle_termination_matrix.rs"] mod lifecycle_termination_matrix;
+#[cfg(all(test, feature = "yolo-integration-tests"))] #[path = "../integration_tests/socket_edges.rs"] mod socket_edges;
+#[cfg(all(test, feature = "yolo-integration-tests"))] #[path = "../integration_tests/socket_startup_adversarial.rs"] mod socket_startup_adversarial;
+#[cfg(all(target_os = "linux", test, feature = "yolo-integration-tests"))] #[path = "../integration_tests/linux_retirement_evidence_tests.rs"] mod linux_retirement_evidence_tests;
+#[cfg(test)] #[cfg(feature = "yolo-integration-tests")] #[path = "../integration_tests/resume_retirement_race.rs"] mod resume_retirement_race;
+#[cfg(test)] #[cfg(feature = "yolo-integration-tests")] #[path = "../integration_tests/resume_transaction_survivor_retirement.rs"] mod resume_transaction_survivor_retirement;
+#[cfg(test)] #[cfg(any(not(test), feature = "yolo-integration-tests"))] #[path = "../integration_tests/resume_transaction_survivor_rearm_socket.rs"] mod resume_transaction_survivor_rearm_socket;
+#[cfg(all(target_os = "linux", test, feature = "yolo-integration-tests"))] #[path = "../integration_tests/linux_worker_crash_retirement.rs"] mod linux_worker_crash_retirement;

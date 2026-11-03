@@ -1,0 +1,10 @@
+pub use yolo_paths::constants::PUBLIC_CLIENT_SOCKET_FILE_NAME as PUBLIC_CLIENT_SOCKET;
+pub const MAX_CONNECTIONS: usize = 32;
+pub const MAX_ACTIVE_CHANNELS: usize = 256;
+pub const VERIFY_INTERVAL: std::time::Duration = std::time::Duration::from_secs(1);
+pub const AUTHENTICATION_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(10);
+pub const CLOSE_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(1);
+pub const SOCKET_PROBE_TIMEOUT: std::time::Duration = std::time::Duration::from_millis(500);
+pub const IDENTITY_MISMATCH: &str = "public client ingress belongs to another Hub";
+pub const LIVE_SOCKET: &str = "public client ingress is already listening";
+pub const CHANNEL_FAILED: &str = "public client channel retired";

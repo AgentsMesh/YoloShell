@@ -1,0 +1,65 @@
+load("//build_system/architecture:source_inventory.bzl", "root_architecture_sources")
+
+package(default_visibility = ["//visibility:public"])
+
+exports_files([
+    "Cargo.lock",
+    "Cargo.toml",
+])
+
+filegroup(
+    name = "docs",
+    srcs = glob(["docs/**/*.md"]),
+)
+
+BUILD_SYSTEM_ARCHITECTURE_DATA = [
+    "//{}:architecture_check_data".format(package)
+    for package in subpackages(include = ["build_system/**"])
+]
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = root_architecture_sources() + BUILD_SYSTEM_ARCHITECTURE_DATA + [
+        "//core:architecture_check_data",
+        "//plugins:architecture_check_data",
+        "//integration_tests/runtime:architecture_check_data",
+        "//third_party/rules_rust:architecture_check_data",
+    ],
+)
+
+test_suite(
+    name = "unit",
+    tests = [
+        "//build_system/architecture:tests",
+        "//build_system/release:tests",
+        "//build_system/coverage:tests",
+        "//core:tests",
+    ],
+)
+
+test_suite(
+    name = "e2e",
+    tests = [
+        "//integration_tests/runtime:runtime_resilience_test",
+    ],
+)
+
+test_suite(
+    name = "visible_e2e",
+    tests = [
+    ],
+)
+
+test_suite(
+    name = "release_unit",
+    tests = [
+        ":unit",
+    ],
+)
+
+test_suite(
+    name = "release_e2e",
+    tests = [
+        "//integration_tests/runtime:runtime_resilience_test",
+    ],
+)

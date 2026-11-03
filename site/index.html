@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Yolo — persistent terminals for coding agents</title>
+  <meta name="theme-color" content="#0d100e">
+  <meta name="description" content="Yolo keeps coding-agent PTYs alive when the window closes. Persistent terminals, native resume, TUI and browser clients, built in Rust.">
+  <meta property="og:title" content="Yolo — persistent terminals for coding agents">
+  <meta property="og:description" content="Close the window. The work stays.">
+  <meta property="og:type" content="website">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles/tokens.css">
+  <link rel="stylesheet" href="styles/layout.css">
+  <link rel="stylesheet" href="styles/content.css">
+  <link rel="stylesheet" href="styles/terminal.css">
+  <link rel="stylesheet" href="styles/cards.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="nav">
+    <div class="container nav-inner">
+      <a class="wordmark" href="./">yolo<span>_</span></a>
+      <nav aria-label="Primary">
+        <ul class="nav-links">
+          <li><a href="#why">Why</a></li>
+          <li><a href="#architecture">Architecture</a></li>
+          <li><a href="#quickstart">Quickstart</a></li>
+          <li><a href="#web">Web</a></li>
+          <li><a href="https://github.com/AgentsMesh/YoloShell/blob/main/docs/README.md">Docs</a></li>
+          <li><a class="nav-cta" href="https://github.com/AgentsMesh/YoloShell">GitHub</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+  <main id="main">
+    <section class="container hero">
+      <div>
+        <p class="eyebrow">Alpha · macOS + Linux</p>
+        <h1>Terminals that <em>outlive</em> the window.</h1>
+        <p class="lede">Yolo keeps every coding-agent PTY alive when the TUI closes, the Host restarts, or you reconnect from another machine. Start Claude Code or Codex in a normal shell. Detach. Pick it up later.</p>
+        <div class="actions">
+          <a class="button button-primary" href="#quickstart">Start building</a>
+          <a class="button" href="https://github.com/AgentsMesh/YoloShell/blob/main/docs/README.md">Read the docs</a>
+          <a class="button" href="https://github.com/AgentsMesh/YoloShell">View source</a>
+        </div>
+        <p class="dim">MIT licensed · Rust + Bazel · native client.</p>
+      </div>
+      <div class="terminal" aria-label="Example Yolo session">
+        <div class="term-bar"><span class="dots"><span></span><span></span><span></span></span><span>yolo · local hub</span><span>alpha</span></div>
+        <div class="term-body">
+          <p><span class="green">$</span> yolo</p>
+          <p class="dim">hub local · 3 agents · 2 shells</p>
+          <div class="rule"></div>
+          <p><span class="amber">●</span> claude   running   ~/src/api</p>
+          <p class="dim">  approval needed · 12s</p>
+          <p><span class="cyan">●</span> codex    running   ~/src/web</p>
+          <p><span class="green">●</span> shell    idle      ~</p>
+          <div class="rule"></div>
+          <p><span class="green">$</span> Ctrl-B d</p>
+          <p class="dim">detached. workers stay alive.</p>
+          <p><span class="green">$</span> yolo attach</p>
+          <p><span class="amber">✓</span> runtime epoch preserved</p>
+          <p><span class="green">$</span> <span class="cursor"></span></p>
+        </div>
+      </div>
+    </section>
+    <section id="why" class="section">
+      <div class="container">
+        <div class="section-head">
+          <div><p class="section-kicker">The problem</p><h2>Closing a window should not kill the work.</h2></div>
+          <p>Most terminal workspaces stop at tabs and panes. Yolo starts one level lower: each PTY has an owner that is independent of every client and survives client, Host and Worker replacement.</p>
+        </div>
+        <div class="compare">
+          <article class="card"><span class="card-label">Ordinary terminal</span><h3>The PTY belongs to the window</h3><p>Close the client, lose the shell. Restart the machine, reconstruct the session from saved commands and hope the agent can resume.</p></article>
+          <article class="card card-hot"><span class="card-label">Yolo</span><h3>The PTY belongs to a Worker</h3><p>The client is a view. The Host is replaceable. The Worker owns the PTY, output journal and process tree; recovery uses exact runtime epochs.</p></article>
+        </div>
+      </div>
+    </section>
+    <section class="section">
+      <div class="container">
+        <div class="section-head">
+          <div><p class="section-kicker">What you get</p><h2>Agent-aware, not agent-shaped.</h2></div>
+          <p>Yolo does not turn Codex or Claude Code into a structured API. It supervises the real terminal and adds only the provider evidence needed for status, interaction and native resume.</p>
+        </div>
+        <div class="grid">
+          <article class="card"><span class="card-label">01 · Custody</span><h3>Persistent PTYs</h3><p>One Worker per terminal. Detach, crash or replace the client and Host without hanging up the process tree.</p></article>
+          <article class="card"><span class="card-label">02 · Entry</span><h3>No agent picker</h3><p>Every tab starts your shell. Yolo observes what you launch and binds the provider after its authenticated hook handshake.</p></article>
+          <article class="card"><span class="card-label">03 · Recovery</span><h3>Native resume</h3><p>After a reboot, a validated provider binding runs the provider's own resume command. Generic shells stay honest about needing recreation.</p></article>
+          <article class="card"><span class="card-label">04 · Control</span><h3>One writer, many viewers</h3><p>Explicit writer leases serialize input. Observers attach without stealing control; takeover is a deliberate action.</p></article>
+          <article class="card"><span class="card-label">05 · Federation</span><h3>Local and remote Hubs</h3><p>One Hub can expose local and peer machines. Shared layouts stay separate from private focus, zoom and Chat drafts.</p></article>
+          <article class="card"><span class="card-label">06 · Clients</span><h3>TUI, browser, plugins</h3><p>The TUI is first-party. The Bun web client and trusted plugins consume the same public protocol; none of them owns a PTY.</p></article>
+        </div>
+      </div>
+    </section>
+    <section id="architecture" class="section">
+      <div class="container">
+        <div class="section-head">
+          <div><p class="section-kicker">Architecture</p><h2>Views above. Custody below.</h2></div>
+          <p>Rust owns terminal identity, leases, PTYs, journals, supervision and recovery. A single executable supplies each role; clients connect through the Hub public protocol.</p>
+        </div>
+        <div class="stack">
+          <div class="stack-row"><div class="node"><strong>TUI</strong><span>first-party client</span></div><div class="node"><strong>Web client</strong><span>trusted plugin</span></div><div class="node"><strong>Plugins</strong><span>public protocol</span></div></div>
+          <div class="arrow">│ public Hub protocol</div>
+          <div class="node node-core"><strong>Hub</strong><span>layout · inventory · federation</span></div>
+          <div class="arrow">│</div>
+          <div class="node"><strong>Host</strong><span>recovery · custody reconciliation</span></div>
+          <div class="arrow">│</div>
+          <div class="stack-row"><div class="node"><strong>Worker</strong><span>PTY + journal</span></div><div class="node"><strong>Worker</strong><span>PTY + journal</span></div><div class="node"><strong>Worker</strong><span>PTY + journal</span></div></div>
+        </div>
+      </div>
+    </section>
+    <section id="quickstart" class="section">
+      <div class="container">
+        <div class="section-head">
+          <div><p class="section-kicker">Quickstart</p><h2>Install a release or build from source.</h2></div>
+          <p>Install the latest stable release with one command, or build the same executable from source with Bazelisk. Cargo is dependency metadata; there is no second build system.</p>
+        </div>
+        <div class="split">
+          <div class="code">
+            <div class="code-head">terminal</div>
+            <pre><code><span class="c"># latest stable release</span>
+curl -fsSL https://raw.githubusercontent.com/AgentsMesh/YoloShell/main/scripts/install.sh | sh
+
+<span class="c"># or build from source; Bazelisk is pinned by .bazelversion</span>
+git clone https://github.com/AgentsMesh/YoloShell.git
+cd yolo
+bazel build --jobs=1 //core:yolo
+bazel run --jobs=1 //core:yolo
+
+<span class="c"># inside the TUI: start an agent normally</span>
+claude
+
+<span class="c"># detach and reconnect later</span>
+Ctrl-B d
+yolo attach</code></pre>
+          </div>
+          <div>
+            <article class="card"><span class="card-label">Step 1</span><h3>Install one executable</h3><p>The TUI, Host, Hub, relay, broker and Worker roles all come from the same Rust binary.</p></article>
+            <article class="card mt"><span class="card-label">Step 2</span><h3>Work in normal terminals</h3><p>Launch any TUI. Yolo recognizes supported agents after launch and keeps provider evidence separate from terminal bytes.</p></article>
+            <article class="card mt"><span class="card-label">Step 3</span><h3>Close the window whenever</h3><p>Detach, reconnect, replace the Host, or use the browser client. The Worker and PTY stay put.</p></article>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section id="web" class="section">
+      <div class="container split split-web">
+        <div>
+          <p class="section-kicker">Web client</p>
+          <h2>Same terminals. Browser view.</h2>
+          <p class="lede">The reference plugin projects the Hub catalogue, live xterm.js terminals, Chat history, typed interactions, creation jobs and archive history over an authenticated same-origin session.</p>
+          <p>Plain HTTP plus a bearer token is a trusted-LAN mode. Browsers never receive the management socket, raw Hub ID, lease grant, creation capability or Hub token.</p>
+          <div class="actions"><a class="button" href="https://github.com/AgentsMesh/YoloShell/blob/main/plugins/web/client/README.md">Web client README</a><a class="button" href="https://github.com/AgentsMesh/YoloShell/blob/main/docs/adr/0024-web-terminal-streaming.md">ADR 0024</a></div>
+        </div>
+        <div class="browser" aria-label="Example web client">
+          <div class="browser-bar"><span class="dots"><span></span><span></span><span></span></span><span>127.0.0.1:4199</span></div>
+          <div class="browser-body">
+            <div class="browser-rail"><p class="dim">AGENTS</p><p><span class="amber">●</span> claude</p><p><span class="cyan">●</span> codex</p><p class="dim mt">SHELLS</p><p><span class="green">●</span> api</p><p class="dim mt">NEEDS YOU</p><p><span class="red">●</span> approval</p></div>
+            <div class="browser-main"><div class="bubble"><span class="dim">claude</span><br>The migration is ready. Allow the test command?</div><div class="bubble"><span class="green">Allow</span> · <span class="red">Deny</span></div><div class="bubble"><span class="dim">terminal</span><br><span class="green">$</span> cargo test<br><span class="green">✓</span> 214 passed</div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section class="section">
+      <div class="container">
+        <div class="section-head">
+          <div><p class="section-kicker">Providers</p><h2>Bring the agent you already use.</h2></div>
+          <p>Claude Code and Codex are the accepted Alpha targets. Gemini CLI, Qwen Code and Grok Build are experimental adapters with hooks and native resume.</p>
+        </div>
+        <div class="chips"><span class="chip"><em>accepted</em> Claude Code</span><span class="chip"><em>accepted</em> Codex</span><span class="chip">experimental Gemini CLI</span><span class="chip">experimental Qwen Code</span><span class="chip">experimental Grok Build</span></div>
+      </div>
+    </section>
+    <section class="section">
+      <div class="container cta">
+        <p class="section-kicker">Status</p>
+        <h2>Alpha, with the limits written down.</h2>
+        <p>Yolo is usable for daily terminal work on Apple Silicon macOS and Linux. The Alpha contract lists the accepted providers, recovery guarantees, deferred remote workflows and the verification approach. Read it before depending on a lifecycle promise.</p>
+        <div class="actions"><a class="button button-primary" href="https://github.com/AgentsMesh/YoloShell/blob/main/docs/alpha.md">Read the Alpha contract</a><a class="button" href="https://github.com/AgentsMesh/YoloShell">Star on GitHub</a></div>
+      </div>
+    </section>
+  </main>
+  <footer class="footer">
+    <div class="container footer-inner"><span>Yolo · MIT licensed · built in Rust</span><span><a href="https://github.com/AgentsMesh/YoloShell/blob/main/docs/README.md">Docs</a> · <a href="https://github.com/AgentsMesh/YoloShell/blob/main/SECURITY.md">Security</a> · <a href="https://github.com/AgentsMesh/YoloShell">GitHub</a></span></div>
+  </footer>
+</body>
+</html>

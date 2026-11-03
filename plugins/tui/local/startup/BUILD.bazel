@@ -1,0 +1,67 @@
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library", "rust_test")
+load("//build_system/bazel:version.bzl", "YOLO_MARKETING_VERSION")
+load("//build_system/bazel/rust:test_features.bzl", "INTEGRATION_TEST_FEATURES")
+
+package(default_visibility = ["//visibility:public"])
+_DEPS = [
+    "//core/crates/transport/capnp/codec",
+    "//core/crates/application/launch/contract:yolo_launch_contract",
+    "//core/crates/application/local/profile:yolo_local_profile",
+    "//core/crates/hub/local/startup:yolo_hub_local_startup",
+    "//core/crates/hub/client:yolo_hub_client",
+    "//core/crates/runtime/engine/process:yolo_process",
+    "@crates//:anyhow",
+    "@crates//:libc",
+    "@crates//:serde_json",
+    "@crates//:tokio",
+]
+filegroup(name = "architecture_check_data", srcs = glob(["**/*.rs"]) + ["BUILD.bazel"])
+rust_library(
+    name = "yolo_tui_local_startup",
+    srcs = glob(["src/**/*.rs"]),
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    version = YOLO_MARKETING_VERSION,
+    deps = _DEPS,
+)
+rust_test(
+    name = "unit_tests",
+    crate_name = "yolo_tui_local_startup_unit_tests",
+    srcs = glob(["src/**/*.rs", "unit_tests/**/*.rs"]) + ["test_support/bootstrap_dispatch.rs"],
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    deps = _DEPS,
+)
+rust_test(
+    name = "integration_tests",
+    crate_name = "yolo_tui_local_startup_integration_tests",
+    data = [":bootstrap_fixture"],
+    env = {"YOLO_TUI_BOOTSTRAP_FIXTURE": "$(rootpath :bootstrap_fixture)"},
+    srcs = glob(["src/**/*.rs", "integration_tests/**/*.rs", "test_support/**/*.rs"]),
+    crate_root = "src/lib.rs",
+    crate_features = INTEGRATION_TEST_FEATURES,
+    edition = "2024",
+    deps = _DEPS + [
+        "//build_system/coverage/profile_test_support:library",
+        "//core/crates/hub/identity:yolo_hub_identity",
+        "//core/crates/hub/state:yolo_hub_state",
+        "@crates//:tempfile",
+    ],
+)
+
+rust_binary(
+    name = "bootstrap_fixture",
+    testonly = True,
+    srcs = ["test_support/bootstrap_fixture.rs", "test_support/bootstrap_contract.rs", "test_support/bootstrap_dispatch.rs"],
+    crate_root = "test_support/bootstrap_fixture.rs",
+    edition = "2024",
+    deps = [
+        "//core/crates/application/launch/contract:yolo_launch_contract",
+        "//core/crates/hub/local/startup:yolo_hub_local_startup",
+        "//core/crates/runtime/engine/process:yolo_process",
+        "//plugins/tui/cli:yolo_tui_cli",
+        "@crates//:anyhow",
+        "@crates//:clap",
+        "@crates//:libc",
+    ],
+)

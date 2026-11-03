@@ -1,0 +1,122 @@
+diff --git a/compiler/rustc_mir_transform/src/coverage/graph.rs b/compiler/rustc_mir_transform/src/coverage/graph.rs
+index dcc7c5b9..2ce31fa1 100644
+--- a/compiler/rustc_mir_transform/src/coverage/graph.rs
++++ b/compiler/rustc_mir_transform/src/coverage/graph.rs
+@@ -33,8 +33,8 @@ pub(crate) struct CoverageGraph {
+ }
+ 
+ impl CoverageGraph {
+-    pub(crate) fn from_mir(mir_body: &mir::Body<'_>) -> Self {
+-        let (bcbs, bb_to_bcb) = Self::compute_basic_coverage_blocks(mir_body);
++    pub(crate) fn from_mir(mir_body: &mir::Body<'_>, direct_counters: bool) -> Self {
++        let (bcbs, bb_to_bcb) = Self::compute_basic_coverage_blocks(mir_body, direct_counters);
+ 
+         // Pre-transform MIR `BasicBlock` successors and predecessors into the BasicCoverageBlock
+         // equivalents. Note that since the BasicCoverageBlock graph has been fully simplified, the
+@@ -117,6 +117,7 @@ pub(crate) fn from_mir(mir_body: &mir::Body<'_>) -> Self {
+ 
+     fn compute_basic_coverage_blocks(
+         mir_body: &mir::Body<'_>,
++        direct_counters: bool,
+     ) -> (
+         IndexVec<BasicCoverageBlock, BasicCoverageBlockData>,
+         IndexVec<BasicBlock, Option<BasicCoverageBlock>>,
+@@ -136,7 +137,9 @@ fn compute_basic_coverage_blocks(
+             }
+ 
+             let is_out_summable = basic_blocks.last().is_some_and(|&bb| {
+-                bcb_filtered_successors(mir_body[bb].terminator()).is_out_summable()
++                let terminator = mir_body[bb].terminator();
++                bcb_filtered_successors(terminator).is_out_summable()
++                    && !(direct_counters && interruption_boundary(&terminator.kind))
+             });
+             let bcb_data = BasicCoverageBlockData { basic_blocks, is_out_summable };
+             debug!("adding {bcb:?}: {bcb_data:?}");
+@@ -159,7 +162,11 @@ fn compute_basic_coverage_blocks(
+                 // Adding a block to a non-empty chain is allowed if the
+                 // previous block permits chaining, and the current block has
+                 // `prev` as its sole predecessor.
+-                let can_chain = subgraph.coverage_successors(prev).is_out_chainable()
++                // An entered call need not return, even when its unwind edge is
++                // absent. Count its continuation only after it is reached.
++                let can_chain = !(direct_counters
++                    && interruption_boundary(&mir_body[prev].terminator().kind))
++                    && subgraph.coverage_successors(prev).is_out_chainable()
+                     && mir_body.basic_blocks.predecessors()[bb].as_slice() == &[prev];
+                 if !can_chain {
+                     // The current block can't be added to the existing chain, so
+@@ -357,6 +364,16 @@ fn into_iter(self) -> Self::IntoIter {
+     }
+ }
+ 
++fn interruption_boundary(kind: &TerminatorKind<'_>) -> bool {
++    matches!(
++        kind,
++        TerminatorKind::Call { .. }
++            | TerminatorKind::Drop { .. }
++            | TerminatorKind::Assert { .. }
++            | TerminatorKind::InlineAsm { .. }
++    )
++}
++
+ // Returns the subset of a block's successors that are relevant to the coverage
+ // graph, i.e. those that do not represent unwinds or false edges.
+ // FIXME(#78544): MIR InstrumentCoverage: Improve coverage of `#[should_panic]` tests and
+diff --git a/compiler/rustc_mir_transform/src/coverage/mod.rs b/compiler/rustc_mir_transform/src/coverage/mod.rs
+index 24a61c9b..16e0a714 100644
+--- a/compiler/rustc_mir_transform/src/coverage/mod.rs
++++ b/compiler/rustc_mir_transform/src/coverage/mod.rs
+@@ -68,7 +68,8 @@ fn instrument_function_for_coverage<'tcx>(tcx: TyCtxt<'tcx>, mir_body: &mut mir:
+ 
+     // Build the coverage graph, which is a simplified view of the MIR control-flow
+     // graph that ignores some details not relevant to coverage instrumentation.
+-    let graph = CoverageGraph::from_mir(mir_body);
++    let graph =
++        CoverageGraph::from_mir(mir_body, tcx.sess.opts.unstable_opts.coverage_direct_counters);
+ 
+     ////////////////////////////////////////////////////
+     // Extract coverage spans and other mapping info from MIR.
+diff --git a/compiler/rustc_mir_transform/src/coverage/tests.rs b/compiler/rustc_mir_transform/src/coverage/tests.rs
+index b0fc5e90..09b66438 100644
+--- a/compiler/rustc_mir_transform/src/coverage/tests.rs
++++ b/compiler/rustc_mir_transform/src/coverage/tests.rs
+@@ -313,7 +313,7 @@ fn test_covgraph_goto_switchint() {
+     if false {
+         eprintln!("basic_blocks = {}", debug_basic_blocks(&mir_body));
+     }
+-    let graph = graph::CoverageGraph::from_mir(&mir_body);
++    let graph = graph::CoverageGraph::from_mir(&mir_body, false);
+     print_coverage_graphviz("covgraph_goto_switchint ", &mir_body, &graph);
+     /*
+     ┌──────────────┐     ┌─────────────────┐
+@@ -376,7 +376,7 @@ fn switchint_then_loop_else_return<'a>() -> Body<'a> {
+ #[test]
+ fn test_covgraph_switchint_then_loop_else_return() {
+     let mir_body = switchint_then_loop_else_return();
+-    let graph = graph::CoverageGraph::from_mir(&mir_body);
++    let graph = graph::CoverageGraph::from_mir(&mir_body, false);
+     print_coverage_graphviz("covgraph_switchint_then_loop_else_return", &mir_body, &graph);
+     /*
+                        ┌─────────────────┐
+@@ -478,7 +478,7 @@ fn switchint_loop_then_inner_loop_else_break<'a>() -> Body<'a> {
+ #[test]
+ fn test_covgraph_switchint_loop_then_inner_loop_else_break() {
+     let mir_body = switchint_loop_then_inner_loop_else_break();
+-    let graph = graph::CoverageGraph::from_mir(&mir_body);
++    let graph = graph::CoverageGraph::from_mir(&mir_body, false);
+     print_coverage_graphviz(
+         "covgraph_switchint_loop_then_inner_loop_else_break",
+         &mir_body,
+diff --git a/compiler/rustc_session/src/options.rs b/compiler/rustc_session/src/options.rs
+index 872a48ef..85576f58 100644
+--- a/compiler/rustc_session/src/options.rs
++++ b/compiler/rustc_session/src/options.rs
+@@ -2271,6 +2271,8 @@ pub(crate) fn parse_align(slot: &mut Option<Align>, v: Option<&str>) -> bool {
+         "emit mono items in the order of spans in source files (default: no)"),
+     contract_checks: Option<bool> = (None, parse_opt_bool, [TRACKED],
+         "emit runtime checks for contract pre- and post-conditions (default: no)"),
++    coverage_direct_counters: bool = (false, parse_bool, [TRACKED],
++        "use physical source coverage counters and separate call continuations"),
+     coverage_options: CoverageOptions = (CoverageOptions::default(), parse_coverage_options, [TRACKED],
+         "control details of coverage instrumentation"),
+     crate_attr: Vec<String> = (Vec::new(), parse_string_push, [TRACKED],

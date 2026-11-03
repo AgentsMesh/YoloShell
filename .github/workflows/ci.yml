@@ -1,0 +1,26 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.4.2"
+      - name: Web client unit tests
+        working-directory: plugins/web/client
+        run: bun test
+      - name: Web client browser build
+        working-directory: plugins/web/client
+        run: bun build browser/main.ts --target=browser --outdir "$RUNNER_TEMP/web"
+      - name: Web server build
+        working-directory: plugins/web/client
+        run: bun build scripts/plugin.ts server/index.ts --target=bun --outdir "$RUNNER_TEMP/server"

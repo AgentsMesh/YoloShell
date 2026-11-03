@@ -1,0 +1,53 @@
+load("@rules_rust//rust:defs.bzl", "rust_test")
+load("//build_system/bazel/rust:isolated_test.bzl", "isolated_rust_test")
+
+package(default_visibility = [
+    "//core:__pkg__",
+    "//integration_tests/runtime:__pkg__",
+])
+
+rust_test(
+    name = "runtime_catalog_test",
+    srcs = ["catalog.rs"],
+    crate_name = "runtime_catalog_test",
+    edition = "2024",
+    deps = [
+        "//core:yolo_runtime",
+        "@crates//:serde_json",
+        "@crates//:tempfile",
+        "@crates//:uuid",
+    ],
+)
+
+isolated_rust_test(
+    name = "catalog_stream_process_test",
+    coverage_objects = ["//core:yolo"],
+    srcs = [
+        "catalog_stream_process.rs",
+        "catalog_stream_process_support.rs",
+    ],
+    crate_name = "catalog_stream_process_test",
+    crate_root = "catalog_stream_process.rs",
+    data = ["//core:yolo"],
+    edition = "2024",
+    env = {"YOLO_TEST_HOST_BINARY": "$(rootpath //core:yolo)"},
+    deps = [
+        "//core/crates/application/launch/contract:yolo_launch_contract",
+        "//core/crates/transport/capnp/codec",
+        "//core/crates/transport/runtime/testing",
+        "//core:yolo_runtime",
+        "@crates//:serde_json",
+        "@crates//:tempfile",
+        "@crates//:tokio",
+        "@crates//:uuid",
+    ],
+)
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = glob(
+        ["**/*"],
+        exclude = ["BUILD.bazel"],
+    ) + ["BUILD.bazel"],
+    visibility = ["//visibility:public"],
+)

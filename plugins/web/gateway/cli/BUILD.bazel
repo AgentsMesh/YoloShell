@@ -1,0 +1,77 @@
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library", "rust_test")
+load("//build_system/bazel:version.bzl", "YOLO_MARKETING_VERSION")
+load("//build_system/bazel/rust:isolated_test.bzl", "isolated_rust_test")
+
+package(default_visibility = ["//visibility:public"])
+
+_DEPS = [
+    "//plugins/web/gateway:yolo_web_gateway",
+    "//core/crates/hub/client/access/protocol:yolo_hub_client_access_protocol",
+    "//core/crates/hub/client/transport:yolo_hub_client_transport",
+    "//core/crates/hub/identity:yolo_hub_identity",
+    "//core/crates/hub/jsonrpc/protocol:yolo_hub_jsonrpc_protocol",
+    "//core/crates/persistence/paths:yolo_paths",
+    "@crates//:anyhow",
+    "@crates//:clap",
+    "@crates//:russh",
+    "@crates//:serde",
+    "@crates//:tokio",
+    "@crates//:zeroize",
+]
+
+filegroup(name = "architecture_check_data", srcs = glob(["**/*.rs"]) + ["BUILD.bazel"])
+
+rust_library(
+    name = "yolo_web_cli",
+    srcs = glob(["src/**/*.rs"]),
+    crate_root = "src/lib.rs",
+    crate_name = "yolo_web_cli",
+    edition = "2024",
+    version = YOLO_MARKETING_VERSION,
+    deps = _DEPS,
+)
+
+rust_test(
+    name = "unit_tests",
+    srcs = glob(["unit_tests/**/*.rs"]),
+    crate_root = "unit_tests/lib.rs",
+    crate_name = "yolo_web_cli_unit_tests",
+    edition = "2024",
+    deps = _DEPS + [":yolo_web_cli"],
+)
+
+rust_binary(
+    name = "entry_fixture",
+    testonly = True,
+    srcs = ["test_support/entry.rs"],
+    crate_root = "test_support/entry.rs",
+    crate_name = "yolo_web_cli_entry_fixture",
+    edition = "2024",
+    deps = [":yolo_web_cli", "@crates//:anyhow"],
+)
+
+isolated_rust_test(
+    name = "integration_tests",
+    srcs = glob(["integration_tests/**/*.rs", "test_support/**/*.rs"], exclude = ["test_support/entry.rs"]),
+    crate_root = "integration_tests/lib.rs",
+    crate_name = "yolo_web_cli_integration_tests",
+    edition = "2024",
+    coverage_objects = [":entry_fixture"],
+    env = {"YOLO_WEB_CLI_TEST_BINARY": "$(rootpath :entry_fixture)"},
+    aliases = {"//core/crates/runtime/engine/process:yolo_process_adversarial": "yolo_process_test_support"},
+    deps = _DEPS + [
+        ":yolo_web_cli",
+        "//core/crates/hub/client/access/registry:yolo_hub_client_access_registry",
+        "//core/crates/hub/jsonrpc/transport:yolo_hub_jsonrpc_transport",
+        "//core/crates/hub/routing:yolo_hub_routing",
+        "//core/crates/hub/rpc/protocol:yolo_hub_rpc_protocol",
+        "//core/crates/runtime/engine/process:yolo_process_adversarial",
+        "@crates//:futures",
+        "@crates//:libc",
+        "@crates//:ring",
+        "@crates//:serde_json",
+        "@crates//:tempfile",
+        "@crates//:tokio-tungstenite",
+        "@crates//:uuid",
+    ],
+)

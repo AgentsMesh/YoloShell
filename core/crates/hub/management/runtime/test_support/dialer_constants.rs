@@ -1,0 +1,14 @@
+use std::time::Duration;
+pub const DIALER_TEST_TIMEOUT: Duration = Duration::from_secs(15);
+pub const DIALER_HOST: &str = "configured-first.invalid";
+pub const REPLACEMENT_HOST: &str = "configured-second.invalid";
+pub const DIALER_PORT: u16 = 43123;
+pub const HOST_DIRECTORY: &str = "host";
+pub const HUB_DIRECTORY: &str = "hub";
+pub const REMOTE_DIRECTORY: &str = "remote";
+pub const REMOTE_HOME_DIRECTORY: &str = "remote-home";
+pub const ABSENT_SOCKET: &str = "absent-host.sock";
+pub const DIALER_BUFFER_BYTES: usize = 1024;
+pub const FIRST_DIAL: usize = 1;
+pub const SECOND_DIAL: usize = 2;
+pub const DIAL_STEP: usize = 1;

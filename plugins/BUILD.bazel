@@ -1,0 +1,14 @@
+package(default_visibility = ["//visibility:public"])
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = ["BUILD.bazel", "README.md"] + [
+        "//plugins/catalog:architecture_check_data",
+        "//plugins/discovery:architecture_check_data",
+        "//plugins/tui:architecture_check_data",
+        "//plugins/web/gateway:architecture_check_data",
+        "//plugins/web/gateway/cli:architecture_check_data",
+        "//plugins/web/sdk:architecture_check_data",
+        "//plugins/web/client:architecture_check_data",
+    ],
+)

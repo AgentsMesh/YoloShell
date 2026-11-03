@@ -1,0 +1,128 @@
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library")
+load("//build_system/bazel/cli_test_support:defs.bzl", "TOOL_CLI_TEST_BINARY_ENV")
+load("//build_system/platform/macos:config.bzl", "RELEASE_EVIDENCE_MACOS_MINIMUM_OS_ENV")
+load("//build_system/bazel/rust:isolated_test.bzl", "isolated_rust_test")
+
+package(default_visibility = ["//visibility:private"])
+
+PRODUCTION_SOURCES = glob(
+    ["src/*.rs"],
+    exclude = ["src/main.rs"],
+)
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = glob(
+        ["**/*"],
+        allow_empty = True,
+        exclude = ["BUILD.bazel"],
+    ) + [
+        "BUILD.bazel",
+        "//build_system/release/acceptance_receipt:architecture_check_data",
+        "//build_system/release/archive_audit:architecture_check_data",
+        "//build_system/release/bazel_output:architecture_check_data",
+        "//build_system/release/candidate_artifact:architecture_check_data",
+        "//build_system/release/candidate_workflow:architecture_check_data",
+        "//build_system/release/contracts:architecture_check_data",
+        "//build_system/release/delivery_foundation:architecture_check_data",
+        "//build_system/release/delivery_system:architecture_check_data",
+        "//build_system/release/delivery_workflow:architecture_check_data",
+        "//build_system/release/developer_release_system:architecture_check_data",
+        "//build_system/release/evidence_model:architecture_check_data",
+        "//build_system/release/filesystem:architecture_check_data",
+        "//build_system/release/foundation:architecture_check_data",
+        "//build_system/release/gate_system:architecture_check_data",
+        "//build_system/release/gate_test_support:architecture_check_data",
+        "//build_system/release/linux_elf:architecture_check_data",
+        "//build_system/release/linux_gate_system:architecture_check_data",
+        "//build_system/release/process_execution:architecture_check_data",
+        "//build_system/release/test_support:architecture_check_data",
+        "//build_system/release/tool_custody:architecture_check_data",
+        "//build_system/release/verification:architecture_check_data",
+        "//build_system/release/workspace_state:architecture_check_data",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+rust_library(
+    name = "library",
+    srcs = PRODUCTION_SOURCES,
+    crate_name = "yolo_release_evidence",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    rustc_env = RELEASE_EVIDENCE_MACOS_MINIMUM_OS_ENV,
+    deps = [
+        "//build_system/release/acceptance_receipt:library",
+        "//build_system/release/archive_audit:library",
+        "//build_system/release/candidate_workflow:library",
+        "//build_system/release/contracts:library",
+        "//build_system/release/delivery_system:library",
+        "//build_system/release/evidence_model:library",
+        "//build_system/release/gate_system:library",
+        "//build_system/release/verification:library",
+    ],
+)
+
+rust_binary(
+    name = "yolo_release_evidence",
+    srcs = ["src/main.rs"],
+    crate_name = "yolo_release_evidence_cli",
+    edition = "2024",
+    deps = [
+        ":library",
+        "@crates//:anyhow",
+        "@crates//:clap",
+    ],
+)
+
+isolated_rust_test(
+    name = "cli_smoke_test",
+    srcs = [
+        "integration_tests/cli.rs",
+        "integration_tests/cli_help.rs",
+        "integration_tests/cli_rejections.rs",
+    ],
+    crate_name = "yolo_release_cli_integration_tests",
+    crate_root = "integration_tests/cli.rs",
+    edition = "2024",
+    coverage_objects = [":yolo_release_evidence"],
+    env = {TOOL_CLI_TEST_BINARY_ENV: "$(rootpath :yolo_release_evidence)"},
+    visibility = ["//visibility:public"],
+    deps = [
+        ":library",
+        "//build_system/bazel/cli_test_support:test_support",
+        "//build_system/release/test_support:library",
+        "@crates//:tokio",
+    ],
+)
+
+test_suite(
+    name = "tests",
+    tests = [
+        ":cli_smoke_test",
+        "//build_system/release/acceptance_receipt:integration_tests",
+        "//build_system/release/archive_audit:unit_tests",
+        "//build_system/release/archive_audit:integration_tests",
+        "//build_system/release/bazel_output:integration_tests",
+        "//build_system/release/candidate_artifact:integration_tests",
+        "//build_system/release/candidate_workflow:integration_tests",
+        "//build_system/release/contracts:unit_tests",
+        "//build_system/release/delivery_system:tests",
+        "//build_system/release/developer_release_system:unit_tests",
+        "//build_system/release/evidence_model:unit_tests",
+        "//build_system/release/filesystem:unit_tests",
+        "//build_system/release/filesystem:integration_tests",
+        "//build_system/release/foundation:unit_tests",
+        "//build_system/release/gate_system:integration_tests",
+        "//build_system/release/gate_system:unit_tests",
+        "//build_system/release/linux_elf:integration_tests",
+        "//build_system/release/linux_gate_system:integration_tests",
+        "//build_system/release/process_execution:integration_tests",
+        "//build_system/release/process_execution:unit_tests",
+        "//build_system/release/tool_custody:integration_tests",
+        "//build_system/release/verification:integration_tests",
+        "//build_system/release/verification:unit_tests",
+        "//build_system/release/workspace_state:integration_tests",
+    ],
+    visibility = ["//visibility:public"],
+)

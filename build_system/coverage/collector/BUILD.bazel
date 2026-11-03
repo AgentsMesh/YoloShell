@@ -1,0 +1,97 @@
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library", "rust_test")
+load("//build_system/bazel/rust:test_features.bzl", "INTEGRATION_TEST_FEATURES")
+
+package(default_visibility = ["//visibility:public"])
+
+PRODUCTION_SOURCES = glob(["src/*.rs"])
+
+UNIT_TEST_SOURCES = glob(["unit_tests/*.rs"])
+
+INTEGRATION_TEST_SOURCES = glob(["integration_tests/*.rs"])
+
+TEST_SUPPORT_SOURCES = glob(["test_support/*.rs"])
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = PRODUCTION_SOURCES + UNIT_TEST_SOURCES + INTEGRATION_TEST_SOURCES + TEST_SUPPORT_SOURCES + ["BUILD.bazel"],
+)
+
+rust_library(
+    name = "collector",
+    srcs = PRODUCTION_SOURCES,
+    crate_name = "yolo_rust_coverage",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    deps = [
+        "//build_system/coverage/protocol",
+        "//build_system/coverage/source_contract",
+        "@crates//:serde",
+        "@crates//:serde_json",
+    ],
+)
+
+rust_test(
+    name = "unit_tests",
+    srcs = PRODUCTION_SOURCES + UNIT_TEST_SOURCES + TEST_SUPPORT_SOURCES,
+    crate_name = "yolo_rust_coverage_tests",
+    crate_root = "src/lib.rs",
+    data = [
+        ":llvm_fixture",
+        "//build_system/release/contracts:architecture_check_data",
+        "//build_system/release/evidence_model:architecture_check_data",
+        "//core/crates/persistence/maintenance/contract:architecture_check_data",
+        "//core/crates/transport/session:architecture_check_data",
+        "@bazel_tools//tools/test:lcov_merger",
+    ],
+    edition = "2024",
+    env = {
+        "YOLO_COLLECTOR_LLVM_FIXTURE": "$(rootpath :llvm_fixture)",
+        "YOLO_LCOV_MERGER": "$(rootpath @bazel_tools//tools/test:lcov_merger)",
+    },
+    deps = [
+        "//build_system/coverage/protocol",
+        "//build_system/coverage/source_contract",
+        "@crates//:serde",
+        "@crates//:serde_json",
+        "@crates//:tempfile",
+    ],
+)
+
+rust_test(
+    name = "integration_tests",
+    srcs = PRODUCTION_SOURCES + INTEGRATION_TEST_SOURCES + TEST_SUPPORT_SOURCES,
+    crate_features = INTEGRATION_TEST_FEATURES,
+    crate_name = "yolo_rust_coverage_integration_tests",
+    crate_root = "src/lib.rs",
+    data = [
+        ":llvm_fixture",
+        "//build_system/release/contracts:architecture_check_data",
+        "//build_system/release/evidence_model:architecture_check_data",
+        "//core/crates/persistence/maintenance/contract:architecture_check_data",
+        "//core/crates/transport/session:architecture_check_data",
+        "@bazel_tools//tools/test:lcov_merger",
+    ],
+    edition = "2024",
+    env = {
+        "YOLO_COLLECTOR_LLVM_FIXTURE": "$(rootpath :llvm_fixture)",
+        "YOLO_LCOV_MERGER": "$(rootpath @bazel_tools//tools/test:lcov_merger)",
+    },
+    deps = [
+        "//build_system/coverage/protocol",
+        "//build_system/coverage/source_contract",
+        "@crates//:serde",
+        "@crates//:serde_json",
+        "@crates//:tempfile",
+    ],
+)
+
+rust_binary(
+    name = "llvm_fixture",
+    testonly = True,
+    srcs = [
+        "test_support/constants.rs",
+        "test_support/llvm_tool.rs",
+    ],
+    crate_root = "test_support/llvm_tool.rs",
+    edition = "2024",
+)
