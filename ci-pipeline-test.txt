@@ -1,0 +1,1 @@
+This file verifies the GitHub Actions pull request pipeline.
