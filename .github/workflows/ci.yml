@@ -108,7 +108,7 @@ jobs:
         run: bazel build --spawn_strategy=local -c opt //core:yolo
 
   build-macos:
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
