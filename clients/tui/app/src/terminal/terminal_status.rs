@@ -37,7 +37,9 @@ pub(crate) fn line(state: &State, desired: Option<TerminalSize>) -> Line<'static
     } else {
         Color::DarkGray
     };
-    let label = if starting
+    let label = if crate::constants::is_self_terminal(address.terminal_id.as_uuid()) {
+        crate::constants::SELF_TERMINAL_LABEL.into()
+    } else if starting
         && matches!(
             projection.phase,
             TerminalPhase::Starting | TerminalPhase::Unavailable

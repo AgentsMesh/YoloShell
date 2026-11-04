@@ -1,4 +1,5 @@
 use crate::command::Command;
+use crate::constants::{MANAGEMENT_LOCAL_ONLY, MANAGEMENT_TIMEOUT};
 use crate::recipe::RecipeCommand;
 use std::path::PathBuf;
 use yolo_hub_client::HubEndpoint;
@@ -14,6 +15,11 @@ pub(crate) enum Selection {
 
 impl Selection {
     pub async fn run(self, command: Option<Command>) -> anyhow::Result<()> {
+        if let Some(Command::Hub { command }) = &command {
+            let (socket, entry) = self.local_hub_endpoint().await?;
+            let deadline = tokio::time::Instant::now() + MANAGEMENT_TIMEOUT;
+            return yolo_tui_hub_cli::run(&socket, entry, command, deadline).await;
+        }
         if let Some(Command::Audit {
             after,
             limit,
@@ -62,6 +68,24 @@ impl Selection {
                     layout,
                 };
                 run(options, startup.cancelled(), command).await
+            }
+        }
+    }
+
+    async fn local_hub_endpoint(&self) -> anyhow::Result<(PathBuf, yolo_hub_identity::HubId)> {
+        match self {
+            Self::Explicit(options) => {
+                let Some(socket) = options.endpoint.local_socket() else {
+                    anyhow::bail!("{}", MANAGEMENT_LOCAL_ONLY);
+                };
+                Ok((socket.to_path_buf(), options.hub))
+            }
+            Self::Local { profile, .. } => {
+                let startup = yolo_tui_local_startup::automatic(profile.as_deref()).await?;
+                Ok((
+                    startup.connection.socket_path.clone(),
+                    startup.connection.entry_hub,
+                ))
             }
         }
     }

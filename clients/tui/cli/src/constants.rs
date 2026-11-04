@@ -63,6 +63,9 @@ pub const MAX_SNAPSHOT_LIMIT: u16 = 128;
 pub const DEFAULT_EVENTS_LIMIT: u16 = 64;
 pub const MAX_EVENTS_LIMIT: u16 = 256;
 pub const AUDIT_LOCAL_ONLY: &str = "audit reads require the local profile";
+pub const MANAGEMENT_LOCAL_ONLY: &str =
+    "Hub management requires the local entry Hub (use --local-profile or --socket/--hub)";
+pub const MANAGEMENT_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(10);
 
 pub const RECIPE_SCHEMA_VERSION: u16 = 1;
 pub const SCHEMA_VERSION_FIELD: &str = "schema_version";
