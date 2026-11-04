@@ -13,7 +13,7 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  linux:
+  conformance:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
@@ -26,18 +26,88 @@ jobs:
             "https://github.com/bazelbuild/bazelisk/releases/download/v1.25.0/bazelisk-linux-amd64"
           chmod +x "$RUNNER_TEMP/bazel"
           echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
-      - name: Conformance and unit tests
+      - name: Architecture conformance
+        run: >-
+          bazel test //build_system/architecture:conformance_test
+          --spawn_strategy=local --test_output=errors --cache_test_results=no
+
+  unit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Install Bazelisk
+        run: |
+          curl -fsSL -o "$RUNNER_TEMP/bazel" \
+            "https://github.com/bazelbuild/bazelisk/releases/download/v1.25.0/bazelisk-linux-amd64"
+          chmod +x "$RUNNER_TEMP/bazel"
+          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+      - name: Unit tests
         run: >-
           bazel test
-          //build_system/architecture:conformance_test
+          //clients/tui/constants:unit_tests
+          //clients/tui/app:unit_tests
+          //clients/tui/cli:unit_tests
+          //core/crates/terminal/metadata:unit_tests
           //core/crates/application/upgrade/cli:unit_tests
           --spawn_strategy=local --test_output=errors --cache_test_results=no
+
+  integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Install Bazelisk
+        run: |
+          curl -fsSL -o "$RUNNER_TEMP/bazel" \
+            "https://github.com/bazelbuild/bazelisk/releases/download/v1.25.0/bazelisk-linux-amd64"
+          chmod +x "$RUNNER_TEMP/bazel"
+          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+      - name: Integration tests
+        run: >-
+          bazel test
+          //core/crates/terminal/metadata:integration_tests
+          //clients/tui/app:integration_tests
+          //clients/tui/cli:integration_tests
+          --spawn_strategy=local --test_output=errors --cache_test_results=no
+
+  client-boundary:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Install Bazelisk
+        run: |
+          curl -fsSL -o "$RUNNER_TEMP/bazel" \
+            "https://github.com/bazelbuild/bazelisk/releases/download/v1.25.0/bazelisk-linux-amd64"
+          chmod +x "$RUNNER_TEMP/bazel"
+          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
       - name: Client boundary
         run: bazel build --spawn_strategy=local //build_system/architecture:client_boundary
+
+  build-linux:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Install Bazelisk
+        run: |
+          curl -fsSL -o "$RUNNER_TEMP/bazel" \
+            "https://github.com/bazelbuild/bazelisk/releases/download/v1.25.0/bazelisk-linux-amd64"
+          chmod +x "$RUNNER_TEMP/bazel"
+          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
       - name: Build YoloShell
         run: bazel build --spawn_strategy=local -c opt //core:yolo
 
-  macos:
+  build-macos:
     runs-on: macos-15
     timeout-minutes: 90
     steps:
