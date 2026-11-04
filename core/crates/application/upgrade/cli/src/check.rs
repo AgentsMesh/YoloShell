@@ -63,7 +63,7 @@ pub(crate) fn run(options: Options) -> Result<()> {
     options.hub = Some(hub);
     options.state = Some(state);
     options.service_units = service_units;
-    let candidate = service::image(&std::env::current_exe()?)?;
+    let candidate = service::image(&std::env::current_exe()?.canonicalize()?)?;
     let report = tokio::runtime::Runtime::new()?.block_on(probe(&options, candidate.clone()));
     let report = report?;
     if options.json {
