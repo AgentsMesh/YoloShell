@@ -46,8 +46,11 @@ rm -f dist/yolo
     bazel=/yolo-tools/bazel
     flags="--batch --output_user_root=/yolo-cache/bazel-$YOLO_ARCH"
     color="--color=no"
+    # The pinned arm64 image ships binutils 2.35; its gold linker crashes with
+    # update_erratum_insn on the current image. Select the bundled bfd linker.
     "$bazel" $flags build $color --repository_cache=/yolo-cache/repo \
       --compilation_mode=opt --jobs=4 \
+      --@rules_rust//rust/settings:extra_rustc_flag=-Clink-arg=-fuse-ld=bfd \
       --symlink_prefix=/tmp/yolo-links/bazel- //core:yolo
     output=$("$bazel" $flags cquery $color --repository_cache=/yolo-cache/repo \
       --compilation_mode=opt --symlink_prefix=/tmp/yolo-links/bazel- \
