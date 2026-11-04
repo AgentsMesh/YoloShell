@@ -99,6 +99,7 @@ impl ManagementService {
             self.history.clone(),
             self.hub.dialer.clone(),
             self.origin.clone(),
+            Some(self.enrollment.clone()),
         )
         .await?;
         *self.hub.generation.write().await = Some(running.node.clone());

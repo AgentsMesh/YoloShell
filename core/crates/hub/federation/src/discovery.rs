@@ -3,9 +3,9 @@ use crate::{
     constants::*,
     discovery_channel::{self, DiscoveryRefresh},
     node::now_ms,
-    peer_diagnostics::EXPORT_DEPTH_EXHAUSTED,
     registry::Link,
 };
+use yolo_hub_peer_diagnostics::EXPORT_DEPTH_EXHAUSTED;
 use anyhow::{Context, Result, ensure};
 use std::{collections::BTreeSet, sync::atomic::Ordering};
 use tokio::time::Instant;

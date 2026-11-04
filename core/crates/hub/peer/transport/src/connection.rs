@@ -14,7 +14,9 @@ use tokio::{
 use yolo_hub_delegation::PeerIdentity;
 
 pub struct PeerConnection {
-    pub(crate) peer: PeerIdentity,
+    /// Present for peer links; enrollment connections authenticate through an
+    /// invite and never become federation links.
+    pub(crate) peer: Option<PeerIdentity>,
     pub(crate) role: Role,
     pub(crate) transport: IoCustody,
     pub(crate) capacity: Arc<Semaphore>,
@@ -29,7 +31,7 @@ pub(crate) enum Role {
 }
 impl PeerConnection {
     pub fn peer(&self) -> PeerIdentity {
-        self.peer
+        self.peer.expect("enrollment connections have no authenticated peer")
     }
     pub fn is_closed(&self) -> bool {
         self.closed.load(Ordering::Acquire)

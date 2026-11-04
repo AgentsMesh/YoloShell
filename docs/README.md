@@ -28,6 +28,7 @@ validation notes and internal release evidence are not part of the public tree.
 - [Hub client channels](hub-client-channels.md)
 - [Hub inventory](hub-inventory.md) and [offline inventory](hub-offline-inventory.md)
 - [Hub management](hub-management.md) and [local startup](hub-local-startup.md)
+- [Hub pairing](hub-pairing.md)
 - [Hub agent control](hub-agent-control.md) and [agent directory](hub-agent-directory.md)
 - [Hub native control](hub-native-control-execution.md)
 - [Hub native workspaces](hub-native-workspaces.md)

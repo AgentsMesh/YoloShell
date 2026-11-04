@@ -1,7 +1,10 @@
+mod clock;
 mod constants;
 mod controller;
 mod dispatch;
+mod enrollment;
 mod generation;
+mod invites;
 mod listener;
 mod retirement;
 mod transition;
@@ -10,6 +13,7 @@ use anyhow::Result;
 use std::sync::Arc;
 use tokio::sync::{RwLock, mpsc, oneshot};
 use yolo_hub_configuration_store::{CONFIGURATION_DIRECTORY, ConfigurationStore};
+use yolo_hub_enrollment_server::EnrollmentService;
 use yolo_hub_federation::Federation;
 use yolo_hub_federation_settings::Configuration;
 use yolo_hub_listener_binding::ListenerBindings;
@@ -20,6 +24,7 @@ use yolo_hub_state::HubState;
 use yolo_hub_terminal_protocol::PublicError;
 
 pub use controller::ManagementService;
+use invites::InviteLedger;
 type ManagementResult = Result<ConfigurationSnapshot, PublicError>;
 struct ManagementRequest {
     change: Option<ConfigurationChange>,
@@ -82,6 +87,11 @@ impl ManagedHub {
         origin: Option<Arc<dyn yolo_hub_dispatch::OriginDecorator<LocalBackend>>>,
     ) -> Result<(Arc<Self>, ManagementService)> {
         let root = state.directory()?;
+        let invites = InviteLedger::open(&root)?;
+        let (commands, receiver) = mpsc::channel(constants::MANAGEMENT_QUEUE_CAPACITY);
+        let (enrollments, enrollment_receiver) =
+            mpsc::channel(constants::ENROLLMENT_QUEUE_CAPACITY);
+        let enrollment = EnrollmentService::new(enrollments.clone(), state.peer_identity());
         let mut store = ConfigurationStore::open(
             root.ensure_descendant(&root.path().join(CONFIGURATION_DIRECTORY))?,
             state.peer_identity(),
@@ -110,9 +120,9 @@ impl ManagedHub {
             None,
             dialer.clone(),
             origin.clone(),
+            Some(enrollment.clone()),
         )
         .await?;
-        let (commands, receiver) = mpsc::channel(constants::MANAGEMENT_QUEUE_CAPACITY);
         let hub = Arc::new(Self {
             state,
             generation: RwLock::new(Some(running.node.clone())),
@@ -123,6 +133,9 @@ impl ManagedHub {
         let service = ManagementService {
             hub: hub.clone(),
             receiver,
+            enrollments: enrollment_receiver,
+            enrollment,
+            invites,
             store,
             bindings,
             backend,

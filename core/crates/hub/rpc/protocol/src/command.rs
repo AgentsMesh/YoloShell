@@ -143,6 +143,10 @@ pub enum Command {
     Configure {
         change: ConfigurationChange,
     },
+    /// Mint a signed, expiring pairing code for a joining Hub.
+    MintInvite {
+        request: yolo_hub_enrollment_protocol::InviteRequest,
+    },
     ListFileRoots {
         after: Option<FileRootId>,
     },

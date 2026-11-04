@@ -2,6 +2,7 @@ use crate::{
     ManagedHub, ManagementRequest, ManagementResult,
     constants::*,
     generation::{self, Running},
+    invites::InviteLedger,
 };
 use anyhow::Result;
 use std::{
@@ -10,6 +11,7 @@ use std::{
 };
 use tokio::sync::{mpsc, watch};
 use yolo_hub_configuration_store::ConfigurationStore;
+use yolo_hub_enrollment_server::{EnrollmentAdmission, EnrollmentService};
 use yolo_hub_local_backend::LocalBackend;
 use yolo_hub_management_protocol::{ConfigurationSnapshot, ConfigurationState};
 use yolo_hub_terminal_protocol::PublicError;
@@ -17,6 +19,9 @@ use yolo_hub_terminal_protocol::PublicError;
 pub struct ManagementService {
     pub(crate) hub: Arc<ManagedHub>,
     pub(crate) receiver: mpsc::Receiver<ManagementRequest>,
+    pub(crate) enrollments: mpsc::Receiver<EnrollmentAdmission>,
+    pub(crate) enrollment: EnrollmentService,
+    pub(crate) invites: InviteLedger,
     pub(crate) store: ConfigurationStore,
     pub(crate) bindings: yolo_hub_listener_binding::ListenerBindings,
     pub(crate) backend: LocalBackend,
@@ -72,6 +77,10 @@ impl ManagementService {
                         // arriving while already pending must not postpone it.
                         activation_retry.reset();
                     }
+                }
+                admission = self.enrollments.recv() => {
+                    let Some(admission) = admission else { break Ok(()); };
+                    self.admit_enrollment(admission).await;
                 }
             }
         };

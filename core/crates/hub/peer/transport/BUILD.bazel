@@ -5,6 +5,8 @@ package(default_visibility = ["//visibility:public"])
 
 _DEPS = [
     "//core/crates/hub/delegation:yolo_hub_delegation",
+    "//core/crates/hub/enrollment/protocol:yolo_hub_enrollment_protocol",
+    "//core/crates/hub/enrollment/wire:yolo_hub_enrollment_wire",
     "@crates//:russh",
     "@crates//:tokio",
     "@crates//:anyhow",
@@ -58,5 +60,6 @@ rust_test(
         ":yolo_hub_peer_transport",
         "//core/crates/hub/identity:yolo_hub_identity",
         "@crates//:ring",
+        "@crates//:uuid",
     ],
 )

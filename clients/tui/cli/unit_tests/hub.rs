@@ -10,7 +10,9 @@ use yolo_hub_management_protocol::{
     CONFIGURATION_SCHEMA, ConfigurationSnapshot, ConfigurationState, FIRST_CONFIGURATION_REVISION,
 };
 use yolo_hub_routing::Right;
-use yolo_tui_hub_cli::{AddPeer, HubCommand, PeerCommand, add_change};
+use yolo_tui_hub_cli::{
+    AddPeer, HubCommand, InvitePeer, PeerCommand, add_change, invite_request,
+};
 
 pub const PEER_HUB: &str = "11111111-2222-4333-8444-555555555555";
 pub const LOCAL_HUB: &str = "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee";
@@ -74,6 +76,57 @@ fn add_args_with_key(key: &str) -> AddPeer {
         PEER_HUB,
         key,
     ])
+}
+
+fn invite_args(extra: &[&str]) -> InvitePeer {
+    let mut arguments = vec![PROGRAM, HUB_COMMAND, PEER_COMMAND, INVITE_COMMAND];
+    arguments.extend_from_slice(extra);
+    let arguments = Arguments::try_parse_from(arguments).unwrap();
+    match arguments.command {
+        Some(Command::Hub {
+            command:
+                HubCommand::Peer {
+                    command: PeerCommand::Invite(args),
+                },
+        }) => args,
+        _ => panic!("expected hub peer invite"),
+    }
+}
+
+#[test]
+fn invite_defaults_to_the_applied_listener_and_local_export() {
+    let mut snapshot = snapshot();
+    snapshot.listen_address = Some("192.168.1.5:7400".parse().unwrap());
+    let request = invite_request(&snapshot, &invite_args(&[])).unwrap();
+    assert_eq!(request.dial.host, "192.168.1.5");
+    assert_eq!(request.dial.port.get(), 7400);
+    assert_eq!(request.lifetime_ms, 10 * 60 * 1000);
+    assert!(request.policy.export_local);
+    assert!(!request.policy.import_peer);
+}
+
+#[test]
+fn invite_requires_a_dial_address_and_honors_flags() {
+    assert!(invite_request(&snapshot(), &invite_args(&[])).is_err());
+    let request = invite_request(
+        &snapshot(),
+        &invite_args(&[
+            HOST_ARGUMENT,
+            "10.0.0.2",
+            PORT_ARGUMENT,
+            "7443",
+            NO_EXPORT_ARGUMENT,
+            IMPORT_PEER_ARGUMENT,
+            TTL_ARGUMENT,
+            "5",
+        ]),
+    )
+    .unwrap();
+    assert_eq!(request.dial.host, "10.0.0.2");
+    assert_eq!(request.dial.port.get(), 7443);
+    assert_eq!(request.lifetime_ms, 5 * 60 * 1000);
+    assert!(!request.policy.export_local);
+    assert!(request.policy.import_peer);
 }
 
 #[test]

@@ -1,6 +1,7 @@
-use crate::{ManagedHub, ManagementRequest};
+use crate::{ManagedHub, ManagementRequest, clock::wall_clock_ms};
 use tokio::sync::{mpsc::error::TrySendError, oneshot};
 use yolo_hub_dispatch::{Dispatcher, Operation, OperationFuture};
+use yolo_hub_enrollment_protocol::{InviteError, MintedInvite, encode, mint};
 use yolo_hub_identity::HubId;
 use yolo_hub_rpc_protocol::{
     BUILD_METHODS, Command, HUB_PROTOCOL_VERSION, Hello, MANAGEMENT_METHODS, Reply, Request,
@@ -40,6 +41,29 @@ impl Dispatcher for ManagedHub {
                     .await?;
                 self.state.verify().map_err(|_| PublicError::Unreachable)?;
                 return Ok(Operation::Reply(Reply::Build { build }));
+            }
+            if let Command::MintInvite { request } = &fields.command {
+                if fields.destination != self.hub_id() {
+                    return Err(PublicError::Unauthorized);
+                }
+                let invite = mint(
+                    request,
+                    uuid::Uuid::new_v4(),
+                    wall_clock_ms()?,
+                    self.state.as_ref(),
+                )
+                .map_err(|error| match error {
+                    InviteError::Claims | InviteError::Issuer => PublicError::InvalidRequest,
+                    _ => PublicError::Internal,
+                })?;
+                let code = encode(&invite).map_err(|_| PublicError::Internal)?;
+                return Ok(Operation::Reply(Reply::Minted {
+                    invite: MintedInvite {
+                        invite_id: invite.claims().invite_id,
+                        code,
+                        expires_at_ms: invite.claims().expires_at_ms,
+                    },
+                }));
             }
             if fields.command.local_only() {
                 if fields.destination != self.hub_id() {
