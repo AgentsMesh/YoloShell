@@ -147,6 +147,10 @@ impl Command {
                 }
                 None
             }
+            Self::MintInvite { request } => {
+                request.validate().map_err(|_| PublicError::InvalidRequest)?;
+                None
+            }
             Self::Hello {}
             | Self::GetBuild {}
             | Self::GetSshProfiles {}

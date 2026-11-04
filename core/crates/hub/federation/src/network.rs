@@ -1,10 +1,4 @@
-use crate::{
-    Federation, constants::*,
-    peer_diagnostics::{
-        INBOUND_PEER_REJECTED, InboundRejections, OutboundFailures, PEER_ATTEMPT_FAILED,
-        PEER_RECOVERED, PeerAttempt,
-    },
-};
+use crate::{Federation, constants::*};
 use anyhow::Result;
 use std::sync::Arc;
 use tokio::{
@@ -14,6 +8,10 @@ use tokio::{
     time::{Instant, interval},
 };
 use yolo_hub_federation_settings::{MAX_PEERS, Peer};
+use yolo_hub_peer_diagnostics::{
+    INBOUND_PEER_REJECTED, InboundRejections, OutboundFailures, PEER_ATTEMPT_FAILED,
+    PEER_RECOVERED, PeerAttempt,
+};
 use yolo_hub_peer_transport::PeerPins;
 
 impl Federation {
@@ -148,19 +146,41 @@ impl Federation {
                     let Ok(permit) = capacity.clone().try_acquire_owned() else { continue; };
                     let node = self.clone(); let pins = pins.clone(); let stop = stop.clone();
                     tasks.spawn(async move {
-                        let _permit = permit;
                         let remote = stream.peer_addr().ok();
                         let setup = async {
-                            let (connection, incoming) = yolo_hub_peer_transport::accept(stream, node.key.clone(), pins, Instant::now() + CONNECT_TIMEOUT).await?;
-                            let initiator = connection.peer().hub();
-                            let link = node.register(connection, initiator).await?;
-                            Ok::<_, anyhow::Error>((link, incoming))
-                        }.await;
+                            match yolo_hub_peer_transport::accept_with_enrollment(
+                                stream,
+                                node.key.clone(),
+                                pins,
+                                node.enrollment.get().map(|service| service.verifier()),
+                                Instant::now() + CONNECT_TIMEOUT,
+                            )
+                            .await?
+                            {
+                                yolo_hub_peer_transport::Accepted::Peer {
+                                    connection,
+                                    incoming,
+                                } => {
+                                    let _permit = permit;
+                                    let initiator = connection.peer().hub();
+                                    let link = node.register(connection, initiator).await?;
+                                    node.serve_link(link, incoming, stop).await
+                                }
+                                yolo_hub_peer_transport::Accepted::Enrollment {
+                                    connection,
+                                    incoming,
+                                } => {
+                                    if let Some(service) = node.enrollment.get() {
+                                        service.spawn(connection, incoming, permit);
+                                    }
+                                    Ok(())
+                                }
+                            }
+                        }
+                        .await;
                         match setup {
                             Err(error) => (remote, false, Err(error)),
-                            Ok((link, incoming)) => {
-                                (remote, true, node.serve_link(link, incoming, stop).await)
-                            }
+                            Ok(()) => (remote, true, Ok(())),
                         }
                     });
                 }

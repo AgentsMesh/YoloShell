@@ -136,6 +136,7 @@ operations! {
     MANAGEMENT_METHODS {
         GetConfiguration: LocalManagement, ReadOnly,
         Configure: LocalManagement, Mutating,
+        MintInvite: LocalManagement, ReadOnly,
     }
     BUILD_METHODS {
         GetBuild: LocalManagement, ReadOnly,

@@ -11,7 +11,7 @@ use std::path::Path;
 use tokio::time::Instant;
 use yolo_hub_identity::HubId;
 
-pub use configuration::add_change;
+pub use configuration::{add_change, invite_request, join_change};
 
 #[derive(Debug, Subcommand)]
 pub enum HubCommand {
@@ -27,6 +27,12 @@ pub enum HubCommand {
 pub enum PeerCommand {
     /// Add a peer to the local entry Hub.
     Add(AddPeer),
+    /// Mint a signed pairing code for a joining Hub.
+    #[command(group(connection_group()))]
+    Invite(InvitePeer),
+    /// Join another Hub with its pairing code.
+    #[command(group(connection_group()))]
+    Join(JoinPeer),
     /// List configured peers.
     #[command(group(connection_group()))]
     List {
@@ -62,6 +68,37 @@ pub struct AddPeer {
     json: bool,
 }
 
+#[derive(Debug, Args)]
+pub struct InvitePeer {
+    /// Host the joining Hub should dial; defaults to the applied listener.
+    #[arg(long)]
+    host: Option<String>,
+    /// Port the joining Hub should dial; defaults to the applied listener.
+    #[arg(long)]
+    port: Option<NonZeroU16>,
+    /// Pairing code lifetime in minutes.
+    #[arg(long, default_value_t = DEFAULT_INVITE_MINUTES)]
+    ttl_minutes: u64,
+    /// Do not let the joining Hub import this Hub's resources.
+    #[arg(long)]
+    no_export: bool,
+    /// Import the joining Hub's resources.
+    #[arg(long)]
+    import_peer: bool,
+    /// Print one JSON document.
+    #[arg(long)]
+    json: bool,
+}
+
+#[derive(Debug, Args)]
+pub struct JoinPeer {
+    /// Pairing code printed by the other Hub's `peer invite`.
+    code: String,
+    /// Print one JSON document.
+    #[arg(long)]
+    json: bool,
+}
+
 // The root CLI declares the same group for its global --socket/--endpoint/--hub
 // arguments; clap resolves `requires` per command, so this subtree needs its own
 // group with identical ids.
@@ -80,6 +117,8 @@ pub async fn run(
     match command {
         HubCommand::Peer { command } => match command {
             PeerCommand::Add(args) => peer::add(socket, entry, args, deadline).await,
+            PeerCommand::Invite(args) => peer::invite(socket, entry, args, deadline).await,
+            PeerCommand::Join(args) => peer::join(socket, entry, args, deadline).await,
             PeerCommand::List { json } => peer::list(socket, entry, *json, deadline).await,
         },
     }

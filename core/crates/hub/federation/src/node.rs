@@ -1,6 +1,5 @@
 use crate::{
-    constants::*, observation_cache::ObservationCache, peer_diagnostics::ExportDepthDenials,
-    registry::Link,
+    constants::*, observation_cache::ObservationCache, registry::Link,
 };
 use anyhow::{Result, ensure};
 use std::{
@@ -18,6 +17,7 @@ use yolo_hub_federation_directory::OriginBook;
 use yolo_hub_federation_settings::{Configuration, routing_limits};
 use yolo_hub_identity::HubId;
 use yolo_hub_local_backend::LocalBackend;
+use yolo_hub_peer_diagnostics::ExportDepthDenials;
 use yolo_hub_peer_dialer::{PeerDialer, TcpPeerDialer};
 use yolo_hub_peer_protocol::{Catalogue, Signed};
 use yolo_hub_publication::Publication;
@@ -41,6 +41,8 @@ pub struct Federation {
     pub(crate) lifetime: Arc<crate::lifetime::Lifetime>,
     pub(crate) key: Arc<russh::keys::PrivateKey>,
     pub(crate) dialer: Arc<dyn PeerDialer>,
+    pub(crate) enrollment:
+        std::sync::OnceLock<yolo_hub_enrollment_server::EnrollmentService>,
 }
 impl Federation {
     pub async fn new(
@@ -108,7 +110,12 @@ impl Federation {
             lifetime: Arc::default(),
             key,
             dialer,
+            enrollment: std::sync::OnceLock::new(),
         }))
+    }
+    /// Enables invite-authenticated enrollment on this generation's listener.
+    pub fn set_enrollment(&self, service: yolo_hub_enrollment_server::EnrollmentService) {
+        let _ = self.enrollment.set(service);
     }
     pub fn hub_id(&self) -> HubId {
         self.state.hub_id()

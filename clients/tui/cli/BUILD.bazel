@@ -62,6 +62,7 @@ rust_test(
     deps = _DEPS + [
         "//core/crates/hub/client/transport:yolo_hub_client_transport",
         "//core/crates/hub/delegation:yolo_hub_delegation",
+        "//core/crates/hub/enrollment/protocol:yolo_hub_enrollment_protocol",
         "//core/crates/hub/federation/settings:yolo_hub_federation_settings",
         "//core/crates/hub/management/protocol:yolo_hub_management_protocol",
         "//core/crates/hub/routing:yolo_hub_routing",

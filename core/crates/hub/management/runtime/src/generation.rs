@@ -1,6 +1,7 @@
 use anyhow::Result;
 use std::{net::TcpListener, sync::Arc};
 use tokio::{sync::watch, task::JoinHandle};
+use yolo_hub_enrollment_server::EnrollmentService;
 use yolo_hub_federation::{Federation, ObservationHistory};
 use yolo_hub_federation_settings::Configuration;
 use yolo_hub_local_backend::LocalBackend;
@@ -23,9 +24,13 @@ impl Running {
         history: Option<ObservationHistory>,
         dialer: Arc<dyn PeerDialer>,
         origin: Option<Arc<dyn yolo_hub_dispatch::OriginDecorator<LocalBackend>>>,
+        enrollment: Option<EnrollmentService>,
     ) -> Result<Self> {
         let listener = crate::listener::activate(listener)?;
         let node = Federation::new_with_dialer(state, backend, configuration, dialer, origin).await?;
+        if let Some(enrollment) = enrollment {
+            node.set_enrollment(enrollment);
+        }
         if let Some(history) = history {
             node.restore_history(history).await?;
         }

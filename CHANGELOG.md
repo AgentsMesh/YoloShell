@@ -3,6 +3,22 @@
 All notable changes to Yolo are recorded here. The project follows semantic
 versioning once a stable release exists.
 
+## 0.1.5 — Alpha
+
+### Added
+
+- Hubs pair with a single-use, expiring `yolo1_` code. `yolo hub peer invite`
+  mints a code signed by the inviting Hub; `yolo hub peer join` verifies the
+  inviting Hub's SSH host key, admits the joining identity and configures both
+  peer directions without copying Hub IDs, keys, hosts or ports. Codes expire
+  in 1–60 minutes, are consumed durably, and grant only the minted export and
+  import directions.
+
+### Changed
+
+- Peer-connection diagnostics moved to their own package so Hub federation stays
+  within its architecture budget.
+
 ## 0.1.4 — Alpha
 
 ### Fixed

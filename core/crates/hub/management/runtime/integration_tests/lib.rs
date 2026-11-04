@@ -1,4 +1,5 @@
 mod dialer_generations;
+mod enrollment;
 mod faults;
 #[path = "../test_support/fixture.rs"]
 mod fixture;

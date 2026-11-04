@@ -43,6 +43,7 @@ pub fn reply_matches_target(reply: &Reply, command: &Command) -> bool {
         (Reply::Layouts { .. }, Command::ListLayouts {}) => true,
         (Reply::SshProfiles { .. }, Command::GetSshProfiles {}) => true,
         (Reply::Configuration { .. }, Command::GetConfiguration {}) => true,
+        (Reply::Minted { .. }, Command::MintInvite { .. }) => true,
         (Reply::ClientAccess { .. }, Command::GetClientAccess {}) => true,
         (
             Reply::ConversationUnavailable { .. },

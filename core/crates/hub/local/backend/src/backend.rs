@@ -93,6 +93,7 @@ impl LocalBackend {
             | Command::GetBuild {}
             | Command::GetConfiguration {}
             | Command::Configure { .. }
+            | Command::MintInvite { .. }
             | Command::GetSshProfiles {}
             | Command::ConfigureSshProfiles { .. }
             | Command::ConnectSshProfile { .. }
