@@ -78,6 +78,12 @@ pub(crate) enum Command {
         #[command(subcommand)]
         command: PlatformCommand,
     },
+    /// Add or list federation peers on the local entry Hub.
+    #[command(group(crate::arguments::connection_group()))]
+    Hub {
+        #[command(subcommand)]
+        command: yolo_tui_hub_cli::HubCommand,
+    },
     /// Read the local Hub's durable authority audit log, or merge exported logs.
     #[command(group(crate::arguments::connection_group()))]
     Audit {

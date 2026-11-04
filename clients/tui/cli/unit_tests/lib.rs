@@ -2,6 +2,7 @@ use crate::{arguments::Arguments, selection::Selection};
 mod clients;
 mod commands;
 mod entry;
+mod hub;
 mod layouts;
 mod lifecycle;
 use clap::{Parser, error::ErrorKind};

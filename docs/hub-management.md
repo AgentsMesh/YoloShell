@@ -49,10 +49,10 @@ the same request ID conflict. Older receipts are not a general operation journal
 configuration, an explicitly supplied conflicting file fails startup rather than
 silently replacing durable policy, and the error points at this boundary. Normal
 subsequent starts can omit the seed. Change peers or the listening endpoint on a
-persisted Hub through `Configure` (the JSON-RPC method behind the TUI and Mac
-configuration editors); a restart seed cannot update them. This protects a
-running owner from replacement, not against an authorized user rewriting valid
-historical state while the service is stopped.
+persisted Hub through `Configure` (the JSON-RPC method behind `yolo hub peer
+add`, the TUI and the Mac configuration editors); a restart seed cannot update
+them. This protects a running owner from replacement, not against an authorized
+user rewriting valid historical state while the service is stopped.
 
 ## Activation And Failure
 
