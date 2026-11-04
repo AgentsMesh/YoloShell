@@ -1,17 +1,9 @@
-use crate::{
-    constants::*,
-    report::CheckReport,
-    service::{self, ServiceUnit},
-};
-use anyhow::{Context, Result};
+use crate::{constants::*, github, probe};
+use anyhow::{Context, Result, bail};
 use clap::Args;
-use std::{path::PathBuf, time::Duration};
-use tokio::time::Instant;
-use yolo_build_image::BuildImage;
-use yolo_hub_client::Client;
+use std::path::PathBuf;
 use yolo_hub_identity::HubId;
-use yolo_hub_rpc_protocol::{Command, HUB_PROTOCOL_VERSION, Reply};
-use yolo_hub_state::{HubState, validate_runtime_contract};
+use yolo_hub_state::HubState;
 use yolo_local_profile::LocalProfile;
 
 #[derive(Debug, Args)]
@@ -32,15 +24,50 @@ pub(crate) struct Options {
     pub(crate) check_release: bool,
     #[arg(long = INSTALL_RELEASE_ARGUMENT)]
     pub(crate) install_release: bool,
+    /// Restart the local Host and Hub after the requested operation.
+    #[arg(long)]
+    pub(crate) restart: bool,
     #[arg(long, hide = true)]
     pub(crate) repository: Option<String>,
 }
 
 pub(crate) fn run(options: Options) -> Result<()> {
-    if options.check_release || options.install_release {
-        return crate::github::run(&options);
+    if options.restart && options.check_release {
+        bail!("{}", RESTART_CHECK_CONFLICT);
     }
     let profile: LocalProfile = yolo_local_profile::current()?;
+    let installed = if options.check_release || options.install_release {
+        let link = github::run(&options)?;
+        if !options.restart {
+            return Ok(());
+        }
+        link
+    } else {
+        None
+    };
+    let runtime = tokio::runtime::Runtime::new()?;
+    if options.restart {
+        let executable = installed.clone().unwrap_or(std::env::current_exe()?);
+        runtime.block_on(yolo_local_lifecycle::restart(&profile, &executable))?;
+        println!("restarted local Host and Hub");
+    }
+    let options = local_options(options, &profile)?;
+    let candidate_path = match &installed {
+        Some(link) => link.canonicalize()?,
+        None => std::env::current_exe()?.canonicalize()?,
+    };
+    let candidate = yolo_local_lifecycle::image(&candidate_path)?;
+    let report = runtime.block_on(probe::probe(&options, candidate))?;
+    if options.json {
+        println!("{}", report.to_json()?);
+    } else {
+        report.print();
+    }
+    anyhow::ensure!(report.ready(), "{}", UPGRADE_REFUSED);
+    Ok(())
+}
+
+fn local_options(mut options: Options, profile: &LocalProfile) -> Result<Options> {
     let state = options
         .state
         .clone()
@@ -54,141 +81,13 @@ pub(crate) fn run(options: Options) -> Result<()> {
         .or_else(|| HubState::hub_id_for(&state, &profile.host_home).ok())
         .context("local Hub identity is unavailable; update admission cannot select a Hub")?;
     let service_units = if options.service_units.is_empty() {
-        default_units()
+        probe::default_units()
     } else {
         options.service_units.clone()
     };
-    let mut options = options;
     options.socket = Some(socket);
     options.hub = Some(hub);
     options.state = Some(state);
     options.service_units = service_units;
-    let candidate = service::image(&std::env::current_exe()?.canonicalize()?)?;
-    let report = tokio::runtime::Runtime::new()?.block_on(probe(&options, candidate.clone()));
-    let report = report?;
-    if options.json {
-        println!("{}", report.to_json()?);
-    } else {
-        print_report(&report);
-    }
-    anyhow::ensure!(
-        report.ready(),
-        "upgrade admission refused; stop the old Hub and runner after reviewing the failed checks"
-    );
-    Ok(())
-}
-
-async fn probe(options: &Options, candidate: BuildImage) -> Result<CheckReport> {
-    let mut report = CheckReport::new(candidate.clone());
-    report.push(
-        CHECK_CANDIDATE,
-        true,
-        format!("{} bytes", candidate.size_bytes()),
-    );
-    let deadline = Instant::now() + Duration::from_secs(CHECK_DEADLINE_SECONDS);
-    let client = Client::connect_local(
-        options.socket.as_ref().unwrap(),
-        options.hub.unwrap(),
-        deadline,
-    )
-    .await;
-    let mut client = match client {
-        Ok(client) => client,
-        Err(error) => {
-            report.push(
-                CHECK_PROTOCOL,
-                false,
-                format!("cannot contact running Hub: {error}"),
-            );
-            check_state_and_units(options, candidate, &mut report);
-            return Ok(report);
-        }
-    };
-    let hello = client.hello().clone();
-    report.push(
-        CHECK_PROTOCOL,
-        hello.version == HUB_PROTOCOL_VERSION,
-        format!(
-            "running={}, expected={}",
-            hello.version, HUB_PROTOCOL_VERSION
-        ),
-    );
-    match client
-        .call(options.hub.unwrap(), Command::GetBuild {}, deadline)
-        .await
-    {
-        Ok(Reply::Build { build }) => {
-            report.push(
-                CHECK_BUILD,
-                build.host == candidate && build.hub == candidate && build.file_helper == candidate,
-                format!(
-                    "host={}, hub={}, file_helper={}",
-                    build.host.sha256(),
-                    build.hub.sha256(),
-                    build.file_helper.sha256()
-                ),
-            );
-        }
-        Ok(reply) => report.push(
-            CHECK_BUILD,
-            false,
-            format!("unexpected Hub reply: {reply:?}"),
-        ),
-        Err(error) => report.push(
-            CHECK_BUILD,
-            false,
-            format!("cannot read live service images: {error}"),
-        ),
-    }
-    check_state_and_units(options, candidate, &mut report);
-    Ok(report)
-}
-
-fn check_state_and_units(options: &Options, candidate: BuildImage, report: &mut CheckReport) {
-    let state = validate_runtime_contract(options.state.as_ref().unwrap());
-    report.push(
-        CHECK_STATE,
-        state.is_ok(),
-        state
-            .err()
-            .map_or_else(|| CONTRACT_MATCH.into(), |error| error.to_string()),
-    );
-    if options.service_units.is_empty() {
-        report.push(
-            CHECK_SERVICE_UNITS,
-            !cfg!(target_os = "linux"),
-            NO_SERVICE_UNITS.to_owned(),
-        );
-    }
-    for path in &options.service_units {
-        let name = format!("{CHECK_SERVICE_PREFIX}{}", path.display());
-        match ServiceUnit::read(path) {
-            Ok(unit) => report.push(
-                name,
-                unit.image == candidate,
-                format!("{}", unit.executable.display()),
-            ),
-            Err(error) => report.push(name, false, error.to_string()),
-        }
-    }
-}
-
-fn default_units() -> Vec<PathBuf> {
-    [HOST_RUNNER_UNIT, HUB_UNIT]
-        .into_iter()
-        .map(PathBuf::from)
-        .filter(|path| path.exists())
-        .collect()
-}
-
-fn print_report(report: &CheckReport) {
-    println!("upgrade {}", report.status);
-    for check in &report.checks {
-        println!(
-            "{}: {} ({})",
-            if check.passed { "ok" } else { "fail" },
-            check.name,
-            check.detail
-        );
-    }
+    Ok(options)
 }

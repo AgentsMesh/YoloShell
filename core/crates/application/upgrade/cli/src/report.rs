@@ -48,4 +48,16 @@ impl CheckReport {
     pub(crate) fn to_json(&self) -> Result<String> {
         Ok(serde_json::to_string_pretty(self)?)
     }
+
+    pub(crate) fn print(&self) {
+        println!("upgrade {}", self.status);
+        for check in &self.checks {
+            println!(
+                "{}: {} ({})",
+                if check.passed { "ok" } else { "fail" },
+                check.name,
+                check.detail
+            );
+        }
+    }
 }

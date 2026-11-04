@@ -22,6 +22,7 @@ _DEPS = [
     "//core/crates/hub/workspace/protocol:yolo_hub_workspace_protocol",
     "//clients/tui/app:yolo_tui_app",
     "//clients/tui/hub/cli:yolo_tui_hub_cli",
+    "//clients/tui/service:yolo_tui_service",
     "//clients/tui/local/startup:yolo_tui_local_startup",
     "//clients/tui/client/control:yolo_tui_client_control",
     "//clients/tui/tab:yolo_tui_tab",

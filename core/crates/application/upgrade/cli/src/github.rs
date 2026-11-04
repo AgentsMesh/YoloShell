@@ -1,9 +1,7 @@
 use crate::{
     check::Options,
     constants::*,
-    github_release::{
-        self, DEFAULT_REPOSITORY, TARGET_TRIPLE, archive_asset, checksums_asset, digest_for,
-    },
+    github_release::{self, DEFAULT_REPOSITORY, archive_asset, checksums_asset, digest_for},
     install,
 };
 use anyhow::{Context, Result, bail, ensure};
@@ -13,7 +11,7 @@ const API_ROOT: &str = "https://api.github.com";
 const API_ENVIRONMENT: &str = "YOLO_GITHUB_API";
 const MAX_RELEASES: usize = 30;
 
-pub(crate) fn run(options: &Options) -> Result<()> {
+pub(crate) fn run(options: &Options) -> Result<Option<std::path::PathBuf>> {
     let repository = options.repository.as_deref().unwrap_or(DEFAULT_REPOSITORY);
     validate_repository(repository)?;
     let api = env::var(API_ENVIRONMENT).unwrap_or_else(|_| API_ROOT.to_owned());
@@ -24,7 +22,7 @@ pub(crate) fn run(options: &Options) -> Result<()> {
     println!("current yolo {}", env!("CARGO_PKG_VERSION"));
     println!("github  {} ({version})", name);
     if !options.install_release {
-        return Ok(());
+        return Ok(None);
     }
     let archive = archive_asset(release)?;
     let sums = checksums_asset(release)?;
@@ -40,11 +38,13 @@ pub(crate) fn run(options: &Options) -> Result<()> {
     )
     .and_then(|path| {
         println!("installed yolo {version}: {}", path.display());
-        println!("run `yolo update` to check live service admission before restarting services");
-        Ok(())
+        if !options.restart {
+            println!("run `yolo restart` to activate it");
+        }
+        Ok(path)
     });
     let _ = fs::remove_dir_all(&work);
-    result
+    result.map(Some)
 }
 
 fn install_download(

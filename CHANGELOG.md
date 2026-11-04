@@ -3,6 +3,31 @@
 All notable changes to Yolo are recorded here. The project follows semantic
 versioning once a stable release exists.
 
+## 0.1.6 — Alpha
+
+### Added
+
+- `yolo status`, `yolo version`, `yolo start`, `yolo stop` and `yolo restart`
+  expose the local Host/Hub lifecycle. Status distinguishes the installed image
+  from the images the running services reported; `yolo version` complements the
+  unchanged one-line `yolo --version` contract.
+- `yolo update --restart` and `yolo update --install-release --restart` activate
+  the installed image and then run upgrade admission against the restarted
+  services.
+
+### Changed
+
+- Upgrade refusal now names `yolo restart` as the activation step.
+- `yolo stop` and `yolo restart` resolve exact service PIDs from private socket
+  peer credentials; Host shutdown leaves Workers attached to their PTYs.
+- `yolo restart` preflights the state contract and Linux delegated Host custody
+  before stopping any service.
+
+### Fixed
+
+- Removed the stale `yolo web` dispatch integration test left by the gateway
+  extraction (ADR 0035).
+
 ## 0.1.5 — Alpha
 
 ### Added

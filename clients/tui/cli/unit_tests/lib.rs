@@ -17,6 +17,7 @@ mod recipe_edges;
 mod remote_arguments;
 mod remote_credentials;
 mod remote_files;
+mod service;
 #[path = "../test_support/remote_fixture.rs"]
 mod remote_fixture;
 
