@@ -1,0 +1,17 @@
+pub const DSR: &[u8] = b"\x1b[5n";
+pub const CPR: &[u8] = b"\x1b[6n";
+pub const DA: &[u8] = b"\x1b[c";
+pub const STATUS_REPLY: &[u8] = b"\x1b[0n";
+pub const ATTRIBUTE_REPLY: &[u8] = b"\x1b[?1;0c";
+pub const CURSOR_REPLY: &[u8] = b"\x1b[2;3R";
+pub const POSITION: &[u8] = b"\x1b[2;3H";
+pub const PARTIAL_QUERY: &[u8] = b"\x1b[6";
+pub const QUERY_FINAL: &[u8] = b"n";
+pub const INITIAL_SEQUENCE: u64 = 0;
+pub const STEP: u64 = 1;
+pub const LEASE_EXTENSION_MS: u64 = 1_000;
+pub const SINGLE_JOB: usize = 1;
+pub const FLOOD_COUNT: usize = 128;
+pub const MAX_REPLIES_PER_CHUNK: usize = 16;
+pub const MAX_REPLY_BYTES_PER_CHUNK: usize = 96;
+pub const STALE_MESSAGE: &str = "query scope retired";

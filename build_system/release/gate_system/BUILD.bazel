@@ -1,0 +1,115 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+load("//build_system/platform/macos:config.bzl", "RELEASE_EVIDENCE_MACOS_MINIMUM_OS_ENV")
+load("//build_system/bazel/rust:config.bzl", "RUST_UNIT_TEST_THREAD_COUNT")
+load("//build_system/bazel/rust:isolated_test.bzl", "isolated_rust_test")
+load("//build_system/bazel/rust:test_features.bzl", "INTEGRATION_TEST_FEATURES", "UNIT_TEST_FEATURES")
+
+package(default_visibility = ["//visibility:public"])
+
+_SOURCES = glob(["src/*.rs"])
+
+_TEST_SUPPORT_SOURCES = glob(["test_support/*.rs"])
+
+_UNIT_TEST_SOURCES = glob(["unit_tests/*.rs"])
+
+_INTEGRATION_TEST_SOURCES = glob(["integration_tests/*.rs"])
+
+_DEPS = [
+    "//core/crates/distribution/bundle:yolo_distribution_bundle",
+    "//build_system/release/archive_audit:library",
+    "//build_system/release/bazel_output:library",
+    "//build_system/release/candidate_artifact:library",
+    "//build_system/release/contracts:library",
+    "//build_system/release/evidence_model:library",
+    "//build_system/release/filesystem:library",
+    "//build_system/release/foundation:library",
+    "//build_system/release/linux_elf:library",
+    "//build_system/release/process_execution:library",
+    "//build_system/release/tool_custody:library",
+    "//build_system/release/workspace_state:library",
+    "@crates//:anyhow",
+    "@crates//:libc",
+    "@crates//:serde",
+    "@crates//:serde_json",
+    "@crates//:tempfile",
+]
+
+_INTEGRATION_DEPS = [
+    dependency
+    for dependency in _DEPS
+    if dependency not in [
+        "//build_system/release/candidate_artifact:library",
+        "//build_system/release/tool_custody:library",
+    ]
+] + [
+    "//build_system/release/archive_audit:test_support",
+    "//build_system/release/candidate_artifact:test_support",
+    "//build_system/release/tool_custody:test_support",
+    "//build_system/release/workspace_state:test_support",
+    "//core/crates/transport/remote:yolo_remote",
+]
+
+_TEST_SUPPORT_DEPS = [
+    dependency
+    for dependency in _DEPS
+    if dependency not in [
+        "//build_system/release/candidate_artifact:library",
+        "//build_system/release/tool_custody:library",
+    ]
+] + [
+    "//build_system/release/candidate_artifact:test_support",
+    "//build_system/release/tool_custody:test_support",
+]
+
+_TEST_DEPS = _DEPS + ["//build_system/release/gate_test_support:library"]
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = _SOURCES + _TEST_SUPPORT_SOURCES + _UNIT_TEST_SOURCES + _INTEGRATION_TEST_SOURCES + ["BUILD.bazel"],
+)
+
+rust_library(
+    name = "library",
+    srcs = _SOURCES,
+    crate_name = "yolo_release_gate_system",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    rustc_env = RELEASE_EVIDENCE_MACOS_MINIMUM_OS_ENV,
+    deps = _DEPS,
+)
+
+rust_library(
+    name = "test_support",
+    testonly = True,
+    srcs = _SOURCES,
+    crate_features = ["yolo-test-support"],
+    crate_name = "yolo_release_gate_system",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    rustc_env = RELEASE_EVIDENCE_MACOS_MINIMUM_OS_ENV,
+    deps = _TEST_SUPPORT_DEPS,
+)
+
+rust_test(
+    name = "unit_tests",
+    srcs = _SOURCES + _TEST_SUPPORT_SOURCES + _UNIT_TEST_SOURCES,
+    crate_features = UNIT_TEST_FEATURES,
+    crate_name = "yolo_release_gate_system_unit_tests",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    env = {"RUST_TEST_THREADS": RUST_UNIT_TEST_THREAD_COUNT},
+    rustc_env = RELEASE_EVIDENCE_MACOS_MINIMUM_OS_ENV,
+    deps = _TEST_DEPS,
+)
+
+isolated_rust_test(
+    name = "integration_tests",
+    srcs = _SOURCES + _TEST_SUPPORT_SOURCES + _INTEGRATION_TEST_SOURCES,
+    crate_features = INTEGRATION_TEST_FEATURES,
+    crate_name = "yolo_release_gate_system_integration_tests",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    env = {"RUST_TEST_THREADS": RUST_UNIT_TEST_THREAD_COUNT},
+    rustc_env = RELEASE_EVIDENCE_MACOS_MINIMUM_OS_ENV,
+    deps = _INTEGRATION_DEPS + ["//build_system/release/gate_test_support:library"],
+)

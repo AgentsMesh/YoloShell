@@ -1,0 +1,88 @@
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library")
+load("//build_system/bazel/rust:isolated_test.bzl", "isolated_rust_test")
+load("//build_system/bazel:version.bzl", "YOLO_MARKETING_VERSION")
+
+package(default_visibility = ["//visibility:public"])
+
+_DEPS = [
+    "//core/crates/application/launch/contract:yolo_launch_contract",
+    "//core/crates/build_image:yolo_build_image",
+    "//core/crates/hub/identity:yolo_hub_identity",
+    "//core/crates/hub/file/helper/protocol:yolo_hub_file_helper_protocol",
+    "//core/crates/hub/terminal/protocol:yolo_hub_terminal_protocol",
+    "//core/crates/hub/transport:yolo_hub_transport",
+    "//core/crates/runtime/engine/process:yolo_process",
+    "@crates//:tokio",
+    "@crates//:uuid",
+]
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = glob(["src/**/*.rs", "unit_tests/**/*.rs", "integration_tests/**/*.rs", "test_support/**/*.rs"], allow_empty = True) + ["BUILD.bazel"],
+)
+
+rust_library(
+    name = "yolo_hub_file_executor",
+    srcs = glob(["src/**/*.rs"]),
+    crate_name = "yolo_hub_file_executor",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    version = YOLO_MARKETING_VERSION,
+    deps = _DEPS,
+)
+
+isolated_rust_test(
+    name = "integration_tests",
+    coverage_objects = ["//core:yolo", ":fault_helper"],
+    srcs = glob(["integration_tests/**/*.rs", "test_support/**/*.rs"], exclude = ["test_support/fault_helper.rs", "test_support/lib.rs", "test_support/constants.rs", "test_support/proof.rs", "test_support/fault_lifecycle.rs"]),
+    crate_name = "yolo_hub_file_executor_integration_tests",
+    version = YOLO_MARKETING_VERSION,
+    crate_root = "integration_tests/lib.rs",
+    edition = "2024",
+    env = {
+        "YOLO_FILE_HELPER_TEST_BINARY": "$(rootpath //core:yolo)",
+        "YOLO_FILE_HELPER_FAULT_BINARY": "$(rootpath :fault_helper)",
+        "RUST_TEST_THREADS": "1",
+    },
+    data = ["//core:yolo", ":fault_helper"],
+    tags = ["exclusive"],
+    deps = _DEPS + [
+        ":yolo_hub_file_executor",
+        "//core/crates/crypto:yolo_crypto",
+        ":test_support",
+        "//build_system/coverage/profile_test_support:library",
+        "//core/crates/hub/file/reader:test_support",
+        "//core/crates/hub/file/protocol:yolo_hub_file_protocol",
+        "@crates//:anyhow",
+        "@crates//:serde",
+        "@crates//:serde_json",
+    ],
+)
+
+rust_library(
+    name = "test_support",
+    testonly = True,
+    srcs = ["test_support/lib.rs", "test_support/constants.rs", "test_support/proof.rs", "test_support/fault_lifecycle.rs"],
+    crate_root = "test_support/lib.rs",
+    crate_name = "yolo_hub_file_executor_test_support",
+    edition = "2024",
+    deps = ["//core/crates/runtime/engine/process:yolo_process", "@crates//:anyhow", "@crates//:serde", "@crates//:serde_json"],
+)
+
+rust_binary(
+    name = "fault_helper",
+    testonly = True,
+    srcs = ["test_support/fault_helper.rs"],
+    crate_root = "test_support/fault_helper.rs",
+    edition = "2024",
+    deps = _DEPS + [
+        ":yolo_hub_file_executor",
+        ":test_support",
+        "//core/crates/hub/file/helper:yolo_hub_file_helper",
+        "//core/crates/hub/terminal/io:yolo_hub_terminal_io",
+        "@crates//:anyhow",
+        "@crates//:libc",
+        "@crates//:serde",
+        "@crates//:serde_json",
+    ],
+)

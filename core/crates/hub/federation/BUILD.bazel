@@ -1,0 +1,91 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+load("//build_system/bazel:version.bzl", "YOLO_MARKETING_VERSION")
+load("//build_system/bazel/rust:test_features.bzl", "INTEGRATION_TEST_FEATURES", "UNIT_TEST_FEATURES")
+
+package(default_visibility = ["//visibility:public"])
+
+_DEPS = [
+    "//core/crates/agent/system/provider/contract:yolo_agent_provider_contract",
+    "//core/crates/hub/agent/protocol:yolo_hub_agent_protocol",
+    "//core/crates/hub/delegation:yolo_hub_delegation",
+    "//core/crates/hub/dispatch:yolo_hub_dispatch",
+    "//core/crates/hub/federation/aggregate:yolo_hub_federation_aggregate",
+    "//core/crates/hub/federation/directory:yolo_hub_federation_directory",
+    "//core/crates/hub/federation/settings:yolo_hub_federation_settings",
+    "//core/crates/hub/identity:yolo_hub_identity",
+    "//core/crates/hub/local/backend:yolo_hub_local_backend",
+    "//core/crates/hub/local/wait:yolo_hub_agent_wait",
+    "//core/crates/hub/local/catalogue/events:yolo_hub_catalogue_events",
+    "//core/crates/hub/observation/store:yolo_hub_observation_store",
+    "//core/crates/hub/peer/protocol:yolo_hub_peer_protocol",
+    "//core/crates/hub/peer/rpc",
+    "//core/crates/hub/peer/dialer:yolo_hub_peer_dialer",
+    "//core/crates/hub/peer/transport:yolo_hub_peer_transport",
+    "//core/crates/hub/publication:yolo_hub_publication",
+    "//core/crates/hub/rpc/protocol:yolo_hub_rpc_protocol",
+    "//core/crates/hub/terminal/protocol:yolo_hub_terminal_protocol",
+    "//core/crates/hub/state:yolo_hub_state",
+    "@crates//:anyhow",
+    "@crates//:tokio",
+    "@crates//:russh",
+    "@crates//:tracing",
+    "@crates//:uuid",
+]
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = glob(
+        [
+            "src/**/*.rs",
+            "unit_tests/**/*.rs",
+            "integration_tests/**/*.rs",
+            "test_support/**/*.rs",
+        ],
+        allow_empty = True,
+    ) + ["BUILD.bazel"],
+)
+
+rust_library(
+    name = "yolo_hub_federation",
+    srcs = glob(["src/**/*.rs"]),
+    crate_name = "yolo_hub_federation",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    version = YOLO_MARKETING_VERSION,
+    deps = _DEPS,
+)
+
+rust_test(
+    name = "unit_tests",
+    srcs = glob(["src/**/*.rs", "unit_tests/**/*.rs", "test_support/**/*.rs"]),
+    crate_name = "yolo_hub_federation_unit_tests",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    crate_features = UNIT_TEST_FEATURES,
+    deps = _DEPS + [
+        "//core/crates/conversation/protocol:yolo_conversation_protocol",
+        "//core/crates/crypto:yolo_crypto",
+        "//core/crates/presentation/protocol:yolo_presentation_protocol",
+        "//core/crates/hub/agent/run/protocol:yolo_hub_agent_run_protocol",
+        "//core/crates/hub/peer/protocol:test_support",
+        "//core/crates/hub/workspace/protocol:yolo_hub_workspace_protocol",
+        "@crates//:tempfile",
+    ],
+)
+
+rust_test(
+    name = "integration_tests",
+    srcs = glob(["src/**/*.rs", "integration_tests/**/*.rs", "test_support/**/*.rs"]),
+    crate_name = "yolo_hub_federation_integration_tests",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    crate_features = INTEGRATION_TEST_FEATURES,
+    deps = _DEPS + [
+        "//core/crates/hub/agent/run/protocol:yolo_hub_agent_run_protocol",
+        "//core/crates/hub/peer/protocol:test_support",
+        "//core/crates/hub/rpc/protocol:test_support",
+        "//core/crates/hub/workspace/protocol:yolo_hub_workspace_protocol",
+        "//core/crates/transport/capnp/rpc",
+        "@crates//:tempfile",
+    ],
+)

@@ -1,0 +1,14 @@
+use crate::host::tests::*;
+include!("../agent/agent_binding_wave5.rs");
+include!("../catalog/catalog_durable_wave5.rs");
+include!("../catalog/catalog_durable_final_faults.rs");
+include!("../creation/receipt/creation_receipt_cleanup_wave5.rs");
+include!("../creation/receipt/creation_receipt_cleanup_final_faults.rs");
+include!("../creation/settlement/creation_durable_directory_faults.rs");
+include!("../creation/receipt/creation_receipt_retirement_wave6.rs");
+include!("../lifecycle/lifecycle_cleanup_wave6.rs");
+include!("../creation/receipt/creation_receipt_staging_wave6.rs");
+include!("../dispatch/dispatch_success_wave6.rs");
+include!("../lifecycle/lifecycle_wave5.rs");
+include!("../server/server_wave5.rs");
+include!("../ingress/host_response_drain.rs");

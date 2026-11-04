@@ -1,0 +1,12 @@
+pub const RUNFILES_DIRECTORY: &str = "fixture-runfiles";
+pub const SOURCE_FILE: &str = "core/src/constants.rs";
+pub const VALID_SOURCE: &str = "pub const VALID: bool = true;\n";
+pub const OVERSIZED_FILE: &str = "core/src/oversized.rs";
+pub const SOURCE_LINE: &str = "// fixture\n";
+pub const EXCESS_LINE: usize = 1;
+pub const MISSING_DIRECTORY: &str = "missing-root";
+pub const PASSED_MESSAGE: &str = "Architecture checks passed.";
+pub const FAILED_MESSAGE: &str = "architecture check failed";
+pub const LIMIT_MESSAGE: &str = "handwritten source limit";
+pub const POLICY_FAILURE: i32 = 1;
+pub const CHECK_FAILURE: i32 = 2;

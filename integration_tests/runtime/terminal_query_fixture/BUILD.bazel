@@ -1,0 +1,32 @@
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library")
+
+package(default_visibility = ["//visibility:public"])
+
+rust_library(
+    name = "library",
+    testonly = True,
+    srcs = glob(["src/**/*.rs"], exclude = ["src/main.rs"]),
+    crate_name = "yolo_terminal_query_fixture",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    deps = [
+        "//core/crates/hub/terminal/io:yolo_hub_terminal_io",
+        "@crates//:anyhow",
+        "@crates//:libc",
+        "@crates//:serde",
+        "@crates//:serde_json",
+        "@crates//:tokio",
+    ],
+)
+
+rust_binary(
+    name = "yolo-test-terminal-query",
+    testonly = True,
+    srcs = ["src/main.rs"],
+    crate_name = "yolo_test_terminal_query",
+    crate_root = "src/main.rs",
+    edition = "2024",
+    deps = [":library", "@crates//:anyhow", "@crates//:tokio"],
+)
+
+filegroup(name = "architecture_check_data", srcs = glob(["**/*.rs"]) + ["BUILD.bazel"])

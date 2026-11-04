@@ -1,0 +1,13 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+package(default_visibility = ["//visibility:public"])
+_DEPS = [
+    "//core/crates/transport/capnp/codec",
+    "//core/crates/transport/capnp/schema",
+    "@crates//:capnp", "@crates//:capnp-rpc", "@crates//:futures",
+    "@crates//:tokio", "@crates//:tokio-util",
+]
+rust_library(name = "rpc", crate_name = "yolo_capnp_rpc", crate_root = "src/lib.rs",
+    srcs = glob(["src/**/*.rs"]), edition = "2024", deps = _DEPS)
+rust_test(name = "integration_tests", crate_root = "integration_tests/lib.rs",
+    srcs = glob(["integration_tests/**/*.rs"]), edition = "2024", deps = _DEPS + [":rpc"])
+filegroup(name = "architecture_check_data", srcs = glob(["**/*"]))

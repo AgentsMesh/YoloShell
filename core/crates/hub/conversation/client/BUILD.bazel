@@ -1,0 +1,42 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+load("//build_system/bazel:version.bzl", "YOLO_MARKETING_VERSION")
+
+package(default_visibility = ["//visibility:public"])
+
+_DEPS = [
+    "//core/crates/conversation/protocol:yolo_conversation_protocol",
+    "//core/crates/hub/client:yolo_hub_client",
+    "//core/crates/hub/identity:yolo_hub_identity",
+    "//core/crates/hub/rpc/protocol:yolo_hub_rpc_protocol",
+    "@crates//:thiserror",
+    "@crates//:tokio",
+]
+
+rust_library(
+    name = "yolo_hub_conversation_client",
+    srcs = glob(["src/**/*.rs"]),
+    crate_name = "yolo_hub_conversation_client",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    version = YOLO_MARKETING_VERSION,
+    deps = _DEPS,
+)
+
+rust_test(
+    name = "integration_tests",
+    srcs = glob(["integration_tests/**/*.rs", "test_support/**/*.rs"]),
+    crate_name = "yolo_hub_conversation_client_integration_tests",
+    crate_root = "integration_tests/lib.rs",
+    edition = "2024",
+    deps = _DEPS + [
+        ":yolo_hub_conversation_client",
+        "//core/crates/crypto:yolo_crypto",
+        "//core/crates/hub/agent/protocol:yolo_hub_agent_protocol",
+        "//core/crates/hub/terminal/protocol:yolo_hub_terminal_protocol",
+        "//core/crates/hub/jsonrpc/transport:yolo_hub_jsonrpc_transport",
+        "//core/crates/hub/jsonrpc/protocol:yolo_hub_jsonrpc_protocol",
+        "@crates//:uuid",
+    ],
+)
+
+filegroup(name = "architecture_check_data", srcs = glob(["**/*.rs"]) + ["BUILD.bazel"])
