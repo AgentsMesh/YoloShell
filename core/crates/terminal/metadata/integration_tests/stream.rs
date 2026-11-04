@@ -42,8 +42,8 @@ fn snapshot_restores_title_without_replaying_any_notification() {
     let mut original = parser();
     original.process(&[TITLE_PARTS, NOTIFY, BEL, SCREEN_TEXT].concat());
     let mut restored = parser();
-    let mut snapshot = original.callbacks().snapshot_prefix();
-    snapshot.extend(original.screen().contents_formatted());
+    let mut snapshot = original.callbacks().snapshot_prefix(false);
+    snapshot.extend(original.screen().state_formatted());
     restored.process(&snapshot);
     assert_eq!(
         restored.callbacks().presentation().title,
@@ -59,6 +59,24 @@ fn snapshot_restores_title_without_replaying_any_notification() {
         parser().callbacks().presentation(),
         &TerminalPresentation::default()
     );
+}
+
+#[test]
+fn snapshot_of_the_alternate_screen_keeps_its_mode_and_leaves_cleanly() {
+    let mut original = parser();
+    original.process(b"\x1b[?1049hALT");
+    assert!(original.screen().alternate_screen());
+    let mut restored = parser();
+    let mut snapshot = original
+        .callbacks()
+        .snapshot_prefix(original.screen().alternate_screen());
+    snapshot.extend(original.screen().state_formatted());
+    restored.process(&snapshot);
+    assert!(restored.screen().alternate_screen());
+    assert_eq!(restored.screen().contents().trim(), "ALT");
+    restored.process(b"\x1b[?1049l");
+    assert!(!restored.screen().alternate_screen());
+    assert!(!restored.screen().contents().contains("ALT"));
 }
 
 #[test]

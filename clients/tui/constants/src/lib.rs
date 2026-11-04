@@ -19,6 +19,11 @@ pub const DISCONNECTED_LABEL: &str = "Disconnected";
 pub const CATALOG_REFRESHING_LABEL: &str = "Refreshing";
 pub const UNSAVED_SHELL_CHANGES_LABEL: &str = "Unsaved shell changes";
 pub const NO_RUNTIME_LABEL: &str = "No running terminal";
+/// Set by the Worker for a shell it owns; a nested client can never display
+/// the terminal it is running in without recursively rendering itself.
+pub const SELF_TERMINAL_ENV: &str = "YOLO_TERMINAL_ID";
+pub const SELF_TERMINAL_LABEL: &str =
+    "This is the terminal running YOLO; open another terminal to view it";
 pub const READ_ONLY_LABEL: &str = "Read Only";
 pub const CONTROL_LOST_LABEL: &str = "Input control was taken by another client";
 pub const INPUT_WAITING_LABEL: &str = "Waiting for terminal input control; input queued";
@@ -58,3 +63,11 @@ pub const OBSERVER_PREFIX_HINT: &str =
 pub const OBSERVER_INVENTORY_HINT: &str =
     "Enter open/details · g terminals · h history · ? help · q detach";
 pub const OBSERVER_HISTORY_HINT: &str = "Terminal history · Enter view · h active";
+
+pub fn is_self_terminal(terminal_id: uuid::Uuid) -> bool {
+    parsed_self_terminal(std::env::var(SELF_TERMINAL_ENV).ok().as_deref(), terminal_id)
+}
+
+pub fn parsed_self_terminal(value: Option<&str>, terminal_id: uuid::Uuid) -> bool {
+    value.and_then(|value| value.parse::<uuid::Uuid>().ok()) == Some(terminal_id)
+}
