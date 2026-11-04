@@ -1,0 +1,114 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+load("//build_system/bazel:version.bzl", "YOLO_MARKETING_VERSION")
+load("//build_system/bazel/rust:component_test_graph.bzl", "COMPONENT_TEST_FEATURES", "component_test_aliases", "component_test_dependencies")
+load("//build_system/bazel/rust:providers.bzl", "PROVIDER_CRATE_DEPS")
+
+package(default_visibility = ["//visibility:public"])
+
+_DEPS = PROVIDER_CRATE_DEPS + [
+    "//core/crates/agent/contract:yolo_agent_contract",
+    "//core/crates/agent/system/adapter/contract:yolo_agent_adapter_contract",
+    "//core/crates/agent/system/adapter/registry:yolo_agent_adapter_registry",
+    "//core/crates/agent/system/core:yolo_agent_core",
+    "//core/crates/agent/system/hooks/installation/contract:yolo_hook_installation_contract",
+    "//core/crates/conversation/source:yolo_conversation_source",
+    "//core/crates/agent/system/provider/contract:yolo_agent_provider_contract",
+    "//core/crates/agent/system/provider/runtime:yolo_agent_provider_runtime",
+    "//core/crates/plugin/provider:yolo_plugin_provider",
+    "//core/crates/runtime/engine/process:yolo_process",
+    "@crates//:anyhow",
+    "@crates//:uuid",
+]
+
+_TEST_DEPS = _DEPS + [
+    "//core/crates/conversation/protocol:yolo_conversation_protocol",
+    "//core/crates/plugin/provider/catalog:yolo_plugin_provider_catalog",
+    "@crates//:serde_json",
+    "@crates//:tempfile",
+]
+
+rust_library(
+    name = "yolo_agent_providers",
+    srcs = glob(["src/**/*.rs"]),
+    crate_name = "yolo_agent_providers",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    version = YOLO_MARKETING_VERSION,
+    deps = _DEPS,
+)
+
+rust_test(
+    name = "yolo_agent_providers_unit_tests",
+    srcs = [
+        ":runtime_sources",
+        ":test_support_sources",
+        ":unit_test_sources",
+    ],
+    crate_name = "yolo_agent_providers_unit_tests",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    deps = _TEST_DEPS,
+)
+
+filegroup(
+    name = "composition_source",
+    srcs = ["src/builtin.rs"],
+)
+
+filegroup(
+    name = "runtime_sources",
+    srcs = glob(
+        ["src/**/*.rs"],
+        allow_empty = False,
+    ),
+)
+
+filegroup(
+    name = "unit_test_sources",
+    testonly = True,
+    srcs = glob(
+        ["unit_tests/**/*.rs"],
+        allow_empty = True,
+    ),
+)
+
+filegroup(
+    name = "integration_test_sources",
+    testonly = True,
+    srcs = glob(
+        ["integration_tests/**/*.rs"],
+        allow_empty = True,
+    ),
+)
+
+filegroup(
+    name = "test_support_sources",
+    testonly = True,
+    srcs = glob(["test_support/**/*.rs"]),
+)
+
+rust_library(
+    name = "yolo_agent_providers_component_test_support",
+    testonly = True,
+    srcs = glob(["src/**/*.rs"]) + glob(
+        ["test_support/**/*.rs"],
+        allow_empty = True,
+    ),
+    aliases = component_test_aliases(_DEPS),
+    crate_features = COMPONENT_TEST_FEATURES,
+    crate_name = "yolo_agent_providers",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    deps = component_test_dependencies(_DEPS),
+)
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = glob(
+        ["**/*"],
+        allow_empty = True,
+        exclude = ["BUILD.bazel"],
+    ) + [
+        "BUILD.bazel",
+    ],
+)

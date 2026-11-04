@@ -1,0 +1,29 @@
+load("@rules_rust//rust:defs.bzl", "rust_library")
+
+package(default_visibility = ["//visibility:public"])
+
+_SOURCES = glob(["src/*.rs"])
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = _SOURCES + ["BUILD.bazel"],
+)
+
+rust_library(
+    name = "library",
+    testonly = True,
+    srcs = _SOURCES,
+    crate_name = "yolo_release_gate_test_support",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    deps = [
+        "//core/crates/distribution/bundle:yolo_distribution_bundle",
+        "//build_system/release/contracts:library",
+        "//build_system/release/evidence_model:library",
+        "//build_system/release/filesystem:library",
+        "//build_system/release/foundation:library",
+        "//build_system/release/gate_system:library",
+        "@crates//:anyhow",
+        "@crates//:libc",
+    ],
+)

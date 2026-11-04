@@ -1,0 +1,103 @@
+load("@rules_rust//rust:defs.bzl", "rust_library")
+load("//build_system/bazel:version.bzl", "YOLO_MARKETING_VERSION")
+load("//build_system/bazel/rust:component_test_graph.bzl", "COMPONENT_TEST_FEATURES", "component_test_aliases", "component_test_dependencies")
+load("//build_system/bazel/rust:isolated_test.bzl", "isolated_rust_test")
+load("//build_system/bazel/rust:test_features.bzl", "UNIT_TEST_FEATURES")
+
+package(default_visibility = ["//visibility:public"])
+
+_EXCLUSIVE_TEST_TAGS = ["exclusive"]
+
+_PATHS_COMPONENT = "//core/crates/persistence/paths:yolo_paths"
+
+_PATHS_TEST_SUPPORT = "//core/crates/persistence/paths:yolo_paths_persistence_test_support"
+
+_DEPS = [
+    "//core/crates/persistence/catalog:yolo_catalog",
+    "//core/crates/persistence/maintenance/contract:yolo_maintenance_contract",
+    _PATHS_COMPONENT,
+    "@crates//:anyhow",
+    "@crates//:tokio",
+    "@crates//:tracing",
+]
+
+_TEST_DEPS = [dependency for dependency in _DEPS if dependency != _PATHS_COMPONENT] + [
+    "//core/crates/application/support:yolo_application_test_fixtures",
+    _PATHS_TEST_SUPPORT,
+    "@crates//:tempfile",
+]
+
+rust_library(
+    name = "yolo_maintenance",
+    srcs = [":runtime_sources"],
+    crate_name = "yolo_maintenance",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    version = YOLO_MARKETING_VERSION,
+    deps = _DEPS,
+)
+
+isolated_rust_test(
+    name = "yolo_maintenance_unit_tests",
+    srcs = [
+        ":runtime_sources",
+        ":test_support_sources",
+        ":unit_test_sources",
+    ],
+    aliases = {_PATHS_TEST_SUPPORT: "yolo_paths"},
+    crate_features = UNIT_TEST_FEATURES,
+    crate_name = "yolo_maintenance_unit_tests",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    tags = _EXCLUSIVE_TEST_TAGS,
+    deps = _TEST_DEPS,
+)
+
+filegroup(
+    name = "runtime_sources",
+    srcs = glob(
+        ["src/**/*.rs"],
+        allow_empty = True,
+    ),
+)
+
+filegroup(
+    name = "unit_test_sources",
+    testonly = True,
+    srcs = glob(
+        ["unit_tests/**/*.rs"],
+        allow_empty = True,
+    ),
+)
+
+filegroup(
+    name = "test_support_sources",
+    testonly = True,
+    srcs = glob(["test_support/**/*.rs"]),
+)
+
+rust_library(
+    name = "yolo_maintenance_component_test_support",
+    testonly = True,
+    srcs = glob(["src/**/*.rs"]) + glob(
+        ["test_support/**/*.rs"],
+        allow_empty = True,
+    ),
+    aliases = component_test_aliases(_DEPS),
+    crate_features = COMPONENT_TEST_FEATURES,
+    crate_name = "yolo_maintenance",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    deps = component_test_dependencies(_DEPS) + ["@crates//:tempfile"],
+)
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = glob(
+        ["**/*"],
+        allow_empty = True,
+        exclude = ["BUILD.bazel"],
+    ) + [
+        "BUILD.bazel",
+    ],
+)

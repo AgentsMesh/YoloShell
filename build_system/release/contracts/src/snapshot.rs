@@ -1,0 +1,80 @@
+pub const PACKAGE_TARGET: &str = "//plugins/macos:YoloRelease";
+pub const BAZEL_BIN_LINK_NAME: &str = "bazel-bin";
+pub const BAZEL_OUT_LINK_NAME: &str = "bazel-out";
+pub const PACKAGE_ARTIFACT_RELATIVE_PATH: &str = "plugins/macos/YoloRelease.zip";
+pub const MAX_BAZEL_OUTPUT_LINK_BYTES: usize = 4096;
+pub const BAZEL_OUTPUT_LINK_CHANGED_ERROR: &str = "Bazel output link changed while pinned";
+pub const BAZEL_OUTPUT_LINK_TYPE_ERROR: &str = "Bazel output link must be a symbolic link";
+pub const BAZEL_OUTPUT_LINK_LENGTH_ERROR: &str = "Bazel output link target is too long";
+pub const BAZEL_OUTPUT_FILE_CHANGED_ERROR: &str = "Bazel output file changed while pinned";
+pub const BAZEL_OUTPUT_CONTAINMENT_ERROR: &str =
+    "Bazel output must resolve inside the retained output root";
+pub const BAZEL_OUTPUT_ROOT_CHANGED_ERROR: &str = "retained Bazel output root changed";
+pub const BAZEL_OUTPUT_LINK_READ_ERROR: &str = "read Bazel output link";
+pub const BAZEL_OUTPUT_LINK_INSPECTION_ERROR: &str = "inspect Bazel output link";
+pub const BAZEL_OUTPUT_RESOLUTION_ERROR: &str = "resolve Bazel output file";
+pub const BAZEL_OUTPUT_FILE_NAME_ERROR: &str = "Bazel output path must name a file";
+pub const BAZEL_OUTPUT_FILE_OPEN_ERROR: &str = "open retained Bazel output file";
+pub const BAZEL_OUTPUT_COMPONENT_ERROR: &str = "Bazel output component must be UTF-8";
+pub const BAZEL_OUTPUT_PATH_ERROR: &str = "Bazel output path must be relative and normalized";
+pub const UNIT_GATE: &str = "unit";
+pub const E2E_GATE: &str = "e2e";
+pub const RUST_COVERAGE_GATE: &str = "rust_coverage";
+pub const SWIFT_COVERAGE_GATE: &str = "swift_coverage";
+pub const UNIT_TARGET: &str = "//:release_unit";
+pub const E2E_TARGET: &str = "//:release_e2e";
+pub const RUST_COVERAGE_TARGET: &str = "//build_system/coverage/gate:gate";
+pub const RUST_TESTS_TARGET: &str = "//core:tests";
+pub const SWIFT_COVERAGE_TARGET: &str = "//plugins/macos:YoloWorkspaceTests";
+pub const NO_CACHE_ARGUMENT: &str = "--nocache_test_results";
+pub const RUST_COVERAGE_REPORT_RELATIVE_PATH: &str = "_coverage/_coverage_report.dat";
+pub const RUST_COVERAGE_CUSTODY_DIRECTORY_NAME: &str = "rust-coverage-report";
+pub const RUST_COVERAGE_CUSTODY_FILE_NAME: &str = "coverage.lcov";
+pub const RUST_COVERAGE_CUSTODY_FILE_NAMES: &[&str] = &[RUST_COVERAGE_CUSTODY_FILE_NAME];
+pub const RUST_COVERAGE_DESCRIPTION: &str = "Rust coverage report";
+pub const RUST_COVERAGE_TYPE_ERROR: &str = "Rust coverage report must be a regular file";
+pub const RUST_COVERAGE_SIZE_ERROR: &str = "Rust coverage report exceeded the bounded limit";
+pub const RUST_COVERAGE_CHANGED_ERROR: &str = "pinned Rust coverage report changed";
+pub const RUST_COVERAGE_UNSEALED_ERROR: &str = "Rust coverage report custody is not sealed";
+pub const RUST_COVERAGE_NAMESPACE_ERROR: &str = "Rust coverage custody entries mismatch";
+pub const RUST_COVERAGE_DIRECTORY_CREATE_ERROR: &str = "create Rust coverage custody directory";
+pub const RUST_COVERAGE_FILE_CREATE_ERROR: &str = "create pinned Rust coverage report";
+pub const RUST_COVERAGE_FILE_OPEN_ERROR: &str = "reopen pinned Rust coverage report";
+pub const RUST_COVERAGE_INPUT_MISSING_ERROR: &str = "Rust coverage input was not pinned";
+pub const RUST_COVERAGE_OUTPUT_DUPLICATE_ERROR: &str = "Rust coverage output was pinned twice";
+pub const MAX_RUST_COVERAGE_REPORT_BYTES: u64 = 512 * 1024 * 1024;
+pub const SNAPSHOT_PREFIX: &str = "yolo-release-gate-";
+pub const SOURCE_DIRECTORY_NAME: &str = "source";
+pub const OUTPUT_DIRECTORY_NAME: &str = "output";
+pub const LINKS_DIRECTORY_NAME: &str = "links";
+pub const HOME_DIRECTORY_NAME: &str = "home";
+pub const TEMP_DIRECTORY_NAME: &str = "tmp";
+pub const GIT_DIRECTORY_NAME: &str = "git";
+pub const LINUX_ARTIFACT_DIRECTORY_NAME: &str = "linux-artifacts";
+pub const SOURCE_ARCHIVE_NAME: &str = "source.tar";
+pub const BAZEL_LINK_NAME_PREFIX: &str = "bazel-";
+pub const ARTIFACT_PREFIX: &str = "yolo-candidate-artifact-";
+pub const AUDIT_RESULT_NAME: &str = "Yolo.audit.sha256";
+pub const ARTIFACT_AUDIT_IDENTIFIER: &str = "bundle_archive_audit";
+pub const ARTIFACT_AUDIT_INPUT_KIND: &str = "pinned_file_descriptor";
+pub const AUDIT_SCRIPT_RELATIVE_PATH: &str = "plugins/macos/Tests/E2E/bundle_audit_test.sh";
+pub const BUNDLE_POLICY_RELATIVE_PATH: &str = "plugins/macos/Tests/E2E/bundle_policy.sh";
+pub const BUNDLE_DEPENDENCY_POLICY_RELATIVE_PATH: &str =
+    "plugins/macos/Tests/E2E/bundle_dependency_policy.sh";
+pub const ARCHIVE_POLICY_RELATIVE_PATH: &str = "plugins/macos/Tests/E2E/bundle_archive_policy.sh";
+pub const ICON_RELATIVE_PATH: &str =
+    "plugins/macos/Resources/Assets.xcassets/AppIcon.appiconset/icon_512x512@2x.png";
+pub const BASH_EXECUTABLE: &str = "/bin/bash";
+pub const YOLO_MARKETING_VERSION: &str = "0.1.1";
+pub const YOLO_VERSION_OUTPUT_PREFIX: &str = "yolo";
+
+pub fn yolo_version_output() -> String {
+    format!("{YOLO_VERSION_OUTPUT_PREFIX} {YOLO_MARKETING_VERSION}")
+}
+pub const YOLO_BUILD_VERSION: &str = "1";
+pub const MACOS_MINIMUM_VERSION: &str = env!("YOLO_RELEASE_MACOS_MINIMUM_OS");
+pub const MAX_EVIDENCE_BYTES: u64 = 1024 * 1024;
+pub const MAX_ARTIFACT_BYTES: u64 = 512 * 1024 * 1024;
+pub const MAX_BAZEL_LAUNCHER_BYTES: u64 = 256 * 1024 * 1024;
+pub const MAX_AUDIT_DIGEST_BYTES: u64 = 65;
+pub const RANDOM_SUFFIX_BYTES: usize = 16;

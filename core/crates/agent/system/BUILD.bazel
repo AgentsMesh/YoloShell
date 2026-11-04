@@ -1,0 +1,32 @@
+package(default_visibility = ["//visibility:public"])
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = [
+        "BUILD.bazel",
+        "//core/crates/agent/system/adapter/contract:architecture_check_data",
+        "//core/crates/agent/system/adapter/registry:architecture_check_data",
+        "//core/crates/agent/system/core:architecture_check_data",
+        "//core/crates/agent/system/authority/contract:architecture_check_data",
+        "//core/crates/agent/system/authority/generation:architecture_check_data",
+        "//core/crates/agent/system/binding/io:architecture_check_data",
+        "//core/crates/agent/system/control/journal:architecture_check_data",
+        "//core/crates/agent/system/control/contract:architecture_check_data",
+        "//core/crates/agent/system/control/runtime:architecture_check_data",
+        "//core/crates/agent/system/custody:architecture_check_data",
+        "//core/crates/agent/system/detection:architecture_check_data",
+        "//core/crates/agent/system/evidence:architecture_check_data",
+        "//core/crates/agent/system/hooks/codec:architecture_check_data",
+        "//core/crates/agent/system/hooks/runtime:architecture_check_data",
+        "//core/crates/agent/system/hooks/installation:architecture_check_data",
+        "//core/crates/agent/system/hooks/installation/contract:architecture_check_data",
+        "//core/crates/agent/system/hooks/ingress:architecture_check_data",
+        "//core/crates/agent/system/hooks/lineage:architecture_check_data",
+        "//core/crates/agent/system/launch:architecture_check_data",
+        "//core/crates/agent/system/process:architecture_check_data",
+        "//core/crates/agent/system/provider/contract:architecture_check_data",
+        "//core/crates/agent/system/provider/runtime:architecture_check_data",
+        "//core/crates/agent/system/providers:architecture_check_data",
+        "//core/crates/agent/system/store:architecture_check_data",
+    ],
+)
