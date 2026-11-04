@@ -3,6 +3,13 @@
 All notable changes to Yolo are recorded here. The project follows semantic
 versioning once a stable release exists.
 
+## 0.1.4 — Alpha
+
+### Fixed
+
+- `yolo update` resolves the installer symlink before validating the running
+  executable, so admission checks work on the standard macOS installation.
+
 ## 0.1.3 — Alpha
 
 ### Added
