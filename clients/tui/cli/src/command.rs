@@ -84,6 +84,21 @@ pub(crate) enum Command {
         #[command(subcommand)]
         command: yolo_tui_hub_cli::HubCommand,
     },
+    /// Show installed and running local service status.
+    #[command(group(crate::arguments::connection_group()))]
+    Status(yolo_tui_service::FormatOptions),
+    /// Print installed and running local service versions.
+    #[command(group(crate::arguments::connection_group()))]
+    Version(yolo_tui_service::FormatOptions),
+    /// Start the local Host and Hub.
+    #[command(group(crate::arguments::connection_group()))]
+    Start(yolo_tui_service::FormatOptions),
+    /// Stop the local Host and Hub; terminals and PTYs keep running.
+    #[command(group(crate::arguments::connection_group()))]
+    Stop(yolo_tui_service::FormatOptions),
+    /// Restart the local Host and Hub.
+    #[command(group(crate::arguments::connection_group()))]
+    Restart(yolo_tui_service::FormatOptions),
     /// Read the local Hub's durable authority audit log, or merge exported logs.
     #[command(group(crate::arguments::connection_group()))]
     Audit {

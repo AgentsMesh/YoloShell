@@ -3,6 +3,7 @@ mod constants;
 mod github;
 mod github_release;
 mod install;
+mod probe;
 mod report;
 mod service;
 

@@ -49,6 +49,13 @@ pub const TERMINATE_COMMAND: &str = "terminate";
 pub const FORCE_ARGUMENT: &str = "--force";
 pub const NAME: &str = "alpha";
 pub const HUB_COMMAND: &str = "hub";
+pub const STATUS_COMMAND: &str = "status";
+// Not named `_COMMAND`: the literal would enter the architecture registry and
+// collide with generic "version" fields outside the CLI.
+pub const VERSION_ENTRY: &str = "version";
+pub const START_COMMAND: &str = "start";
+pub const STOP_COMMAND: &str = "stop";
+pub const RESTART_COMMAND: &str = "restart";
 pub const PEER_COMMAND: &str = "peer";
 pub const ADD_COMMAND: &str = "add";
 pub const INVITE_COMMAND: &str = "invite";

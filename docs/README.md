@@ -9,6 +9,8 @@ validation notes and internal release evidence are not part of the public tree.
 - [Architecture](architecture.md): process boundaries and ownership.
 - [Concept model](concept-model.md): terminals, agents, runs and authority.
 - [Operations](operations.md): install, launch, diagnostics and removal.
+- [Local service lifecycle](local-service-lifecycle.md): status, start, stop,
+  restart and release activation.
 
 ## Runtime and protocol
 

@@ -1,8 +1,11 @@
 use crate::command::Command;
-use crate::constants::{ENROLLMENT_TIMEOUT, MANAGEMENT_LOCAL_ONLY, MANAGEMENT_TIMEOUT};
+use crate::constants::{
+    ENROLLMENT_TIMEOUT, LIFECYCLE_LOCAL_ONLY, MANAGEMENT_LOCAL_ONLY, MANAGEMENT_TIMEOUT,
+};
 use crate::recipe::RecipeCommand;
 use std::path::PathBuf;
 use yolo_hub_client::HubEndpoint;
+use yolo_local_profile::LocalProfile;
 use yolo_tui_app::Options;
 use yolo_tui_hub_cli::{HubCommand, PeerCommand};
 
@@ -16,6 +19,32 @@ pub(crate) enum Selection {
 
 impl Selection {
     pub async fn run(self, command: Option<Command>) -> anyhow::Result<()> {
+        if let Some(
+            command @ (Command::Status(_)
+            | Command::Version(_)
+            | Command::Start(_)
+            | Command::Stop(_)
+            | Command::Restart(_)),
+        ) = &command
+        {
+            let profile = self.local_profile()?;
+            return match command {
+                Command::Status(options) => {
+                    yolo_tui_service::status_command(&profile, *options).await
+                }
+                Command::Version(options) => {
+                    yolo_tui_service::version_command(&profile, *options).await
+                }
+                Command::Start(options) => {
+                    yolo_tui_service::start_command(&profile, *options).await
+                }
+                Command::Stop(options) => yolo_tui_service::stop_command(&profile, *options).await,
+                Command::Restart(options) => {
+                    yolo_tui_service::restart_command(&profile, *options).await
+                }
+                _ => unreachable!(),
+            };
+        }
         if let Some(Command::Hub { command }) = &command {
             let (socket, entry) = self.local_hub_endpoint().await?;
             let timeout = match command {
@@ -94,6 +123,16 @@ impl Selection {
                     startup.connection.entry_hub,
                 ))
             }
+        }
+    }
+
+    fn local_profile(&self) -> anyhow::Result<LocalProfile> {
+        match self {
+            Self::Local { profile, .. } => match profile {
+                Some(path) => LocalProfile::load(path),
+                None => yolo_local_profile::current(),
+            },
+            Self::Explicit(_) => anyhow::bail!("{}", LIFECYCLE_LOCAL_ONLY),
         }
     }
 }

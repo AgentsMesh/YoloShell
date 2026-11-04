@@ -1,4 +1,4 @@
-use super::constants::{COMMAND, HELP_ARGUMENT, PROGRAM};
+use super::constants::{CHECK_RELEASE_SWITCH, COMMAND, HELP_ARGUMENT, PROGRAM, RESTART_SWITCH};
 use super::service::ServiceUnit;
 use std::{fs, os::unix::fs::PermissionsExt};
 use tempfile::tempdir;
@@ -76,6 +76,27 @@ fn update_is_the_only_public_admission_command() {
 }
 
 #[test]
+fn restart_is_available_without_release_flags() {
+    use clap::Parser;
+    let args = [PROGRAM, COMMAND, RESTART_SWITCH];
+    let parsed = super::Cli::try_parse_from(args).unwrap();
+    let super::Command::Update(options) = parsed.command;
+    assert!(options.restart);
+    assert!(!options.check_release);
+    assert!(!options.install_release);
+}
+
+#[test]
+fn restart_refuses_to_combine_with_a_release_check() {
+    use clap::Parser;
+    let args = [PROGRAM, COMMAND, RESTART_SWITCH, CHECK_RELEASE_SWITCH];
+    let parsed = super::Cli::try_parse_from(args).unwrap();
+    let super::Command::Update(options) = parsed.command;
+    let error = super::check::run(options).unwrap_err();
+    assert!(error.to_string().contains(CHECK_RELEASE_SWITCH));
+}
+
+#[test]
 fn one_failed_admission_check_cannot_be_hidden_by_later_success() {
     let executable = std::env::current_exe().unwrap();
     let image = super::service::image(&executable).unwrap();
@@ -109,7 +130,7 @@ fn selects_stable_and_nightly_releases_and_their_assets() {
 
 #[test]
 fn release_flags_are_selectable_without_local_profile() {
-    use super::constants::{CHANNEL_SWITCH, CHECK_RELEASE_SWITCH, COMMAND, NIGHTLY_VALUE, PROGRAM};
+    use super::constants::{CHANNEL_SWITCH, NIGHTLY_VALUE};
     use clap::Parser;
     let args = [
         PROGRAM,

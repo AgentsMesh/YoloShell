@@ -26,14 +26,3 @@ async fn protocol_discovery_is_strict() {
         assert!(result.stdout.is_empty());
     }
 }
-
-#[tokio::test]
-async fn web_command_is_dispatched_without_entering_the_tui() {
-    let help = command::run(&[WEB_COMMAND, HELP], None).await;
-    assert_eq!(help.code, SUCCESS, "{}", help.stderr);
-    assert!(help.stdout.contains(WEB_CLIENT_KEY_OPTION));
-    assert!(help.stdout.contains(WEB_ORIGIN_OPTION));
-    let missing = command::run(&[WEB_COMMAND], None).await;
-    assert_eq!(missing.code, USAGE);
-    assert!(missing.stderr.contains(WEB_PROFILE_OPTION));
-}

@@ -25,9 +25,9 @@ pub(crate) const EMPTY_EXEC_START: &str = "service unit ExecStart is empty";
 pub(crate) const ABSOLUTE_EXEC_START: &str = "service ExecStart must be absolute";
 pub(crate) const WRONG_EXECUTABLE: &str = "service ExecStart must point to yolo";
 pub(crate) const MUTABLE_EXECUTABLE: &str = "service ExecStart must point to an immutable image";
-pub(crate) const INVALID_EXECUTABLE: &str = "service executable is not a regular file";
-pub(crate) const INVALID_EXECUTABLE_SIZE: &str = "service executable size is invalid";
-pub(crate) const EXECUTABLE_CHANGED: &str = "service executable changed while hashing";
+pub(crate) const UPGRADE_REFUSED: &str =
+    "upgrade admission refused; run `yolo restart` to activate the installed image";
+pub(crate) const RESTART_CHECK_CONFLICT: &str = "--restart cannot be combined with --check-release";
 pub(crate) const DIGEST_MISMATCH: &str = "service image digest does not match executable";
 pub(crate) const SIZE_MISMATCH: &str = "service image size does not match executable";
 pub(crate) const CONTRACT_MATCH: &str = "runtime contract matches current image";
@@ -48,6 +48,7 @@ pub(crate) const TARGET_MACOS_ARM64: &str = "aarch64-apple-darwin";
 pub(crate) const TARGET_LINUX_X86_64: &str = "x86_64-unknown-linux-gnu";
 pub(crate) const TARGET_LINUX_ARM64: &str = "aarch64-unknown-linux-gnu";
 pub(crate) const CHECK_RELEASE_SWITCH: &str = "--check-release";
+pub(crate) const RESTART_SWITCH: &str = "--restart";
 pub(crate) const CHANNEL_SWITCH: &str = "--channel";
 
 #[cfg(all(target_os = "macos", target_arch = "aarch64"))]

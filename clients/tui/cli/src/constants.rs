@@ -65,6 +65,8 @@ pub const MAX_EVENTS_LIMIT: u16 = 256;
 pub const AUDIT_LOCAL_ONLY: &str = "audit reads require the local profile";
 pub const MANAGEMENT_LOCAL_ONLY: &str =
     "Hub management requires the local entry Hub (use --local-profile or --socket/--hub)";
+pub const LIFECYCLE_LOCAL_ONLY: &str =
+    "local service lifecycle commands operate on the local profile only";
 pub const MANAGEMENT_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(10);
 /// Pairing spans an SSH handshake and a remote configuration activation.
 pub const ENROLLMENT_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(60);
