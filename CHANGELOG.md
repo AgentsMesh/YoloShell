@@ -3,6 +3,23 @@
 All notable changes to Yolo are recorded here. The project follows semantic
 versioning once a stable release exists.
 
+## 0.1.3 — Alpha
+
+### Added
+
+- `yolo hub peer add` and `yolo hub peer list` manage federation peers through
+  the local entry Hub, with explicit dial addresses, import control and export
+  policies.
+
+### Fixed
+
+- A YOLO client running inside a YOLO terminal no longer attaches to its own
+  terminal; it shows a status hint and keeps the pane read-only instead of
+  recursively rendering itself.
+- A terminal snapshot taken on the alternate screen carries the screen mode, so
+  reattaching to a full-screen program no longer leaves its content smeared on
+  the primary screen.
+
 ## 0.1.2 — Alpha
 
 ### Added

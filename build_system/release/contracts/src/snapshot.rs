@@ -65,7 +65,7 @@ pub const ARCHIVE_POLICY_RELATIVE_PATH: &str = "plugins/macos/Tests/E2E/bundle_a
 pub const ICON_RELATIVE_PATH: &str =
     "plugins/macos/Resources/Assets.xcassets/AppIcon.appiconset/icon_512x512@2x.png";
 pub const BASH_EXECUTABLE: &str = "/bin/bash";
-pub const YOLO_MARKETING_VERSION: &str = "0.1.2";
+pub const YOLO_MARKETING_VERSION: &str = "0.1.3";
 pub const YOLO_VERSION_OUTPUT_PREFIX: &str = "yolo";
 
 pub fn yolo_version_output() -> String {
