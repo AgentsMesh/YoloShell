@@ -49,6 +49,21 @@ fn service_unit_rejects_mutable_or_unpinned_exec_start() {
 }
 
 #[test]
+fn running_the_installer_symlink_resolves_to_the_immutable_image() {
+    let directory = tempdir().unwrap();
+    let executable = directory.path().join("yolo");
+    fs::write(&executable, b"candidate").unwrap();
+    let link = directory.path().join("bin-yolo");
+    std::os::unix::fs::symlink(&executable, &link).unwrap();
+    assert!(super::service::image(&link).is_err());
+    let resolved = fs::canonicalize(&link).unwrap();
+    assert_eq!(
+        super::service::image(&resolved).unwrap(),
+        super::service::image(&executable).unwrap()
+    );
+}
+
+#[test]
 fn update_is_the_only_public_admission_command() {
     use clap::Parser;
     let args = [PROGRAM, COMMAND, HELP_ARGUMENT];
