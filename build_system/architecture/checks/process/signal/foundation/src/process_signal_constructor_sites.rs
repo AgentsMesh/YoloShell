@@ -1,0 +1,102 @@
+use crate::process_signal_authority_sites::{QualifiedSite, authority_constructor, qualified};
+use yolo_architecture_policy_contracts::process_signal as contract;
+
+pub const CONSTRUCTOR_SITES: &[QualifiedSite] = &[
+    qualified(
+        contract::RETAINED_EXACT_PROCESS,
+        contract::CAPTURE,
+        contract::REMOTE_SUPERVISED_CONTAINMENT_PATH,
+        None,
+        "contain",
+    ),
+    qualified(
+        contract::RETAINED_EXACT_PROCESS,
+        contract::CAPTURE,
+        contract::RETAINED_EXACT_DOUBLE_FORK_TESTS_PATH,
+        None,
+        "discovery_and_no_proof_custody_keep_refresh_semantics",
+    ),
+    qualified(
+        contract::RETAINED_EXACT_PROCESS,
+        contract::IS_RUNNING,
+        contract::REMOTE_SUPERVISED_CONTAINMENT_PATH,
+        None,
+        "contain",
+    ),
+    qualified(
+        contract::RETAINED_EXACT_PROCESS,
+        contract::BEGIN_CONTAINMENT,
+        contract::REMOTE_SUPERVISED_CONTAINMENT_PATH,
+        None,
+        "contain",
+    ),
+    qualified(
+        contract::RETAINED_EXACT_PROCESS,
+        contract::ENFORCE_CONTAINMENT,
+        contract::REMOTE_SUPERVISED_CONTAINMENT_PATH,
+        None,
+        "contain",
+    ),
+    authority_constructor(Some(contract::DESTRUCTIVE_ACCESS), contract::CAPTURE),
+    authority_constructor(
+        Some(contract::DESTRUCTIVE_ACCESS),
+        contract::INSTALL_LINUX_CONTAINMENT,
+    ),
+    authority_constructor(
+        Some(contract::DESTRUCTIVE_ACCESS),
+        contract::AUTHORIZE_FOR_TEST,
+    ),
+    authority_constructor(Some(contract::FOREGROUND_AUTHORITY), contract::VERIFIED),
+    authority_constructor(None, contract::REQUEST_WAITABLE_ROOT_GRACEFUL_TERMINATION),
+    authority_constructor(None, contract::SIGNAL_EXACT_PROCESS),
+    authority_constructor(Some(contract::PROCESS_SIGNAL_AUTHORITY), contract::FOR_TEST),
+    qualified(
+        contract::DESTRUCTIVE_AUTHORITY,
+        contract::DESTRUCTIVE_AUTHORITY,
+        contract::SIGNAL_AUTHORITY_PATH,
+        Some(contract::DESTRUCTIVE_ACCESS),
+        contract::CAPTURE,
+    ),
+    qualified(
+        contract::DESTRUCTIVE_AUTHORITY,
+        contract::DESTRUCTIVE_AUTHORITY,
+        contract::SIGNAL_AUTHORITY_PATH,
+        Some(contract::DESTRUCTIVE_ACCESS),
+        contract::INSTALL_LINUX_CONTAINMENT,
+    ),
+    qualified(
+        contract::DESTRUCTIVE_AUTHORITY,
+        contract::DESTRUCTIVE_AUTHORITY,
+        contract::SIGNAL_AUTHORITY_PATH,
+        Some(contract::DESTRUCTIVE_ACCESS),
+        contract::AUTHORIZE_FOR_TEST,
+    ),
+    qualified(
+        contract::PROCESS_SIGNAL_AUTHORITY,
+        contract::FOR_TEST,
+        contract::LIVE_CONTROL_PATH,
+        Some(contract::LIVE_IDENTITY),
+        contract::SIGNAL_FOR_TEST,
+    ),
+    qualified(
+        contract::FOREGROUND_AUTHORITY,
+        contract::VERIFIED,
+        contract::INVENTORY_PATH,
+        Some(contract::PROCESS_GROUP_IDENTITY),
+        contract::VERIFIED,
+    ),
+    qualified(
+        contract::PROCESS_GROUP_IDENTITY,
+        contract::VERIFIED,
+        contract::INVENTORY_SCOPE_PATH,
+        Some(contract::PTY_SCOPE),
+        "foreground_group",
+    ),
+    qualified(
+        contract::PROCESS_GROUP_IDENTITY,
+        contract::VERIFIED,
+        "core/crates/runtime/engine/process/integration_tests/inventory/inventory_tests.rs",
+        None,
+        "live_scope_uses_kernel_identities_and_rejects_unverified_groups",
+    ),
+];

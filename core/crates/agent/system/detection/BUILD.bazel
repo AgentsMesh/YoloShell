@@ -1,0 +1,158 @@
+load("@rules_rust//rust:defs.bzl", "rust_library")
+load("//build_system/bazel:version.bzl", "YOLO_MARKETING_VERSION")
+load("//build_system/bazel/rust:component_test_graph.bzl", "COMPONENT_TEST_FEATURES", "component_test_aliases", "component_test_dependencies")
+load("//build_system/bazel/rust:config.bzl", "RUST_UNIT_TEST_THREAD_COUNT")
+load("//build_system/bazel/rust:isolated_test.bzl", "isolated_rust_test")
+load(
+    "//build_system/bazel/rust:test_features.bzl",
+    "INTEGRATION_TEST_FEATURES",
+    "UNIT_TEST_FEATURES",
+)
+load(
+    "//build_system/bazel/rust:unit_test_fixtures.bzl",
+    "UNIT_TEST_FIXTURE_DATA",
+    "unit_test_fixture_environment",
+)
+
+package(default_visibility = ["//visibility:public"])
+
+_DEPS = [
+    "//core/crates/agent/contract:yolo_agent_contract",
+    "//core/crates/agent/system/adapter/contract:yolo_agent_adapter_contract",
+    "//core/crates/agent/system/core:yolo_agent_core",
+    "//core/crates/agent/system/process:yolo_agent_process",
+    "//core/crates/agent/system/adapter/registry:yolo_agent_adapter_registry",
+    "//core/crates/application/cli:yolo_cli",
+    "//core/crates/runtime/engine/process:yolo_process",
+    "//core/crates/terminal/model:yolo_terminal_model",
+    "//core/crates/transport/local/unix:yolo_local_unix",
+    "//core/crates/wire:yolo_wire",
+    "@crates//:anyhow",
+    "@crates//:serde",
+    "@crates//:serde_bytes",
+    "@crates//:thiserror",
+    "@crates//:tokio",
+]
+
+_TEST_DEPS = _DEPS + [
+    "//core/crates/agent/system/providers:yolo_agent_providers",
+    "//core/crates/agent/providers/claude:yolo_claude",
+    "//core/crates/agent/providers/codex:yolo_codex",
+    "//core/crates/agent/system/launch:yolo_agent_launch",
+    "//core/crates/application/support:yolo_application_support",
+    "@crates//:libc",
+    "@crates//:serde_json",
+    "@crates//:tempfile",
+    "@crates//:uuid",
+]
+
+rust_library(
+    name = "yolo_agent_detection",
+    srcs = glob(["src/**/*.rs"]),
+    crate_name = "yolo_agent_detection",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    version = YOLO_MARKETING_VERSION,
+    deps = _DEPS,
+)
+
+rust_library(
+    name = "yolo_agent_detection_adversarial",
+    testonly = True,
+    srcs = glob(["src/**/*.rs"]) + [
+        "test_support/process_snapshot_adversarial_constants.rs",
+    ],
+    crate_features = ["adversarial-test-hooks"],
+    crate_name = "yolo_agent_detection",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    deps = _DEPS,
+)
+
+isolated_rust_test(
+    name = "yolo_agent_detection_unit_tests",
+    srcs = [
+        ":runtime_sources",
+        ":test_support_sources",
+        ":unit_test_sources",
+    ],
+    crate_features = UNIT_TEST_FEATURES,
+    crate_name = "yolo_agent_detection_unit_tests",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    deps = _TEST_DEPS,
+)
+
+isolated_rust_test(
+    name = "yolo_agent_detection_integration_tests",
+    srcs = [
+        ":integration_test_sources",
+        ":runtime_sources",
+        ":test_support_sources",
+    ],
+    crate_features = INTEGRATION_TEST_FEATURES,
+    crate_name = "yolo_agent_detection_integration_tests",
+    crate_root = "src/lib.rs",
+    data = UNIT_TEST_FIXTURE_DATA,
+    edition = "2024",
+    env = unit_test_fixture_environment(RUST_UNIT_TEST_THREAD_COUNT),
+    deps = _TEST_DEPS,
+)
+
+filegroup(
+    name = "runtime_sources",
+    srcs = glob(
+        ["src/**/*.rs"],
+        allow_empty = False,
+    ),
+)
+
+filegroup(
+    name = "unit_test_sources",
+    testonly = True,
+    srcs = glob(
+        ["unit_tests/**/*.rs"],
+        allow_empty = True,
+    ),
+)
+
+filegroup(
+    name = "integration_test_sources",
+    testonly = True,
+    srcs = glob(
+        ["integration_tests/**/*.rs"],
+        allow_empty = True,
+    ),
+)
+
+filegroup(
+    name = "test_support_sources",
+    testonly = True,
+    srcs = glob(["test_support/**/*.rs"]),
+)
+
+rust_library(
+    name = "yolo_agent_detection_component_test_support",
+    testonly = True,
+    srcs = glob(["src/**/*.rs"]) + glob(
+        ["test_support/**/*.rs"],
+        allow_empty = True,
+    ),
+    aliases = component_test_aliases(_DEPS),
+    crate_features = COMPONENT_TEST_FEATURES,
+    crate_name = "yolo_agent_detection",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    deps = component_test_dependencies(_DEPS) + ["@crates//:tempfile"],
+)
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = glob(
+        ["**/*"],
+        allow_empty = True,
+        exclude = ["BUILD.bazel"],
+    ) + [
+        "BUILD.bazel",
+    ],
+)

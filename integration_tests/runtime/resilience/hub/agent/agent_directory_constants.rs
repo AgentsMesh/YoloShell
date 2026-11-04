@@ -1,0 +1,13 @@
+pub const A_STATE: &str = "directory-entry";
+pub const B_STATE: &str = "directory-relay";
+pub const C_STATE: &str = "directory-origin";
+pub const CLAUDE_BINARY_DIRECTORY: &str = "directory-agent-bin";
+pub const CLAUDE_DATA_DIRECTORY: &str = "directory-claude-data";
+pub const FIRST_DIRECTORY: &str = "agent-first cwd ";
+pub const NEXT_DIRECTORY: &str = "agent-next cwd ";
+pub const SESSION_NAME: &str = "agent working directory";
+pub const PRIVATE_FILE: &str = "private.txt";
+pub const PRIVATE_CONTENT: &[u8] = b"directory metadata does not authorize file reads";
+pub const EXECUTABLE_MODE: u32 = 0o755;
+pub const SINGLE_AGENT: usize = 1;
+pub const SHELL_QUOTE_ESCAPE: &str = "'\"'\"'";

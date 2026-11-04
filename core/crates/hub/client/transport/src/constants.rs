@@ -1,0 +1,20 @@
+use std::time::Duration;
+
+pub const PUBLIC_CLIENT_USER: &str = "yolo-public-client";
+pub const MAX_CLIENT_CHANNELS: usize = 256;
+pub const MAX_QUEUED_CHANNELS: usize = 32;
+pub(crate) const SSH_CHANNEL_MESSAGES: usize = 32;
+pub(crate) const SSH_SESSION_MESSAGES: usize = 64;
+pub(crate) const SSH_WINDOW_BYTES: u32 = 65_536;
+pub(crate) const SSH_PACKET_BYTES: u32 = 16_384;
+pub(crate) const AUTH_EVENT_CAPACITY: usize = 1;
+pub(crate) const AUTH_REJECTION_DELAY: Duration = Duration::from_millis(250);
+pub(crate) const KEEPALIVE_INTERVAL: Duration = Duration::from_secs(10);
+pub(crate) const MISSED_KEEPALIVES: usize = 3;
+pub(crate) const MAX_AUTH_ATTEMPTS: usize = 3;
+pub(crate) const EXPIRY_RECHECK_INTERVAL: Duration = Duration::from_secs(1);
+pub(crate) const CLOSED: &str = "public client transport is closed";
+pub(crate) const AUTH_FAILED: &str = "public client identity was not authenticated";
+pub(crate) const CHANNEL_LIMIT: &str = "public client channel limit reached";
+pub(crate) const INVALID_KEY: &str = "public client transport requires an Ed25519 key";
+pub(crate) const INVALID_CLOCK: &str = "public client clock is unavailable";

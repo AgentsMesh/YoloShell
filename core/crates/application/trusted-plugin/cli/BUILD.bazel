@@ -1,0 +1,44 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+load("//build_system/bazel:version.bzl", "YOLO_MARKETING_VERSION")
+
+package(default_visibility = ["//visibility:public"])
+
+_DEPS = [
+    "//core/crates/persistence/paths:yolo_paths",
+    "//core/crates/plugin/trusted/manifest:yolo_trusted_plugin_manifest",
+    "//core/crates/plugin/trusted/registry:yolo_trusted_plugin_registry",
+    "//core/crates/plugin/trusted/lifecycle:yolo_trusted_plugin_lifecycle",
+    "//core/crates/plugin/api:yolo_plugin_api",
+    "//core/crates/application/local/profile:yolo_local_profile",
+    "//core/crates/hub/local/startup:yolo_hub_local_startup",
+    "//core/crates/hub/identity:yolo_hub_identity",
+    "@crates//:anyhow",
+    "@crates//:clap",
+    "@crates//:serde",
+    "@crates//:serde_json",
+    "@crates//:tempfile",
+    "@crates//:tokio",
+]
+
+filegroup(name = "architecture_check_data", srcs = glob(["**/*.rs"]) + ["BUILD.bazel"])
+
+rust_library(
+    name = "yolo_trusted_plugin_cli",
+    srcs = glob(["src/**/*.rs"]),
+    crate_name = "yolo_trusted_plugin_cli",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    version = YOLO_MARKETING_VERSION,
+    deps = _DEPS,
+)
+
+rust_test(
+    name = "unit_tests",
+    srcs = glob(["src/**/*.rs", "unit_tests/**/*.rs"]),
+    crate_name = "yolo_trusted_plugin_cli_unit_tests",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    deps = _DEPS + [
+        "//core/crates/hub/rpc/protocol:yolo_hub_rpc_protocol",
+    ],
+)
