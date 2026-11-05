@@ -1,6 +1,5 @@
-use super::{InvitePeer, invite_request, listen_change};
-use std::net::SocketAddr;
-use std::num::NonZeroU16;
+use super::{AddPeer, add_change};
+use std::path::PathBuf;
 use uuid::Uuid;
 use yolo_hub_delegation::PeerIdentity;
 use yolo_hub_federation_settings::Configuration;
@@ -9,90 +8,59 @@ use yolo_hub_management_protocol::{
     CONFIGURATION_SCHEMA, ConfigurationSnapshot, ConfigurationState,
 };
 
-fn snapshot(listen: Option<SocketAddr>, applied: bool) -> ConfigurationSnapshot {
+mod constants;
+use constants::*;
+
+fn snapshot() -> ConfigurationSnapshot {
     ConfigurationSnapshot {
         state: ConfigurationState {
             schema_version: CONFIGURATION_SCHEMA,
-            identity: PeerIdentity::new(HubId::new(), [1; 32]).unwrap(),
+            identity: PeerIdentity::new(HubId::new(), LOCAL_KEY).unwrap(),
             revision: 1,
             last_change: Uuid::new_v4(),
             configuration: Configuration::default(),
         },
-        applied,
-        listen_address: listen,
+        applied: true,
+        peer_socket: Some(SOCKET.into()),
     }
 }
 
-fn invite(host: Option<&str>, port: Option<u16>) -> InvitePeer {
-    InvitePeer {
-        host: host.map(str::to_owned),
-        port: port.and_then(NonZeroU16::new),
-        ttl_minutes: 10,
-        no_export: false,
-        import_peer: false,
+fn args(ssh_profile: Option<&str>, remote_socket: Option<&str>) -> AddPeer {
+    AddPeer {
+        peer: HubId::new(),
+        key: PEER_KEY.into(),
+        ssh_profile: ssh_profile.map(str::to_owned),
+        remote_socket: remote_socket.map(PathBuf::from),
+        no_import: false,
+        exports: vec![],
+        export_local: true,
         json: false,
     }
 }
 
 #[test]
-fn a_host_without_a_listener_needs_a_port_and_names_the_remedy() {
-    let error = invite_request(&snapshot(None, true), &invite(Some("100.85.238.9"), None))
-        .unwrap_err()
-        .to_string();
-    assert!(error.contains("--port"), "{error}");
-    assert!(error.contains("yolo hub listen"), "{error}");
-}
-
-#[test]
-fn explicit_host_and_port_pair_even_without_a_listener() {
-    let request = invite_request(
-        &snapshot(None, true),
-        &invite(Some("100.85.238.9"), Some(7400)),
-    )
-    .unwrap();
-    assert_eq!(request.dial.host, "100.85.238.9");
-    assert_eq!(request.dial.port.get(), 7400);
-    assert!(request.policy.export_local);
-    assert!(!request.policy.import_peer);
-}
-
-#[test]
-fn an_applied_listener_supplies_the_default_port() {
-    let listener = Some(SocketAddr::from(([0, 0, 0, 0], 7400)));
-    let request = invite_request(
-        &snapshot(listener, true),
-        &invite(Some("100.85.238.9"), None),
-    )
-    .unwrap();
-    assert_eq!(request.dial.host, "100.85.238.9");
-    assert_eq!(request.dial.port.get(), 7400);
-}
-
-#[test]
-fn an_unspecified_listener_still_requires_a_dialable_host() {
-    let listener = Some(SocketAddr::from(([0, 0, 0, 0], 7400)));
-    let error = invite_request(&snapshot(listener, true), &invite(None, None))
-        .unwrap_err()
-        .to_string();
-    assert!(error.contains("--host"), "{error}");
-    assert!(error.contains("current listener"), "{error}");
-}
-
-#[test]
-fn listen_change_sets_the_listener_at_the_current_revision() {
-    let address = SocketAddr::from(([127, 0, 0, 1], 7400));
-    let change = listen_change(&snapshot(None, true), address).unwrap();
-    assert_eq!(change.configuration.listen, Some(address));
+fn adds_a_pinned_peer_with_an_ssh_socket_dial_and_exports() {
+    let change = add_change(&snapshot(), &args(Some(PROFILE), Some(SOCKET))).unwrap();
+    let peer = &change.configuration.peers[0];
+    let dial = peer.dial.as_ref().unwrap();
+    assert_eq!(dial.profile, PROFILE);
+    assert_eq!(dial.socket, PathBuf::from(SOCKET));
+    assert!(peer.consume);
+    assert_eq!(peer.exports.len(), 1);
     assert_eq!(change.expected_revision, 1);
 }
 
 #[test]
-fn expiry_is_reported_in_human_units() {
-    use crate::peer::expires_in_text;
-    assert_eq!(
-        expires_in_text(1_000, 1_000 + 9 * 60_000 + 58_000),
-        "9m 58s"
-    );
-    assert_eq!(expires_in_text(1_000, 1_000 + 42_000), "42s");
-    assert_eq!(expires_in_text(1_000, 1_000), "less than a minute");
+fn dial_flags_are_paired_and_the_key_is_validated() {
+    assert!(add_change(&snapshot(), &args(None, Some(SOCKET))).is_err());
+    assert!(add_change(&snapshot(), &args(Some(PROFILE), None)).is_err());
+    let mut invalid = args(None, None);
+    invalid.key = "not-a-key".into();
+    assert!(add_change(&snapshot(), &invalid).is_err());
+}
+
+#[test]
+fn a_peer_can_be_pinned_without_a_dial() {
+    let change = add_change(&snapshot(), &args(None, None)).unwrap();
+    assert!(change.configuration.peers[0].dial.is_none());
 }

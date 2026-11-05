@@ -1,10 +1,10 @@
 # Persistent Hub SSH profiles
 
-Federation peer addresses explicitly select TCP or SSH. An SSH address contains
-a stable profile ID and expected profile authority digest, plus the remote Hub's
-canonical loopback address and nonzero port. Missing or changed SSH profiles fail
-connection admission; they never fall back to TCP. The configured Hub public key
-remains mandatory for the inner mutually authenticated Hub connection.
+Federation peer addresses are SSH-only. A dial contains a stable local profile
+ID and the remote Hub's absolute `<hub-state>/peer.sock` path. The profile ID is
+resolved against the current registry when the link opens; missing or changed
+profiles fail admission and never fall back to TCP. The configured Hub public
+key remains mandatory for the `PeerHello` link handshake.
 
 The persistent Hub owns the profile registry and the federation dialer. Public
 `GetSshProfiles` and `ConfigureSshProfiles` commands are local management operations;
@@ -24,7 +24,7 @@ instance rather than silently adopting replacement state.
 Ordinary later updates use the public commands, so an initially empty registry
 can be populated without restarting the Hub. The optional seed must agree with
 an existing registry. Every real Hub installs the SSH-aware dialer; embedded Hubs
-without one continue to reject SSH transport requests explicitly.
+without one reject dials explicitly.
 
 ## Broker and channel lifetime
 
@@ -48,7 +48,7 @@ watchers use weak references so they do not retain Hub or profile-store locks.
 Remote Agent processes and PTY custody remain at the origin.
 
 Existing adopted brokers can survive entry Hub exit. A restarted entry Hub reads
-its registry, verifies the existing broker and opens a new inner Hub connection.
+its registry, verifies the existing broker and opens a new peer link.
 Normal tunnel EOF or cancellation closes that tunnel only. Ambiguous SSH channel
 open or failed transport cleanup may still close the outer SSH connection under
 the existing conservative cleanup policy; sibling-channel survival is not an

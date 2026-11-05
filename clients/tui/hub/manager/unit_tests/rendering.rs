@@ -44,7 +44,7 @@ fn wrapped_fields_scroll_to_the_edit_cursor_and_pointer_events_are_generation_fe
     let mut manager = manager();
     manager.page(Page::Peers);
     activate(&mut manager, Action::AddPeer);
-    field(&mut manager, FieldId::Host, &"x".repeat(100));
+    field(&mut manager, FieldId::Profile, &"x".repeat(100));
     let mut terminal = Terminal::new(TestBackend::new(40, 16)).unwrap();
     let mut view = None;
     terminal
@@ -95,11 +95,10 @@ fn pointer_can_navigate_menu_and_confirmation_without_touching_terminal_processe
 }
 
 #[test]
-fn dynamic_listener_shows_actual_port_separately_from_the_configured_bind_address() {
+fn the_header_reports_the_derived_peer_socket() {
     let mut manager = manager();
     let base = manager.base.as_mut().unwrap();
-    base.state.configuration.listen = Some("127.0.0.1:0".parse().unwrap());
-    base.listen_address = Some("127.0.0.1:2345".parse().unwrap());
+    base.peer_socket = Some("/run/user/1000/yolo/hub/peer.sock".into());
     manager.draft = Some(base.state.configuration.clone());
     let mut terminal = Terminal::new(TestBackend::new(80, 24)).unwrap();
     terminal
@@ -114,6 +113,5 @@ fn dynamic_listener_shows_actual_port_separately_from_the_configured_bind_addres
         .iter()
         .map(|cell| cell.symbol())
         .collect::<String>();
-    assert!(text.contains("Listening: 127.0.0.1:2345"));
-    assert!(text.contains("Listener: 127.0.0.1:0"));
+    assert!(text.contains("Peer socket: /run/user/1000/yolo/hub/peer.sock"));
 }

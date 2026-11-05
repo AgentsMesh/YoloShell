@@ -3,6 +3,33 @@
 All notable changes to Yolo are recorded here. The project follows semantic
 versioning once a stable release exists.
 
+## 0.2.0 — Alpha
+
+### Changed
+
+- Hub peer links now use the user's SSH access instead of a Hub-owned TCP
+  listener and inner SSH server. Each Hub publishes a private
+  `<hub-state>/peer.sock`; the entry Hub's broker opens a streamlocal channel
+  through an SSH profile. Links are directed: the dialing Hub is the RPC client.
+- Each link begins with a signed `PeerHello` binding the connection to the
+  configured Hub identities. SSH authenticates the account and host; it never
+  grants export rights. `consume`, `exports` and peer pins remain local policy.
+- `yolo hub peer add` takes `--ssh-profile <profile-id>` and
+  `--remote-socket <absolute-path>` instead of `--host`/`--port`; `yolo hub
+  peer list` reports both.
+- Old configurations keep pins, import flags and export policy while dropping
+  retired TCP/loopback dials. Re-run remote setup, or add an SSH dial, to
+  restore a dial.
+
+### Removed
+
+- Pairing codes, `yolo hub peer invite`, `yolo hub peer join`, `yolo hub
+  listen`, `MintInvite`, the invite ledger, the enrollment server and the inner
+  peer SSH transport. 0.1.x TCP peers need an SSH/socket dial instead.
+- The persisted listener-binding record and the `listen` configuration field;
+  the peer socket is derived from Hub state and republished for the service
+  lifetime.
+
 ## 0.1.7 — Alpha
 
 ### Added

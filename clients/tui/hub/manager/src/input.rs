@@ -151,12 +151,6 @@ impl Manager {
                     })
                     .map(|root| Form::file_root(Some(root)));
             }
-            Action::Listener => {
-                self.form = self
-                    .draft
-                    .as_ref()
-                    .map(|draft| Form::listener(draft.listen))
-            }
             Action::AddExport(peer) => self.form = Some(Form::export(peer, self.entry, None)),
             Action::EditExport(peer, origin) => {
                 self.form = self

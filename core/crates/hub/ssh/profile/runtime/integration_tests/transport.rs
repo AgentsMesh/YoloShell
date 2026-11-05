@@ -1,24 +1,48 @@
 use super::{broker, constants::*, fixture::*};
 use std::sync::Arc;
-use tokio::{
-    io::{AsyncReadExt, AsyncWriteExt},
-    time::timeout_at,
-};
-use yolo_hub_federation_settings::{PeerAddress, SshProfileRef};
+use tokio::time::timeout_at;
+use yolo_hub_federation_settings::PeerAddress;
 use yolo_hub_peer_dialer::dial_peer;
-use yolo_hub_peer_transport::{PeerIo, PeerPins, accept_io, connect_io};
+use yolo_hub_peer_link::{accept, connect};
+use yolo_hub_peer_protocol::{FIRST_REVISION, PEER_PROTOCOL_VERSION, PeerReply, PeerRequest};
+use yolo_hub_peer_rpc::{Client, Handler, Response, RpcFuture};
+use yolo_hub_state::HubState;
+use uuid::Uuid;
+
+struct Echo;
+impl Handler for Echo {
+    fn request(&self, request: PeerRequest) -> RpcFuture<'_, Response> {
+        Box::pin(async move {
+            let PeerRequest::Discover { request_id, .. } = request else {
+                return Err(yolo_hub_peer_rpc::RpcError::Invalid);
+            };
+            Ok(Response {
+                reply: PeerReply::Directory {
+                    request_id,
+                    revision: FIRST_REVISION,
+                    origins: Vec::new(),
+                },
+                updates: None,
+            })
+        })
+    }
+}
+
+fn discover() -> PeerRequest {
+    PeerRequest::Discover {
+        request_id: Uuid::new_v4(),
+        version: PEER_PROTOCOL_VERSION,
+        allowed_origins: Vec::new(),
+    }
+}
 
 #[tokio::test]
-async fn unknown_profile_never_falls_back_to_the_loopback_tcp_endpoint() {
+async fn unknown_profile_never_opens_a_remote_socket() {
     let fixture = Fixture::new();
-    let listener = tokio::net::TcpListener::bind((std::net::Ipv4Addr::LOCALHOST, 0))
-        .await
-        .unwrap();
-    let address = PeerAddress::ssh(
-        SshProfileRef::new(PROFILE_ID, DIGEST_CHARACTER.repeat(DIGEST_BYTES)).unwrap(),
-        listener.local_addr().unwrap(),
-    )
-    .unwrap();
+    let root = tempfile::tempdir().unwrap();
+    let socket = root.path().join("hub.sock");
+    let listener = tokio::net::UnixListener::bind(&socket).unwrap();
+    let address = PeerAddress::ssh(PROFILE_ID.to_owned(), socket).unwrap();
     assert!(
         dial_peer(
             fixture.runtime.as_ref(),
@@ -35,69 +59,51 @@ async fn unknown_profile_never_falls_back_to_the_loopback_tcp_endpoint() {
 }
 
 #[tokio::test]
-async fn registry_removal_closes_the_existing_tunnel_before_the_change_reply() {
+async fn registry_removal_closes_the_existing_link_before_the_change_reply() {
     let fixture = Fixture::new();
     let (paths, listener) = broker::bind(&fixture.root.path().join(BROKER_DIRECTORY));
     let profile = fixture.profile(paths.state_dir());
     fixture.apply(vec![profile.clone()]).await;
-    let origin = yolo_hub_state::HubState::open(
-        &fixture.root.path().join(ORIGIN_DIRECTORY),
-        &fixture.root.path().join(ORIGIN_HOST_DIRECTORY),
-    )
-    .unwrap();
+    let origin = Arc::new(
+        HubState::open(
+            &fixture.root.path().join(ORIGIN_DIRECTORY),
+            &fixture.root.path().join(ORIGIN_HOST_DIRECTORY),
+        )
+        .unwrap(),
+    );
     let peer = origin.peer_identity();
-    let address = PeerAddress::ssh(profile.profile, ENDPOINT.parse().unwrap()).unwrap();
+    let address = PeerAddress::ssh(profile.profile.profile_id().to_owned(), SOCKET.into()).unwrap();
     let (transport, remote) = tokio::join!(
         dial_peer(fixture.runtime.as_ref(), peer, &address, deadline()),
         timeout_at(deadline(), broker::upgrade(&listener, peer)),
     );
-    let (transport, remote) = (transport.unwrap(), remote.unwrap());
-    let (client, server) = tokio::join!(
-        connect_io(
-            transport,
-            Arc::new(fixture.state.transport_key().unwrap()),
-            peer,
-            deadline()
-        ),
-        accept_io(
-            PeerIo::new(remote, || {}),
-            Arc::new(origin.transport_key().unwrap()),
-            PeerPins::new(vec![fixture.state.peer_identity()]).unwrap(),
-            deadline()
-        ),
-    );
-    let (client, _) = client.unwrap();
-    let (server, mut incoming) = server.unwrap();
-    let mut transport = client.open_channel(deadline()).await.unwrap();
-    let mut remote = timeout_at(deadline(), incoming.recv())
-        .await
-        .unwrap()
-        .unwrap();
-    transport.write_all(PAYLOAD).await.unwrap();
-    let mut bytes = vec![0; PAYLOAD.len()];
-    timeout_at(deadline(), remote.read_exact(&mut bytes))
-        .await
-        .unwrap()
-        .unwrap();
-    assert_eq!(bytes, PAYLOAD);
-    fixture.apply(Vec::new()).await;
-    let mut one = [0];
-    assert_eq!(
-        timeout_at(deadline(), remote.read(&mut one))
+    let local = fixture.state.peer_identity();
+    let stream = remote.unwrap();
+    let server_origin = origin.clone();
+    let served = tokio::spawn(async move {
+        let (_, stream) = accept(stream, peer, server_origin.as_ref(), &[local], deadline())
             .await
-            .unwrap()
-            .unwrap(),
-        0
-    );
+            .unwrap();
+        let _ = yolo_hub_peer_rpc::serve(stream, Arc::new(Echo)).await;
+    });
+    let client: Client = connect(
+        transport.unwrap(),
+        local,
+        fixture.state.as_ref(),
+        peer,
+        deadline(),
+    )
+    .await
+    .unwrap();
+    assert!(client.request(discover(), deadline()).await.is_ok());
+    fixture.apply(Vec::new()).await;
     timeout_at(deadline(), async {
-        while !client.is_closed() {
+        while client.request(discover(), deadline()).await.is_ok() {
             tokio::task::yield_now().await;
         }
     })
     .await
     .unwrap();
-    assert!(client.open_channel(deadline()).await.is_err());
-    let _ = client.close(deadline()).await;
-    let _ = server.close(deadline()).await;
+    timeout_at(deadline(), served).await.unwrap().unwrap();
     paths.verify_state().unwrap();
 }

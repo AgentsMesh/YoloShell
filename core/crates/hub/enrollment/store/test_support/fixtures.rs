@@ -19,9 +19,8 @@ pub fn prepared(no_change: bool) -> PreparedEnrollment {
             configuration: configuration.clone(),
         },
         applied: true,
-        listen_address: None,
+        peer_socket: Some("/run/user/1000/yolo/hub/peer.sock".into()),
     };
-    configuration.listen = Some((std::net::Ipv4Addr::LOCALHOST, PORT).into());
     configuration.peers.push(Peer {
         identity: request.fields().consumer,
         dial: None,
@@ -57,7 +56,6 @@ pub fn applied(prepared: &PreparedEnrollment) -> ConfigurationSnapshot {
         snapshot.state.last_change = change.request_id;
         snapshot.state.configuration = change.configuration.clone();
     }
-    snapshot.listen_address = snapshot.state.configuration.listen;
     snapshot
 }
 pub fn completed(prepared: &PreparedEnrollment) -> RemoteBootstrapReceipt {

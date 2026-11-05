@@ -1,96 +1,78 @@
 use crate::constants::*;
 use anyhow::{Result, ensure};
 use serde::{Deserialize, Serialize};
-use std::{
-    net::{IpAddr, SocketAddr},
-    num::NonZeroU16,
-};
+use std::path::{Component, Path, PathBuf};
 pub use yolo_ssh_profile_protocol::SshProfileRef;
+use yolo_ssh_profile_protocol::validate_profile_id;
 
-#[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
-#[serde(from = "TransportWire", into = "TransportWire")]
-pub enum DialTransport {
-    #[default]
-    Tcp,
-    Ssh {
-        profile: SshProfileRef,
-    },
+/// One SSH profile and the remote Hub's absolute Unix peer socket.
+///
+/// The outer SSH connection provides the path and host trust; the Hub identity
+/// is established by the peer link handshake.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(try_from = "PeerAddressWire", into = "PeerAddressWire")]
+pub struct PeerAddress {
+    pub profile: String,
+    pub socket: PathBuf,
 }
 
 #[derive(Serialize, Deserialize)]
-#[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
-enum TransportWire {
-    Tcp {},
-    Ssh { profile: SshProfileRef },
+#[serde(deny_unknown_fields)]
+struct PeerAddressWire {
+    profile: String,
+    socket: PathBuf,
 }
-impl From<TransportWire> for DialTransport {
-    fn from(value: TransportWire) -> Self {
-        match value {
-            TransportWire::Tcp {} => Self::Tcp,
-            TransportWire::Ssh { profile } => Self::Ssh { profile },
-        }
-    }
-}
-impl From<DialTransport> for TransportWire {
-    fn from(value: DialTransport) -> Self {
-        match value {
-            DialTransport::Tcp => Self::Tcp {},
-            DialTransport::Ssh { profile } => Self::Ssh { profile },
-        }
+
+impl TryFrom<PeerAddressWire> for PeerAddress {
+    type Error = anyhow::Error;
+    fn try_from(value: PeerAddressWire) -> Result<Self> {
+        Self::ssh(value.profile, value.socket)
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub struct PeerAddress {
-    pub host: String,
-    pub port: NonZeroU16,
-    pub transport: DialTransport,
+impl From<PeerAddress> for PeerAddressWire {
+    fn from(value: PeerAddress) -> Self {
+        Self {
+            profile: value.profile,
+            socket: value.socket,
+        }
+    }
 }
 
 impl PeerAddress {
-    pub fn tcp(host: impl Into<String>, port: NonZeroU16) -> Self {
-        Self {
-            host: host.into(),
-            port,
-            transport: DialTransport::Tcp,
-        }
-    }
-    pub fn ssh(profile: SshProfileRef, endpoint: SocketAddr) -> Result<Self> {
-        ensure!(
-            !matches!(endpoint, SocketAddr::V6(address) if address.scope_id() != 0 || address.flowinfo() != 0),
-            INVALID
-        );
+    pub fn ssh(profile: impl Into<String>, socket: PathBuf) -> Result<Self> {
         let value = Self {
-            host: endpoint.ip().to_string(),
-            port: NonZeroU16::new(endpoint.port()).ok_or_else(|| anyhow::anyhow!(INVALID))?,
-            transport: DialTransport::Ssh { profile },
+            profile: profile.into(),
+            socket,
         };
         value.validate()?;
         Ok(value)
     }
     pub fn validate(&self) -> Result<()> {
-        ensure!(
-            !self.host.is_empty()
-                && self.host.len() <= MAX_HOST_BYTES
-                && !self
-                    .host
-                    .chars()
-                    .any(|character| character.is_whitespace() || character.is_control()),
-            INVALID
-        );
-        if matches!(self.transport, DialTransport::Ssh { .. }) {
-            let address: IpAddr = self.host.parse()?;
-            ensure!(
-                address.is_loopback() && address.to_string() == self.host,
-                INVALID
-            );
-        }
-        Ok(())
+        validate_profile_id(&self.profile)?;
+        validate_socket(&self.socket)
     }
-    pub fn ssh_endpoint(&self) -> Result<SocketAddr> {
-        self.validate()?;
-        ensure!(matches!(self.transport, DialTransport::Ssh { .. }), INVALID);
-        Ok(SocketAddr::new(self.host.parse()?, self.port.get()))
-    }
+}
+
+/// Unix socket paths must fit the kernel `sun_path` budget and name a
+/// canonical absolute location without traversal or control bytes.
+pub fn validate_socket(path: &Path) -> Result<()> {
+    ensure!(path.is_absolute() && path.to_str().is_some(), INVALID);
+    let raw = path.to_str().ok_or_else(|| anyhow::anyhow!(INVALID))?;
+    ensure!(
+        !raw.split('/').any(|part| part == "." || part == ".."),
+        INVALID
+    );
+    let encoded = path.as_os_str().as_encoded_bytes();
+    ensure!(
+        !encoded.is_empty() && encoded.len() <= MAX_SOCKET_PATH_BYTES,
+        INVALID
+    );
+    ensure!(
+        path.components()
+            .all(|component| matches!(component, Component::RootDir | Component::Normal(_))),
+        INVALID
+    );
+    ensure!(!encoded.iter().any(|byte| byte.is_ascii_control()), INVALID);
+    Ok(())
 }

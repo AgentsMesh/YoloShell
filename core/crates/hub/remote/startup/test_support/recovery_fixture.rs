@@ -46,7 +46,7 @@ impl Fixture {
                     configuration: Default::default(),
                 },
                 applied: true,
-                listen_address: None,
+                peer_socket: Some("/run/user/1000/yolo/hub/peer.sock".into()),
             },
             build: yolo_hub_remote_startup_test_support::receipt(&request).build,
             methods: Vec::new(),
@@ -95,7 +95,7 @@ impl Fixture {
         state.snapshot.state.configuration = change.configuration.clone();
         state.snapshot.state.revision = prepared.revision();
         state.snapshot.state.last_change = change.request_id;
-        state.snapshot.listen_address = Some((std::net::Ipv4Addr::LOCALHOST, PORT).into());
+        state.snapshot.peer_socket = Some("/run/user/1000/yolo/hub/peer.sock".into());
     }
     pub fn configured(&self) -> usize {
         self.shared

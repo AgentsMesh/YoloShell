@@ -31,6 +31,10 @@ Update:
     yolo update
     yolo update --check
 
+Peer links:
+
+    yolo hub peer add <hub-id> <key> --ssh-profile <profile> --remote-socket <path>
+
 Nightly channel:
 
     yolo update --channel nightly

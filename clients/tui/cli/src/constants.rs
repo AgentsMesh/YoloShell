@@ -72,7 +72,6 @@ pub const LIFECYCLE_LOCAL_ONLY: &str =
     "local service lifecycle commands operate on the local profile only";
 pub const MANAGEMENT_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(10);
 /// Pairing spans an SSH handshake and a remote configuration activation.
-pub const ENROLLMENT_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(60);
 
 pub const RECIPE_SCHEMA_VERSION: u16 = 1;
 pub const SCHEMA_VERSION_FIELD: &str = "schema_version";

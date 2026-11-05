@@ -60,9 +60,6 @@ pub enum Reply {
     Configuration {
         snapshot: yolo_hub_management_protocol::ConfigurationSnapshot,
     },
-    Minted {
-        invite: yolo_hub_enrollment_protocol::MintedInvite,
-    },
     Hubs {
         hubs: Vec<HubSummary>,
         next: Option<HubId>,

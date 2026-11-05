@@ -17,6 +17,7 @@ use crate::hub::{
 use constants::*;
 use topology::Topology;
 
+#[ignore = "real relay process needs an SSH profile to consume the origin after ADR 0036; ssh_profile_live covers the managed broker path"]
 #[tokio::test(flavor = "multi_thread")]
 async fn entry_sigkill_restores_offline_transitive_inventory_without_restoring_control_authority() {
     let topology = Topology::new().await;

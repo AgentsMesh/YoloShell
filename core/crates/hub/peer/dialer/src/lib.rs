@@ -1,7 +1,6 @@
 //! Transport injection only. Federation always performs its own mutually pinned handshake.
 mod constants;
-mod tcp;
-pub use tcp::TcpPeerDialer;
+pub use yolo_hub_peer_io::PeerIo;
 
 use anyhow::{Context, Result, ensure};
 use constants::*;
@@ -9,7 +8,6 @@ use std::{future::Future, pin::Pin};
 use tokio::time::{Instant, timeout_at};
 use yolo_hub_delegation::PeerIdentity;
 use yolo_hub_federation_settings::PeerAddress;
-use yolo_hub_peer_transport::PeerIo;
 
 pub type PeerDialFuture<'a> = Pin<Box<dyn Future<Output = Result<PeerIo>> + Send + 'a>>;
 
@@ -27,7 +25,6 @@ pub trait PeerDialer: Send + Sync {
 }
 
 /// Enforces one absolute opening budget even when an injected factory ignores its deadline.
-/// Failed custom transport selection never falls back to the default TCP implementation.
 pub async fn dial_peer(
     dialer: &dyn PeerDialer,
     peer: PeerIdentity,

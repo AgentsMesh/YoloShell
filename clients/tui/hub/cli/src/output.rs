@@ -21,55 +21,13 @@ pub(crate) fn list_json(snapshot: &ConfigurationSnapshot) -> Result<String> {
     }))?)
 }
 
-pub(crate) fn listen_json(snapshot: &ConfigurationSnapshot) -> Result<String> {
-    Ok(serde_json::to_string_pretty(&serde_json::json!({
-        "revision": snapshot.state.revision,
-        "applied": snapshot.applied,
-        "configured": snapshot.state.configuration.listen,
-        "listen_address": snapshot.listen_address,
-    }))?)
-}
-
-pub(crate) fn invite_json(
-    snapshot: &ConfigurationSnapshot,
-    invite: &yolo_hub_enrollment_protocol::MintedInvite,
-) -> Result<String> {
-    Ok(serde_json::to_string_pretty(&serde_json::json!({
-        "revision": snapshot.state.revision,
-        "hub": snapshot.state.identity.hub().to_string(),
-        "invite_id": invite.invite_id,
-        "code": invite.code,
-        "expires_at_ms": invite.expires_at_ms,
-    }))?)
-}
-
-pub(crate) fn join_json(
-    snapshot: &ConfigurationSnapshot,
-    invite: &yolo_hub_enrollment_protocol::SignedInvite,
-    reply: &yolo_hub_enrollment_wire::JoinReply,
-    changed: bool,
-) -> Result<String> {
-    Ok(serde_json::to_string_pretty(&serde_json::json!({
-        "changed": changed,
-        "local_revision": snapshot.state.revision,
-        "hub": reply.hub.hub().to_string(),
-        "peer_revision": reply.revision,
-        "peer_applied": reply.applied,
-        "dial": {
-            "host": invite.claims().dial.host,
-            "port": invite.claims().dial.port.get(),
-        },
-        "expires_at_ms": invite.claims().expires_at_ms,
-    }))?)
-}
-
 fn peer_document(peer: &Peer) -> serde_json::Value {
     serde_json::json!({
         "hub": peer.identity.hub().to_string(),
         (PUBLIC_KEY_FIELD): key_text(peer.identity),
         "dial": peer.dial.as_ref().map(|dial| serde_json::json!({
-            "host": dial.host,
-            "port": dial.port.get(),
+            "profile": dial.profile,
+            "socket": dial.socket,
         })),
         "consume": peer.consume,
         "exports": peer.exports.iter().map(|policy| serde_json::json!({

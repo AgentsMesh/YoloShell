@@ -14,6 +14,8 @@ async fn tilde_cwd_is_expanded_by_the_host_not_the_client() {
             cwd: PathBuf::from("~"),
             cols: None,
             rows: None,
+            initial_input: None,
+            context: None,
         })
         .await
         .unwrap();

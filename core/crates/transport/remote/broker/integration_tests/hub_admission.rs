@@ -39,7 +39,7 @@ async fn pending_adoption_prepares_bound_ssh_but_cannot_open_until_committed() {
         .open_hub_peer(request, deadline())
         .await
         .unwrap();
-    let (mut remote, _) = fixture.target.accept().await.unwrap();
+    let (mut remote, _) = fixture.target.listener.accept().await.unwrap();
     drop(tunnel);
     assert!(
         timeout_at(deadline(), remote.read_u8())
@@ -59,13 +59,13 @@ async fn admitted_tunnel_releases_the_only_management_slot() {
         .prepare_hub_transport(&request.binding.profile)
         .await
         .unwrap();
-    request.endpoint = fixture.target.local_addr().unwrap();
+    request.socket = fixture.target.path.clone();
     let mut first = fixture
         .client()
         .open_hub_peer(request.clone(), deadline())
         .await
         .unwrap();
-    let (mut remote, _) = fixture.target.accept().await.unwrap();
+    let (mut remote, _) = fixture.target.listener.accept().await.unwrap();
     // Wait for the promotion completion without relying on a scheduling delay.
     timeout_at(deadline(), async {
         loop {
@@ -126,7 +126,7 @@ async fn retirement_drains_active_tunnels_and_releases_its_namespace() {
         .open_hub_peer(request.clone(), deadline())
         .await
         .unwrap();
-    let _remote = fixture.target.accept().await.unwrap();
+    let _remote = fixture.target.listener.accept().await.unwrap();
     fixture
         .client()
         .request(BrokerRequest::Retire {

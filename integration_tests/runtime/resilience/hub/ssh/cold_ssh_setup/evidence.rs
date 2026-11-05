@@ -80,8 +80,8 @@ impl Evidence {
             receipt.fields().configuration_revision
         );
         assert_eq!(
-            configuration.listen_address,
-            Some(receipt.fields().endpoint)
+            configuration.peer_socket.as_ref(),
+            Some(&receipt.fields().peer_socket)
         );
         let host = fixture.direct_host().status().await.unwrap();
         let identities = fixture.owners.identities();

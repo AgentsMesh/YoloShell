@@ -17,7 +17,7 @@ async fn cancelled_delayed_direct_open_closes_its_late_channel_without_losing_ss
     fixture.ssh.filesystem.release_channel_open();
     fixture.ssh.filesystem.wait_channel_open_accepted().await;
     barrier.release();
-    let (mut socket, _) = timeout_at(deadline(), fixture.listener.accept())
+    let (mut socket, _) = timeout_at(deadline(), fixture.target.listener.accept())
         .await
         .unwrap()
         .unwrap();

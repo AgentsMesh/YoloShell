@@ -10,14 +10,14 @@ use yolo_hub_management_protocol::{
     CONFIGURATION_SCHEMA, ConfigurationSnapshot, ConfigurationState, FIRST_CONFIGURATION_REVISION,
 };
 use yolo_hub_routing::Right;
-use yolo_tui_hub_cli::{
-    AddPeer, HubCommand, InvitePeer, PeerCommand, add_change, invite_request,
-};
+use yolo_tui_hub_cli::{AddPeer, HubCommand, PeerCommand, add_change};
 
 pub const PEER_HUB: &str = "11111111-2222-4333-8444-555555555555";
 pub const LOCAL_HUB: &str = "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee";
 pub const PEER_KEY: &str = "1111111111111111111111111111111111111111111111111111111111111111";
 pub const INVALID_KEY: &str = "abc";
+pub const PROFILE_REVISION: &str =
+    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
 
 fn local_identity() -> PeerIdentity {
     PeerIdentity::new(LOCAL_HUB.parse().unwrap(), [1; 32]).unwrap()
@@ -37,7 +37,7 @@ fn snapshot() -> ConfigurationSnapshot {
             configuration: Configuration::default(),
         },
         applied: true,
-        listen_address: None,
+        peer_socket: Some("/run/user/1000/yolo/hub/peer.sock".into()),
     }
 }
 
@@ -67,100 +67,87 @@ fn add_args(extra: &[&str]) -> AddPeer {
     parse(arguments)
 }
 
-fn add_args_with_key(key: &str) -> AddPeer {
-    parse(vec![
-        PROGRAM,
-        HUB_COMMAND,
-        PEER_COMMAND,
-        ADD_COMMAND,
-        PEER_HUB,
-        key,
-    ])
-}
-
-fn invite_args(extra: &[&str]) -> InvitePeer {
-    let mut arguments = vec![PROGRAM, HUB_COMMAND, PEER_COMMAND, INVITE_COMMAND];
-    arguments.extend_from_slice(extra);
-    let arguments = Arguments::try_parse_from(arguments).unwrap();
-    match arguments.command {
-        Some(Command::Hub {
-            command:
-                HubCommand::Peer {
-                    command: PeerCommand::Invite(args),
-                },
-        }) => args,
-        _ => panic!("expected hub peer invite"),
-    }
+#[test]
+fn add_accepts_an_ssh_profile_and_remote_socket_together() {
+    let args = add_args(&[
+        SSH_PROFILE_ARGUMENT,
+        SSH_PROFILE,
+        REMOTE_SOCKET_ARGUMENT,
+        REMOTE_SOCKET,
+    ]);
+    let change = add_change(&snapshot(), &args).unwrap();
+    let dial = change.configuration.peers[0].dial.as_ref().unwrap();
+    assert_eq!(dial.profile, SSH_PROFILE);
+    assert_eq!(dial.socket.to_str(), Some(REMOTE_SOCKET));
+    assert!(
+        Arguments::try_parse_from([
+            PROGRAM,
+            HUB_COMMAND,
+            PEER_COMMAND,
+            ADD_COMMAND,
+            PEER_HUB,
+            PEER_KEY,
+            SSH_PROFILE_ARGUMENT,
+            SSH_PROFILE,
+        ])
+        .is_err()
+    );
+    assert!(
+        Arguments::try_parse_from([
+            PROGRAM,
+            HUB_COMMAND,
+            PEER_COMMAND,
+            ADD_COMMAND,
+            PEER_HUB,
+            PEER_KEY,
+            REMOTE_SOCKET_ARGUMENT,
+            REMOTE_SOCKET,
+        ])
+        .is_err()
+    );
 }
 
 #[test]
-fn invite_defaults_to_the_applied_listener_and_local_export() {
-    let mut snapshot = snapshot();
-    snapshot.listen_address = Some("192.168.1.5:7400".parse().unwrap());
-    let request = invite_request(&snapshot, &invite_args(&[])).unwrap();
-    assert_eq!(request.dial.host, "192.168.1.5");
-    assert_eq!(request.dial.port.get(), 7400);
-    assert_eq!(request.lifetime_ms, 10 * 60 * 1000);
-    assert!(request.policy.export_local);
-    assert!(!request.policy.import_peer);
-}
-
-#[test]
-fn invite_requires_a_dial_address_and_honors_flags() {
-    assert!(invite_request(&snapshot(), &invite_args(&[])).is_err());
-    let request = invite_request(
+fn adds_a_pinned_peer_with_an_ssh_dial_and_no_exports_by_default() {
+    let change = add_change(
         &snapshot(),
-        &invite_args(&[
-            HOST_ARGUMENT,
-            "10.0.0.2",
-            PORT_ARGUMENT,
-            "7443",
-            NO_EXPORT_ARGUMENT,
-            IMPORT_PEER_ARGUMENT,
-            TTL_ARGUMENT,
-            "5",
+
+        &add_args(&[
+            SSH_PROFILE_ARGUMENT,
+            SSH_PROFILE,
+            REMOTE_SOCKET_ARGUMENT,
+            REMOTE_SOCKET,
         ]),
     )
     .unwrap();
-    assert_eq!(request.dial.host, "10.0.0.2");
-    assert_eq!(request.dial.port.get(), 7443);
-    assert_eq!(request.lifetime_ms, 5 * 60 * 1000);
-    assert!(!request.policy.export_local);
-    assert!(request.policy.import_peer);
-}
-
-#[test]
-fn adds_a_peer_with_import_and_no_exports_by_default() {
-    let change = add_change(&snapshot(), &add_args(&[])).unwrap();
     assert_eq!(change.expected_revision, FIRST_CONFIGURATION_REVISION);
     assert!(!change.request_id.is_nil());
-    assert_eq!(change.configuration.peers.len(), 1);
     let peer = &change.configuration.peers[0];
     assert_eq!(peer.identity, peer_identity());
     assert!(peer.consume);
-    assert!(peer.dial.is_none());
+    let dial = peer.dial.as_ref().unwrap();
+    assert_eq!(dial.profile, SSH_PROFILE);
+    assert_eq!(dial.socket.to_str(), Some(REMOTE_SOCKET));
     assert!(peer.exports.is_empty());
 }
 
 #[test]
-fn no_import_dial_and_local_export_are_applied() {
+fn no_import_and_local_export_are_applied() {
     let change = add_change(
         &snapshot(),
+
         &add_args(&[
             NO_IMPORT_ARGUMENT,
-            HOST_ARGUMENT,
-            "10.0.0.2",
-            PORT_ARGUMENT,
-            "7443",
+            SSH_PROFILE_ARGUMENT,
+            SSH_PROFILE,
+            REMOTE_SOCKET_ARGUMENT,
+            REMOTE_SOCKET,
             EXPORT_LOCAL_ARGUMENT,
         ]),
     )
     .unwrap();
     let peer = &change.configuration.peers[0];
     assert!(!peer.consume);
-    let dial = peer.dial.as_ref().unwrap();
-    assert_eq!(dial.host, "10.0.0.2");
-    assert_eq!(dial.port.get(), 7443);
     assert_eq!(peer.exports.len(), 1);
     assert_eq!(peer.exports[0].origin, LOCAL_HUB.parse().unwrap());
     assert!(
@@ -173,6 +160,7 @@ fn no_import_dial_and_local_export_are_applied() {
 
 #[test]
 fn rejects_duplicate_self_and_invalid_keys() {
+    let args = add_args(&[]);
     let mut existing = snapshot();
     existing
         .state
@@ -181,17 +169,25 @@ fn rejects_duplicate_self_and_invalid_keys() {
         .push(yolo_hub_federation_settings::Peer {
             identity: peer_identity(),
             dial: None,
-            consume: true,
+            consume: false,
             exports: vec![],
         });
-    assert!(add_change(&existing, &add_args(&[])).is_err());
+    assert!(add_change(&existing, &args).is_err());
 
-    let self_args = add_args(&[]);
     let mut self_snapshot = snapshot();
     self_snapshot.state.identity = local_identity_at_peer_hub();
-    assert!(add_change(&self_snapshot, &self_args).is_err());
+    assert!(add_change(&self_snapshot, &args).is_err());
 
-    assert!(add_change(&snapshot(), &add_args_with_key(INVALID_KEY)).is_err());
+    let invalid = parse(vec![
+        PROGRAM,
+        HUB_COMMAND,
+        PEER_COMMAND,
+        ADD_COMMAND,
+        PEER_HUB,
+        INVALID_KEY,
+    ]);
+    assert!(add_change(&snapshot(), &invalid).is_err());
+
 }
 
 fn local_identity_at_peer_hub() -> PeerIdentity {

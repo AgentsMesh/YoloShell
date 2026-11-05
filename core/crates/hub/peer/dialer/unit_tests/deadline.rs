@@ -5,7 +5,7 @@ use std::sync::{
 };
 use tokio::time::{Instant, timeout_at};
 use yolo_hub_peer_dialer::dial_peer;
-use yolo_hub_peer_transport::PeerIo;
+use yolo_hub_peer_dialer::PeerIo;
 
 #[tokio::test]
 async fn deadline_and_full_configured_identity_are_preserved_without_authentication_in_factory() {
@@ -18,7 +18,7 @@ async fn deadline_and_full_configured_identity_are_preserved_without_authenticat
         })),
         Behavior::Ready,
     );
-    let peer = keys().0;
+    let peer = identity();
     let address = address();
     let deadline = deadline();
     let transport = dial_peer(&factory, peer, &address, deadline).await.unwrap();
@@ -34,14 +34,14 @@ async fn deadline_and_full_configured_identity_are_preserved_without_authenticat
 #[tokio::test]
 async fn invalid_input_or_expired_budget_never_polls_factory() {
     let factory = Injected::new(None, Behavior::Reject);
-    let peer = keys().0;
+    let peer = identity();
     assert!(
         dial_peer(&factory, peer, &address(), Instant::now())
             .await
             .is_err()
     );
     let mut invalid = address();
-    invalid.host.clear();
+    invalid.socket = "relative.sock".into();
     assert!(
         dial_peer(&factory, peer, &invalid, deadline())
             .await
@@ -64,7 +64,7 @@ async fn pending_factory_is_cancelled_at_the_shared_absolute_deadline_and_releas
     assert!(
         dial_peer(
             &factory,
-            keys().0,
+            identity(),
             &address(),
             Instant::now() + SHORT_TIMEOUT
         )
@@ -87,7 +87,7 @@ async fn caller_cancellation_drops_the_inflight_factory_transport_without_detach
         Behavior::Pending,
     ));
     let opening_factory = factory.clone();
-    let peer = keys().0;
+    let peer = identity();
     let opening = tokio::spawn(async move {
         dial_peer(opening_factory.as_ref(), peer, &address(), deadline()).await
     });

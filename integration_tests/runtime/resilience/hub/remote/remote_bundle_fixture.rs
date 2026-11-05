@@ -127,7 +127,7 @@ impl Fixture {
             HubState::inspect_peer_identity(&self.state, &self.home).unwrap(),
             Some(receipt.fields().peer)
         );
-        assert!(receipt.fields().endpoint.ip().is_loopback());
+        assert!(receipt.fields().peer_socket.is_absolute());
         let (host, hub) = self.owners.identities();
         assert!(host.matches() && hub.matches());
         receipt

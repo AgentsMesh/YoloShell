@@ -1,6 +1,5 @@
 use crate::{ConfigurationStore, constants::RECORD_FILE, record::Record};
 use std::{
-    net::{Ipv4Addr, SocketAddr},
     path::PathBuf,
 };
 use uuid::Uuid;
@@ -61,7 +60,7 @@ impl Fixture {
 }
 pub fn changed() -> Configuration {
     Configuration {
-        listen: Some(SocketAddr::new(Ipv4Addr::LOCALHOST.into(), PORT)),
+        trusted_origins: vec![other_identity()],
         ..Configuration::default()
     }
 }

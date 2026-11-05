@@ -2,7 +2,7 @@ use crate::{Federation, constants::*};
 use anyhow::Result;
 use std::sync::Arc;
 use tokio::{
-    net::TcpListener,
+    net::UnixListener,
     sync::{Semaphore, watch},
     task::JoinSet,
     time::{Instant, interval},
@@ -12,7 +12,7 @@ use yolo_hub_peer_diagnostics::{
     INBOUND_PEER_REJECTED, InboundRejections, OutboundFailures, PEER_ATTEMPT_FAILED,
     PEER_RECOVERED, PeerAttempt,
 };
-use yolo_hub_peer_transport::PeerPins;
+use yolo_hub_peer_link::{connect, accept};
 
 impl Federation {
     pub(crate) async fn dial_loop(
@@ -43,26 +43,27 @@ impl Federation {
                 .map_err(|error| (PeerAttempt::Dial, error))?;
                 self.require_open()
                     .map_err(|error| (PeerAttempt::Handshake, error))?;
-                let (connection, incoming) = yolo_hub_peer_transport::connect_io(
+                let client = connect(
                     transport,
-                    self.key.clone(),
+                    self.state.peer_identity(),
+                    self.state.as_ref(),
                     peer.identity,
                     deadline,
                 )
                 .await
-                .map_err(|error| (PeerAttempt::Handshake, error))?;
+                .map_err(|error| (PeerAttempt::Handshake, error.into()))?;
                 let link = self
-                    .register(connection, self.hub_id())
+                    .register(peer.identity, client)
                     .await
                     .map_err(|error| (PeerAttempt::Admission, error))?;
-                Ok::<_, (PeerAttempt, anyhow::Error)>((link, incoming))
+                Ok::<_, (PeerAttempt, anyhow::Error)>(link)
             };
             let attempt = tokio::select! {
                 _ = stop.changed() => break,
                 attempt = attempt => attempt,
             };
             match attempt {
-                Ok((link, incoming)) => {
+                Ok(link) => {
                     if let Some(attempts) = failures.succeed() {
                         tracing::info!(
                             message = PEER_RECOVERED,
@@ -70,7 +71,7 @@ impl Federation {
                             attempts,
                         );
                     }
-                    let served = self.clone().serve_link(link, incoming, stop.clone()).await;
+                    let served = self.clone().serve_link(link, stop.clone()).await;
                     if let Err(error) = served {
                         tracing::debug!(
                             peer = %peer.identity.hub(),
@@ -87,8 +88,8 @@ impl Federation {
                         tracing::warn!(
                             message = PEER_ATTEMPT_FAILED,
                             peer = %peer.identity.hub(),
-                            host = %address.host,
-                            port = address.port.get(),
+                            profile = ?address.profile,
+                            socket = %address.socket.display(),
                             stage = stage.as_str(),
                             attempts,
                         );
@@ -106,12 +107,18 @@ impl Federation {
     }
     pub(crate) async fn accept_loop(
         self: Arc<Self>,
-        listener: TcpListener,
+        listener: UnixListener,
         mut stop: watch::Receiver<bool>,
     ) -> Result<()> {
         let mut tasks = JoinSet::new();
         let capacity = Arc::new(Semaphore::new(MAX_PEERS));
-        let pins = PeerPins::new(self.config.peers.iter().map(|peer| peer.identity).collect())?;
+        let allowed: Arc<Vec<_>> = Arc::new(
+            self.config
+                .peers
+                .iter()
+                .map(|peer| peer.identity)
+                .collect(),
+        );
         let mut rejections = InboundRejections::default();
         loop {
             tokio::select! {
@@ -144,38 +151,20 @@ impl Federation {
                     self.state.verify()?;
                     let (stream, _) = accepted?;
                     let Ok(permit) = capacity.clone().try_acquire_owned() else { continue; };
-                    let node = self.clone(); let pins = pins.clone(); let stop = stop.clone();
+                    let node = self.clone(); let allowed = allowed.clone();
                     tasks.spawn(async move {
                         let remote = stream.peer_addr().ok();
                         let setup = async {
-                            match yolo_hub_peer_transport::accept_with_enrollment(
+                            let (peer, stream) = accept(
                                 stream,
-                                node.key.clone(),
-                                pins,
-                                node.enrollment.get().map(|service| service.verifier()),
+                                node.state.peer_identity(),
+                                node.state.as_ref(),
+                                &allowed,
                                 Instant::now() + CONNECT_TIMEOUT,
                             )
-                            .await?
-                            {
-                                yolo_hub_peer_transport::Accepted::Peer {
-                                    connection,
-                                    incoming,
-                                } => {
-                                    let _permit = permit;
-                                    let initiator = connection.peer().hub();
-                                    let link = node.register(connection, initiator).await?;
-                                    node.serve_link(link, incoming, stop).await
-                                }
-                                yolo_hub_peer_transport::Accepted::Enrollment {
-                                    connection,
-                                    incoming,
-                                } => {
-                                    if let Some(service) = node.enrollment.get() {
-                                        service.spawn(connection, incoming, permit);
-                                    }
-                                    Ok(())
-                                }
-                            }
+                            .await?;
+                            let _permit = permit;
+                            node.serve_peer(peer, stream).await
                         }
                         .await;
                         match setup {

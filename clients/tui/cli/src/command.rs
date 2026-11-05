@@ -91,7 +91,7 @@ pub(crate) enum Command {
         #[command(subcommand)]
         command: PlatformCommand,
     },
-    /// Manage federation peers and the local peer listener.
+    /// Manage federation peers.
     #[command(group(crate::arguments::connection_group()))]
     Hub {
         #[command(subcommand)]

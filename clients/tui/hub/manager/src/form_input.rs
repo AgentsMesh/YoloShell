@@ -2,9 +2,12 @@ use crate::{
     fields::{FieldId, Value},
     form::Form,
 };
-use crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
+use crossterm::event::{Event, KeyCode, KeyEvent};
 use yolo_hub_delegation::MAX_DELEGATION_DEPTH;
-use yolo_hub_federation_settings::MAX_HOST_BYTES;
+use yolo_hub_federation_settings::MAX_SOCKET_PATH_BYTES;
+use yolo_ssh_profile_protocol::MAX_PROFILE_ID_BYTES;
+
+const MAX_TEXT_BYTES: usize = 128;
 
 impl Form {
     pub fn paste(&mut self, value: &str) -> bool {
@@ -60,8 +63,10 @@ impl Form {
 
 fn text_limit(id: FieldId) -> usize {
     match id {
+        FieldId::Profile => MAX_PROFILE_ID_BYTES,
+        FieldId::Socket => MAX_SOCKET_PATH_BYTES,
         FieldId::RootName => yolo_hub_file_protocol::MAX_FILE_ROOT_NAME_BYTES,
         FieldId::RootPath => yolo_hub_file_protocol::MAX_FILE_PATH_BYTES,
-        _ => MAX_HOST_BYTES,
+        _ => MAX_TEXT_BYTES,
     }
 }

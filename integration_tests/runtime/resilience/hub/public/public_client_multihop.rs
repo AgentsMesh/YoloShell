@@ -30,20 +30,15 @@ async fn openssh_entries_preserve_directed_views_and_control_c_origin() {
         b_state.peer_identity(),
         c_state.peer_identity(),
     );
-    let (a_listener, b_listener, c_listener) = (
-        federation_support::listener().await,
-        federation_support::listener().await,
-        federation_support::listener().await,
+    let sockets = (
+        a_state.peer_socket().unwrap(),
+        b_state.peer_socket().unwrap(),
+        c_state.peer_socket().unwrap(),
     );
-    let addresses = (
-        a_listener.local_addr().unwrap(),
-        b_listener.local_addr().unwrap(),
-        c_listener.local_addr().unwrap(),
-    );
-    let (a_config, b_config, c_config) = setup::configuration(a_peer, b_peer, c_peer, addresses);
-    let a_node = RunningNode::start(&a_host, a_state.clone(), a_config, a_listener).await;
-    let b_node = RunningNode::start(&b_host, b_state.clone(), b_config, b_listener).await;
-    let c_node = RunningNode::start(&c_host, c_state.clone(), c_config, c_listener).await;
+    let (a_config, b_config, c_config) = setup::configuration(a_peer, b_peer, c_peer, sockets);
+    let a_node = RunningNode::start(&a_host, a_state.clone(), a_config).await;
+    let b_node = RunningNode::start(&b_host, b_state.clone(), b_config).await;
+    let c_node = RunningNode::start(&c_host, c_state.clone(), c_config).await;
     let shared = SharedClient::generate(root.path());
     let a_ingress = Ingress::start(
         &a_node,

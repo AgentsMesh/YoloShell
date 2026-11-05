@@ -1,5 +1,5 @@
 use crate::configuration::{plan, verify_images};
-use yolo_hub_federation_settings::{ExportPolicy, Peer};
+use yolo_hub_federation_settings::{ExportPolicy, Peer, PeerAddress};
 use yolo_remote_provisioning_protocol::RemoteBootstrapRequest;
 use yolo_hub_remote_startup_test_support::*;
 #[path = "../test_support/fixture.rs"]
@@ -11,7 +11,7 @@ fn new_enrollment_preserves_existing_peers_and_only_exports_requested_origin_rig
     let other = Peer {
         identity: peer(FOREIGN_HUB, FOREIGN_KEY),
         dial: None,
-        consume: true,
+        consume: false,
         exports: vec![],
     };
     snapshot.state.configuration.peers.push(other.clone());
@@ -33,13 +33,8 @@ fn new_enrollment_preserves_existing_peers_and_only_exports_requested_origin_rig
             remaining_reexports: request.fields().remaining_reexports
         }]
     );
-    assert_eq!(
-        change.configuration.listen.unwrap().ip(),
-        std::net::Ipv4Addr::LOCALHOST
-    );
-    assert_eq!(change.configuration.listen.unwrap().port(), 0);
     snapshot.state.configuration = change.configuration;
-    snapshot.listen_address = Some((std::net::Ipv4Addr::LOCALHOST, PORT).into());
+    snapshot.peer_socket = Some("/run/user/1000/yolo/hub/peer.sock".into());
     assert!(plan(&snapshot, &request).unwrap().is_none());
 }
 
@@ -59,7 +54,13 @@ fn existing_exports_and_consume_direction_are_not_silently_changed() {
     };
     snapshot.state.configuration.peers.push(Peer {
         identity: request.fields().consumer,
-        dial: None,
+        dial: Some(
+            PeerAddress::ssh(
+                "existing-profile",
+                "/run/user/1000/yolo/hub/peer.sock".into(),
+            )
+            .unwrap(),
+        ),
         consume: true,
         exports: vec![existing.clone()],
     });
@@ -71,21 +72,20 @@ fn existing_exports_and_consume_direction_are_not_silently_changed() {
     assert!(consumer.consume);
     assert_eq!(consumer.exports[0], existing);
     snapshot.state.configuration = change.configuration;
-    snapshot.listen_address = Some((std::net::Ipv4Addr::LOCALHOST, PORT).into());
+    snapshot.peer_socket = Some("/run/user/1000/yolo/hub/peer.sock".into());
     snapshot.state.configuration.peers[0].exports[1].remaining_reexports += 1;
     assert!(plan(&snapshot, &request).is_err());
 }
 
 #[test]
-fn pin_listener_and_apply_conflicts_fail_without_mutating_input() {
+fn pin_socket_and_apply_conflicts_fail_without_mutating_input() {
     let request = request();
     let original = fixture::snapshot();
     let mut snapshot = original.clone();
     snapshot.applied = false;
     assert!(plan(&snapshot, &request).is_err());
     let mut snapshot = original.clone();
-    snapshot.state.configuration.listen = Some((std::net::Ipv4Addr::UNSPECIFIED, 0).into());
-    snapshot.listen_address = Some((std::net::Ipv4Addr::UNSPECIFIED, PORT).into());
+    snapshot.peer_socket = None;
     assert!(plan(&snapshot, &request).is_err());
     let mut snapshot = original.clone();
     snapshot.state.identity = peer(FOREIGN_HUB, FOREIGN_KEY);

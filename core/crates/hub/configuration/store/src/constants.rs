@@ -12,6 +12,7 @@ pub(crate) const REVISION_CONFLICT: &str = "Hub configuration revision changed";
 pub(crate) const REVISION_EXHAUSTED: &str = "Hub configuration revision exhausted";
 pub(crate) const REPLACED_RECORD: &str = "Hub configuration file changed outside its owner";
 pub(crate) const LOST: &str = "Hub configuration storage is no longer usable";
-pub(crate) const PRIVATE_RECORD_SCHEMA: u16 = 2;
+pub(crate) const PRIVATE_RECORD_SCHEMA: u16 = 3;
+pub(crate) const LEGACY_PRIVATE_RECORD_SCHEMA: u16 = 2;
 pub(crate) const INVALID_PRIVATE_SCHEMA: &str =
     "Hub configuration private record schema is invalid";
