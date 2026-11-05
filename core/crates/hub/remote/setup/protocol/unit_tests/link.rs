@@ -14,11 +14,11 @@ fn linking_preserves_existing_policy_and_is_noop_only_for_the_exact_ssh_route() 
     let peer = change.configuration.peers.first().unwrap().clone();
     assert!(peer.consume && peer.exports.is_empty());
     let dial = peer.dial.as_ref().unwrap();
-    assert_eq!(dial.profile, request.profile().unwrap().profile_id());
+    assert_eq!(dial.profile_id(), Some(request.profile().unwrap().profile_id()));
     let ProvisionOutcome::Ready { enrollment, .. } = &provision.fields().outcome else {
         panic!()
     };
-    assert_eq!(dial.socket, enrollment.fields().peer_socket);
+    assert_eq!(dial.socket(), enrollment.fields().peer_socket.as_path());
     let mut connected = baseline.clone();
     connected.state.configuration = change.configuration;
     assert!(configuration_contains_link(&connected, &provision).unwrap());
@@ -48,7 +48,7 @@ fn linking_preserves_existing_policy_and_is_noop_only_for_the_exact_ssh_route() 
         current.state.configuration.peers[0].exports
     );
     current.state.configuration.peers[0].dial =
-        Some(PeerAddress::ssh(OTHER_PROFILE, OTHER_SOCKET.into()).unwrap());
+        Some(PeerAddress::profile(OTHER_PROFILE, OTHER_SOCKET.into()).unwrap());
     assert!(plan_link(&current, &request, &provision).is_err());
 }
 

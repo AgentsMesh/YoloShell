@@ -56,8 +56,8 @@ pub(crate) async fn list(
             |dial| {
                 format!(
                     "{}:{}",
-                    dial.profile,
-                    dial.socket.display()
+                    dial.ssh_target().or_else(|| dial.profile_id()).unwrap_or_default(),
+                    dial.socket().display()
                 )
             },
         );

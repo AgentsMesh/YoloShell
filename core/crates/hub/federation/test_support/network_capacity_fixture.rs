@@ -4,7 +4,7 @@ use std::sync::Arc;
 use tokio::time::Instant;
 use yolo_hub_federation_settings::{Configuration, Peer, PeerAddress};
 use yolo_hub_local_backend::LocalBackend;
-use yolo_hub_peer_link::{accept, connect};
+use yolo_hub_peer_link::{Admission, accept, connect};
 use yolo_hub_peer_protocol::FIRST_REVISION;
 use yolo_hub_state::HubState;
 
@@ -70,7 +70,7 @@ impl LinkFixture {
                 peer_stream,
                 remote_identity,
                 server_state.as_ref(),
-                &[local_identity],
+                Admission::Only(&[local_identity]),
                 deadline,
             )
             .await

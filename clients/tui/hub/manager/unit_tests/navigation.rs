@@ -19,7 +19,7 @@ fn enter_saves_a_complete_peer_form_and_cancel_preserves_the_previous_draft() {
         FieldId::Key,
         &crate::wire_fields::key_text(pin),
     );
-    field(&mut manager, FieldId::Profile, "test-machine");
+    field(&mut manager, FieldId::Ssh, "test-machine");
     field(
         &mut manager,
         FieldId::Socket,
@@ -30,7 +30,7 @@ fn enter_saves_a_complete_peer_form_and_cancel_preserves_the_previous_draft() {
     let before = manager.draft.clone();
     manager.page(Page::Peer(pin.hub()));
     activate(&mut manager, Action::EditPeer(pin.hub()));
-    field(&mut manager, FieldId::Profile, "changed");
+    field(&mut manager, FieldId::Ssh, "changed");
     key(&mut manager, KeyCode::Esc);
     assert_eq!(manager.draft, before);
 }

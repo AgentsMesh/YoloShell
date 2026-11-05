@@ -12,7 +12,6 @@ _DEPS = [
     "//core/crates/hub/management/protocol:yolo_hub_management_protocol",
     "//core/crates/hub/routing:yolo_hub_routing",
     "//core/crates/hub/rpc/protocol:yolo_hub_rpc_protocol",
-    "//core/crates/transport/ssh/profile/protocol:yolo_ssh_profile_protocol",
     "//clients/tui/input/line:yolo_tui_line_input",
     "@crates//:anyhow",
     "@crates//:crossterm",

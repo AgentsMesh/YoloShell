@@ -55,7 +55,7 @@ fn existing_exports_and_consume_direction_are_not_silently_changed() {
     snapshot.state.configuration.peers.push(Peer {
         identity: request.fields().consumer,
         dial: Some(
-            PeerAddress::ssh(
+            PeerAddress::profile(
                 "existing-profile",
                 "/run/user/1000/yolo/hub/peer.sock".into(),
             )

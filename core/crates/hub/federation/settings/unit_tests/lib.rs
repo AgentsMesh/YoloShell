@@ -7,6 +7,52 @@ mod agent_control;
 mod file_roots;
 
 #[test]
+fn ssh_peers_share_the_local_origin_by_default() {
+    let local = Identity::new();
+    let remote = Identity::new();
+    let configuration = Configuration::default();
+    assert!(!configuration.ssh_peers.require_registration);
+    assert!(configuration.ssh_peers.share_local);
+    let policy = configuration
+        .shared_export(local.identity.hub(), local.identity.hub())
+        .unwrap();
+    assert_eq!(policy.origin, local.identity.hub());
+    assert!(policy.rights.allows(&observe()));
+    assert!(
+        configuration
+            .shared_export(remote.identity.hub(), local.identity.hub())
+            .is_none()
+    );
+}
+
+#[test]
+fn schema_3_profile_dials_and_missing_share_policy_are_read() {
+    let remote = Identity::new();
+    let configuration = Configuration {
+        peers: vec![Peer {
+            identity: remote.identity,
+            dial: Some(
+                PeerAddress::profile("managed", "/run/user/1000/yolo/hub/peer.sock".into())
+                    .unwrap(),
+            ),
+            consume: true,
+            exports: vec![],
+        }],
+        ..Configuration::default()
+    };
+    let mut raw = serde_json::to_value(&configuration).unwrap();
+    raw.as_object_mut().unwrap().remove(stringify!(ssh_peers));
+    let configuration: Configuration = serde_json::from_value(raw).unwrap();
+    assert!(matches!(
+        configuration.peers[0].dial,
+        Some(PeerAddress::Profile(_))
+    ));
+    assert!(configuration.ssh_peers.share_local);
+    assert!(!configuration.ssh_peers.require_registration);
+    assert!(configuration.ssh_peers.rights.allows(&observe()));
+}
+
+#[test]
 fn default_local_configuration_and_explicit_directed_peer_roundtrip() {
     let (local, remote) = (Identity::new(), Identity::new());
     Configuration::default().validate(local.identity).unwrap();
@@ -23,6 +69,7 @@ fn default_local_configuration_and_explicit_directed_peer_roundtrip() {
                 remaining_reexports: REEXPORT_DEPTH,
             }],
         }],
+        ..Configuration::default()
     };
     configuration.validate(local.identity).unwrap();
     assert_eq!(configuration.pins(), vec![remote.identity]);
@@ -49,6 +96,7 @@ fn duplicate_peers_unpinned_exports_and_self_connections_are_rejected() {
         trusted_origins: vec![],
         file_roots: vec![],
         peers: vec![peer.clone(), peer],
+        ..Configuration::default()
     };
     assert!(configuration.validate(local.identity).is_err());
     configuration.peers.pop();
@@ -71,7 +119,7 @@ fn legacy_listener_and_dial_are_migrated_without_weakening_the_peer_pin() {
         peers: vec![Peer {
             identity: remote.identity,
             dial: Some(
-                PeerAddress::ssh(
+                PeerAddress::profile(
                     "remote",
                     "/run/user/1000/yolo/hub/peer.sock".into(),
                 )

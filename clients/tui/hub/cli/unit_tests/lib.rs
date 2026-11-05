@@ -1,4 +1,4 @@
-use super::{AddPeer, add_change};
+use super::{AddPeer, add_change, join_change, remove_change};
 use std::path::PathBuf;
 use uuid::Uuid;
 use yolo_hub_delegation::PeerIdentity;
@@ -25,11 +25,11 @@ fn snapshot() -> ConfigurationSnapshot {
     }
 }
 
-fn args(ssh_profile: Option<&str>, remote_socket: Option<&str>) -> AddPeer {
+fn args(ssh: Option<&str>, remote_socket: Option<&str>) -> AddPeer {
     AddPeer {
         peer: HubId::new(),
         key: PEER_KEY.into(),
-        ssh_profile: ssh_profile.map(str::to_owned),
+        ssh: ssh.map(str::to_owned),
         remote_socket: remote_socket.map(PathBuf::from),
         no_import: false,
         exports: vec![],
@@ -43,8 +43,8 @@ fn adds_a_pinned_peer_with_an_ssh_socket_dial_and_exports() {
     let change = add_change(&snapshot(), &args(Some(PROFILE), Some(SOCKET))).unwrap();
     let peer = &change.configuration.peers[0];
     let dial = peer.dial.as_ref().unwrap();
-    assert_eq!(dial.profile, PROFILE);
-    assert_eq!(dial.socket, PathBuf::from(SOCKET));
+    assert_eq!(dial.ssh_target(), Some(PROFILE));
+    assert_eq!(dial.socket(), PathBuf::from(SOCKET));
     assert!(peer.consume);
     assert_eq!(peer.exports.len(), 1);
     assert_eq!(change.expected_revision, 1);
@@ -63,4 +63,41 @@ fn dial_flags_are_paired_and_the_key_is_validated() {
 fn a_peer_can_be_pinned_without_a_dial() {
     let change = add_change(&snapshot(), &args(None, None)).unwrap();
     assert!(change.configuration.peers[0].dial.is_none());
+}
+
+#[test]
+fn join_upserts_the_dial_and_remove_deletes_the_peer() {
+    let peer = PeerIdentity::new(HubId::new(), [0x11; 32]).unwrap();
+    let mut snapshot = snapshot();
+    let change = join_change(
+        &snapshot,
+        PROFILE.into(),
+        PathBuf::from(SOCKET),
+        peer,
+        false,
+    )
+    .unwrap()
+    .unwrap();
+    let joined = &change.configuration.peers[0];
+    assert_eq!(joined.identity, peer);
+    assert_eq!(
+        joined.dial.as_ref().unwrap().ssh_target(),
+        Some(PROFILE)
+    );
+    assert!(joined.consume);
+    snapshot.state.configuration = change.configuration;
+    assert!(
+        join_change(
+            &snapshot,
+            PROFILE.into(),
+            PathBuf::from(SOCKET),
+            peer,
+            false
+        )
+        .unwrap()
+        .is_none()
+    );
+    let removed = remove_change(&snapshot, peer.hub()).unwrap();
+    assert!(removed.configuration.peers.is_empty());
+    assert!(remove_change(&snapshot, HubId::new()).is_err());
 }

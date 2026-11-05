@@ -20,19 +20,19 @@ fn peer_creation_editing_and_dial_direction_are_draft_only() {
         FieldId::Key,
         &crate::wire_fields::key_text(pin),
     );
-    field(&mut manager, FieldId::Profile, PROFILE);
+    field(&mut manager, FieldId::Ssh, PROFILE);
     field(&mut manager, FieldId::Socket, SOCKET);
     save(&mut manager);
     assert!(manager.form.is_none() && manager.dirty() && !manager.pending());
     let peer = manager.draft.as_ref().unwrap().peer(pin.hub()).unwrap();
     assert!(peer.consume && peer.exports.is_empty());
     let dial = peer.dial.as_ref().unwrap();
-    assert_eq!(dial.profile, PROFILE);
-    assert_eq!(dial.socket.to_str(), Some(SOCKET));
+    assert_eq!(dial.ssh_target(), Some(PROFILE));
+    assert_eq!(dial.socket().to_str(), Some(SOCKET));
     activate(&mut manager, Action::Page(Page::Peer(pin.hub())));
     activate(&mut manager, Action::EditPeer(pin.hub()));
     field(&mut manager, FieldId::Key, "ff");
-    field(&mut manager, FieldId::Profile, "");
+    field(&mut manager, FieldId::Ssh, "");
     field(&mut manager, FieldId::Socket, "");
     let form = manager.form.as_mut().unwrap();
     form.focused = form
@@ -62,7 +62,7 @@ fn malformed_identity_duplicate_peer_and_invalid_dial_are_atomic_rejections() {
     for (id, value) in [
         (FieldId::Hub, "invalid"),
         (FieldId::Key, "00"),
-        (FieldId::Profile, "bad host"),
+        (FieldId::Ssh, "bad host"),
         (FieldId::Socket, "relative.sock"),
     ] {
         let mut manager = manager();
@@ -75,7 +75,7 @@ fn malformed_identity_duplicate_peer_and_invalid_dial_are_atomic_rejections() {
             FieldId::Key,
             &crate::wire_fields::key_text(pin),
         );
-        field(&mut manager, FieldId::Profile, PROFILE);
+        field(&mut manager, FieldId::Ssh, PROFILE);
         field(&mut manager, FieldId::Socket, SOCKET);
         field(&mut manager, id, value);
         save(&mut manager);
@@ -121,7 +121,7 @@ fn peer_socket_edits_reject_partial_pairs_and_reload_does_not_silently_discard_d
     activate(&mut manager, Action::Page(Page::Peer(pin.hub())));
     activate(&mut manager, Action::EditPeer(pin.hub()));
     let before = manager.draft.clone();
-    field(&mut manager, FieldId::Profile, PROFILE);
+    field(&mut manager, FieldId::Ssh, PROFILE);
     save(&mut manager);
     assert_eq!(manager.draft, before);
     field(&mut manager, FieldId::Socket, SOCKET);

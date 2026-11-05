@@ -5,6 +5,7 @@ use yolo_hub_identity::HubId;
 
 pub const PEER_ATTEMPT_FAILED: &str = "Hub peer connection attempt failed";
 pub const PEER_RECOVERED: &str = "Hub peer connection recovered";
+pub const PEER_CONNECTED: &str = "Hub peer connection established";
 pub const INBOUND_PEER_REJECTED: &str = "Hub rejected an inbound peer connection";
 pub const INBOUND_REJECTION_INTERVAL: Duration = Duration::from_secs(30);
 pub const EXPORT_DEPTH_EXHAUSTED: &str =

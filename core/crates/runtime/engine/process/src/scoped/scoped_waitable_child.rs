@@ -87,7 +87,7 @@ impl ScopedWaitableChild {
         self.custody_mut().take_stdout()
     }
 
-    pub(crate) fn take_stdin(&mut self) -> Option<ChildStdin> {
+    pub fn take_stdin(&mut self) -> Option<ChildStdin> {
         self.custody_mut().take_stdin()
     }
 

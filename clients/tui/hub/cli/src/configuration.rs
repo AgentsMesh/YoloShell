@@ -25,9 +25,9 @@ pub fn add_change(
             .all(|peer| peer.identity.hub() != identity.hub()),
         PEER_ALREADY_CONFIGURED
     );
-    let dial = match (&args.ssh_profile, &args.remote_socket) {
-        (Some(profile), Some(socket)) => {
-            Some(PeerAddress::ssh(profile.clone(), socket.clone())?)
+    let dial = match (&args.ssh, &args.remote_socket) {
+        (Some(target), Some(socket)) => {
+            Some(PeerAddress::ssh(target.clone(), socket.clone())?)
         }
         (None, None) => None,
         _ => anyhow::bail!("{}", INVALID_PEER_DIAL),
@@ -60,7 +60,62 @@ pub fn add_change(
     })
 }
 
-fn identity(hub: HubId, key: &str) -> Result<PeerIdentity> {
+pub fn join_change(
+    snapshot: &ConfigurationSnapshot,
+    target: String,
+    socket: std::path::PathBuf,
+    identity: PeerIdentity,
+    no_import: bool,
+) -> Result<Option<ConfigurationChange>> {
+    let local = snapshot.state.identity;
+    ensure!(identity.hub() != local.hub(), PEER_IS_LOCAL);
+    let dial = PeerAddress::ssh(target, socket)?;
+    let mut configuration = snapshot.state.configuration.clone();
+    match configuration
+        .peers
+        .iter_mut()
+        .find(|peer| peer.identity.hub() == identity.hub())
+    {
+        Some(peer) => {
+            ensure!(peer.identity == identity, PEER_IDENTITY_CHANGED);
+            peer.dial = Some(dial);
+            peer.consume = !no_import;
+        }
+        None => configuration.peers.push(Peer {
+            identity,
+            dial: Some(dial),
+            consume: !no_import,
+            exports: Vec::new(),
+        }),
+    }
+    configuration.validate(local)?;
+    if configuration == snapshot.state.configuration {
+        return Ok(None);
+    }
+    Ok(Some(ConfigurationChange {
+        request_id: Uuid::new_v4(),
+        expected_revision: snapshot.state.revision,
+        configuration,
+    }))
+}
+
+pub fn remove_change(
+    snapshot: &ConfigurationSnapshot,
+    hub: HubId,
+) -> Result<ConfigurationChange> {
+    let mut configuration = snapshot.state.configuration.clone();
+    let before = configuration.peers.len();
+    configuration.peers.retain(|peer| peer.identity.hub() != hub);
+    ensure!(configuration.peers.len() != before, PEER_NOT_CONFIGURED);
+    configuration.validate(snapshot.state.identity)?;
+    Ok(ConfigurationChange {
+        request_id: Uuid::new_v4(),
+        expected_revision: snapshot.state.revision,
+        configuration,
+    })
+}
+
+pub(crate) fn identity(hub: HubId, key: &str) -> Result<PeerIdentity> {
     let key = key.trim();
     ensure!(
         key.len() == ED25519_PUBLIC_KEY_BYTES * 2 && key.is_ascii(),

@@ -3,6 +3,14 @@
 All notable changes to Yolo are recorded here. The project follows semantic
 versioning once a stable release exists.
 
+## 0.2.3 — Alpha
+
+### Changed
+- `yolo hub peer join <user@host>` onboards a peer over the user's existing
+  SSH client, discovering and pinning its identity and socket. Peer links use
+  an SSH stdio bridge with no broker profile; the provider's SSH account is
+  the admission boundary and its local share policy controls exports.
+
 ## 0.2.2 — Alpha
 
 ### Fixed
@@ -20,23 +28,20 @@ versioning once a stable release exists.
 
 ### Changed
 
-- Hub peer links use SSH instead of a Hub TCP listener and inner SSH server:
-  each Hub publishes `<hub-state>/peer.sock`; the broker opens a streamlocal
-  channel through an SSH profile. The dialing Hub is the RPC client, and a
-  signed `PeerHello` binds the configured identities. SSH grants no export
-  rights; `consume`, `exports` and pins remain local policy.
-- `yolo hub peer add` takes `--ssh-profile` and `--remote-socket` instead of
-  `--host`/`--port`; `yolo hub peer list` reports both.
-- Old configurations keep pins, import flags and exports while dropping
-  retired TCP/loopback dials. Re-run remote setup or add an SSH dial.
+- Hub peer links use SSH instead of a TCP listener and inner SSH server:
+  each Hub publishes `<hub-state>/peer.sock`; a signed `PeerHello` binds the
+  configured identities. Pins, imports and exports stay local.
+- `yolo hub peer add` uses `--ssh-profile`/`--remote-socket`; `peer list`
+  reports both.
+- Old configurations keep pins, imports and exports; TCP dials are dropped.
 
 ### Removed
 
 - Pairing codes, `yolo hub peer invite`, `yolo hub peer join`, `yolo hub
-  listen`, `MintInvite`, the invite ledger, the enrollment server and the
-  inner peer SSH transport. 0.1.x TCP peers need an SSH/socket dial.
-- The listener-binding record and the `listen` configuration field; the peer
-  socket is derived from Hub state and republished for the service lifetime.
+  listen`, `MintInvite`, the ledger, the enrollment server and the inner peer
+  SSH transport. 0.1.x TCP peers need an SSH dial.
+- The listener record and `listen` field; the peer socket derives from Hub
+  state and is republished for the service lifetime.
 
 ## 0.1.7 — Alpha
 
@@ -47,22 +52,17 @@ versioning once a stable release exists.
 
 ### Changed
 
-- `yolo update` checks, installs, restarts when needed and probes admission in
-  one command; `--check`, `--admit` and `--no-restart` select explicit modes,
-  and `--install-release` remains a hidden legacy alias.
+- `yolo update` checks, installs, restarts and probes admission; `--check`,
+  `--admit` and `--no-restart` select modes; `--install-release` is hidden.
 - Top-level help lists the auxiliary commands; one clap tree accepts root
   connection options before or after the command.
 - `yolo update` accepts `--local-profile`.
-- `yolo hub peer list` explains its IMPORT/EXPORTS columns and prints guidance
-  when no peers are configured.
+- `yolo hub peer list` explains IMPORT/EXPORTS and prints a no-peer hint.
 - Help covers `update`, workspace, conversation, recipe and plugin commands,
   including the plugin `--trust` review step.
-- `yolo workspace update` uses the resolved revision unless
-  `--expected-revision` rejects a concurrent change.
-- `yolo worktree create` requires `--trust-repository` and documents its name,
-  branch and base options.
-- `yolo update --check` reports `update available` or `already current`;
-  `--no-restart` prints the `yolo restart` activation step.
+- `yolo workspace update` uses the resolved revision unless `--expected-revision` conflicts.
+- `yolo worktree create` requires `--trust-repository`; its options are documented.
+- `yolo update --check` reports availability; `--no-restart` prints the restart step.
 - `agent send`, `ask` and `prompt` help states the wait and atomicity
   difference; `hub peer add` is marked as the advanced pre-shared-key path.
 

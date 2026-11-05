@@ -1,5 +1,10 @@
 //! Transport injection only. Federation always performs its own mutually pinned handshake.
+mod composite;
 mod constants;
+mod ssh;
+pub use composite::CompositeDialer;
+pub use constants::{PEER_SOCKET_FLAG, PEER_STDIO_COMMAND, PEER_STDIO_FLAG};
+pub use ssh::SystemSshDialer;
 pub use yolo_hub_peer_io::PeerIo;
 
 use anyhow::{Context, Result, ensure};

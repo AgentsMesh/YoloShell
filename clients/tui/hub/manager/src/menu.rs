@@ -62,7 +62,11 @@ impl Manager {
                 for peer in &draft.peers {
                     let dial = peer.dial.as_ref().map_or_else(
                         || INBOUND.into(),
-                        |dial| format!("{}:{}", dial.profile, dial.socket.display()),
+                        |dial| format!(
+                            "{}:{}",
+                            dial.ssh_target().or_else(|| dial.profile_id()).unwrap_or_default(),
+                            dial.socket().display()
+                        ),
                     );
                     items.push(Item::new(
                         Action::Page(Page::Peer(peer.identity.hub())),

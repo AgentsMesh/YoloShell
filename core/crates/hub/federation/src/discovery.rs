@@ -77,11 +77,12 @@ impl Federation {
             .source()
             .filter(|source| source.payload.policy_epoch == self.policy_epoch)
         {
-            if let Some(policy) = self
+            let policy = self
                 .config
                 .export(peer.hub(), self.hub_id())
-                .filter(|policy| allowed.contains(&policy.origin))
-            {
+                .cloned()
+                .or_else(|| self.config.shared_export(self.hub_id(), self.hub_id()));
+            if let Some(policy) = policy.filter(|policy| allowed.contains(&policy.origin)) {
                 let claims = GrantClaims {
                     grant_id: Uuid::new_v4(),
                     issuer: self.state.peer_identity(),

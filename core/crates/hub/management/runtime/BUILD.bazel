@@ -64,6 +64,7 @@ rust_test(
     edition = "2024",
     deps = _DEPS + [
         "@crates//:tempfile",
+        "@crates//:uuid",
     ],
 )
 

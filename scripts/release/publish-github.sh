@@ -33,7 +33,9 @@ Update:
 
 Peer links:
 
-    yolo hub peer add <hub-id> <key> --ssh-profile <profile> --remote-socket <path>
+    yolo hub peer join <user@host>
+
+Both Hubs need this release; the SSH login must be non-interactive (key or agent).
 
 Nightly channel:
 

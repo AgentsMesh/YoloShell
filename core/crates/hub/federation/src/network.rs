@@ -10,9 +10,9 @@ use tokio::{
 use yolo_hub_federation_settings::{MAX_PEERS, Peer};
 use yolo_hub_peer_diagnostics::{
     INBOUND_PEER_REJECTED, InboundRejections, OutboundFailures, PEER_ATTEMPT_FAILED,
-    PEER_RECOVERED, PeerAttempt,
+    PEER_CONNECTED, PEER_RECOVERED, PeerAttempt,
 };
-use yolo_hub_peer_link::{connect, accept};
+use yolo_hub_peer_link::{Admission, accept, connect};
 
 impl Federation {
     pub(crate) async fn dial_loop(
@@ -64,12 +64,17 @@ impl Federation {
             };
             match attempt {
                 Ok(link) => {
-                    if let Some(attempts) = failures.succeed() {
-                        tracing::info!(
+                    match failures.succeed() {
+                        Some(attempts) => tracing::info!(
                             message = PEER_RECOVERED,
                             peer = %peer.identity.hub(),
                             attempts,
-                        );
+                        ),
+                        None => tracing::info!(
+                            message = PEER_CONNECTED,
+                            peer = %peer.identity.hub(),
+                            ssh = address.ssh_target().unwrap_or("-"),
+                        ),
                     }
                     let served = self.clone().serve_link(link, stop.clone()).await;
                     if let Err(error) = served {
@@ -88,8 +93,9 @@ impl Federation {
                         tracing::warn!(
                             message = PEER_ATTEMPT_FAILED,
                             peer = %peer.identity.hub(),
-                            profile = ?address.profile,
-                            socket = %address.socket.display(),
+                            ssh = address.ssh_target().unwrap_or("-"),
+                            profile = address.profile_id().unwrap_or("-"),
+                            socket = %address.socket().display(),
                             stage = stage.as_str(),
                             attempts,
                         );
@@ -155,11 +161,16 @@ impl Federation {
                     tasks.spawn(async move {
                         let remote = stream.peer_addr().ok();
                         let setup = async {
+                            let admission = if node.config.ssh_peers.require_registration {
+                                Admission::Only(&allowed)
+                            } else {
+                                Admission::Any
+                            };
                             let (peer, stream) = accept(
                                 stream,
                                 node.state.peer_identity(),
                                 node.state.as_ref(),
-                                &allowed,
+                                admission,
                                 Instant::now() + CONNECT_TIMEOUT,
                             )
                             .await?;

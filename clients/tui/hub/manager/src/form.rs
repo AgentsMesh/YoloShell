@@ -56,16 +56,16 @@ impl Form {
                     read_only,
                 ),
                 Field::text(
-                    FieldId::Profile,
+                    FieldId::Ssh,
                     peer.and_then(|peer| peer.dial.as_ref())
-                        .map(|dial| dial.profile.clone())
+                        .map(|dial| dial.ssh_target().or_else(|| dial.profile_id()).unwrap_or_default().to_owned())
                         .unwrap_or_default(),
                     false,
                 ),
                 Field::text(
                     FieldId::Socket,
                     peer.and_then(|peer| peer.dial.as_ref())
-                        .map(|dial| dial.socket.display().to_string())
+                        .map(|dial| dial.socket().display().to_string())
                         .unwrap_or_default(),
                     false,
                 ),

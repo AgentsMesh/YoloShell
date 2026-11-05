@@ -5,7 +5,7 @@ use yolo_tui_line_input::Cursor;
 pub(crate) enum FieldId {
     Hub,
     Key,
-    Profile,
+    Ssh,
     Socket,
     Import,
     Origin,
@@ -58,7 +58,7 @@ impl Field {
         match self.id {
             FieldId::Hub => HUB_ID,
             FieldId::Key => PUBLIC_KEY,
-            FieldId::Profile => SSH_PROFILE,
+            FieldId::Ssh => SSH_TARGET,
             FieldId::Socket => REMOTE_SOCKET,
             FieldId::Import => IMPORTS,
             FieldId::Origin => ORIGIN,

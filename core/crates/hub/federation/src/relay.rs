@@ -30,6 +30,8 @@ impl Federation {
         let policy = self
             .config
             .export(peer.hub(), origin.hub())
+            .cloned()
+            .or_else(|| self.config.shared_export(origin.hub(), self.hub_id()))
             .ok_or(PublicError::Unauthorized)?;
         let Some(required) = required_rights(&call.payload.request.fields().command) else {
             // Local management never crosses a peer boundary.
