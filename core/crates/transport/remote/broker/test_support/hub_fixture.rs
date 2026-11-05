@@ -8,7 +8,6 @@ use std::{
     },
 };
 use tokio::{
-    net::TcpListener,
     sync::oneshot,
     time::{Instant, timeout_at},
 };
@@ -17,7 +16,7 @@ pub const PAYLOAD: &[u8] = b"Hub tunnel data\0\r\n";
 pub const TIMEOUT: std::time::Duration = std::time::Duration::from_secs(5);
 pub const POLL: std::time::Duration = std::time::Duration::from_millis(5);
 pub const ONE_TUNNEL: usize = 1;
-pub const WRONG_PORT: u16 = 1;
+pub const WRONG_SOCKET: &str = "/run/user/1000/yolo/wrong.sock";
 const RUNTIME: &str = "/opt/yolo";
 const REMOTE_HOME: &str = "/srv/yolo";
 const USER: &str = "builder";
@@ -63,7 +62,7 @@ pub struct Harness {
     _root: tempfile::TempDir,
     pub paths: BrokerPaths,
     pub ssh: BrokerCommandCleanupFixture,
-    pub target: TcpListener,
+    pub target: HubPeerTarget,
     pub factory: Arc<Factory>,
     pub pool: Arc<BrokerConnectionPool>,
     pub adoption: Option<oneshot::Sender<BrokerAdoptionAcknowledgement>>,
@@ -149,7 +148,7 @@ impl Harness {
             .prepare_hub_transport(yolo_broker_hub_test_support::profile(), deadline())
             .await
             .unwrap();
-        request.endpoint = self.target.local_addr().unwrap();
+        request.socket = self.target.path.clone();
         request
     }
     pub async fn stop(mut self) {

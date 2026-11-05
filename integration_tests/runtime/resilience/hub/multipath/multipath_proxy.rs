@@ -1,23 +1,26 @@
 use super::{
-    super::federation_support::{POLL, deadline, listener},
+    super::federation_support::{POLL, deadline},
     constants::*,
 };
 use std::{
-    net::SocketAddr,
+    path::PathBuf,
     sync::{
         Arc,
         atomic::{AtomicUsize, Ordering},
     },
 };
 use tokio::{
-    net::{TcpListener, TcpStream},
+    net::{UnixListener, UnixStream},
     sync::watch,
     task::{JoinHandle, JoinSet},
     time::timeout_at,
 };
 
+const PROXY_SOCKET: &str = "route.sock";
+
 pub struct RouteProxy {
-    pub address: SocketAddr,
+    pub path: PathBuf,
+    _root: tempfile::TempDir,
     enabled: watch::Sender<bool>,
     stop: watch::Sender<bool>,
     active: Arc<AtomicUsize>,
@@ -25,15 +28,17 @@ pub struct RouteProxy {
 }
 
 impl RouteProxy {
-    pub async fn start(origin: SocketAddr) -> Self {
-        let listener = listener().await;
-        let address = listener.local_addr().unwrap();
+    pub async fn start(origin: PathBuf) -> Self {
+        let root = tempfile::tempdir().unwrap();
+        let path = root.path().join(PROXY_SOCKET);
+        let listener = UnixListener::bind(&path).unwrap();
         let (enabled, current) = watch::channel(true);
         let (stop, stopped) = watch::channel(false);
         let active = Arc::new(AtomicUsize::new(usize::default()));
         let task = tokio::spawn(accept(listener, origin, current, stopped, active.clone()));
         Self {
-            address,
+            path,
+            _root: root,
             enabled,
             stop,
             active,
@@ -81,8 +86,8 @@ impl Drop for RouteProxy {
 }
 
 async fn accept(
-    listener: TcpListener,
-    origin: SocketAddr,
+    listener: UnixListener,
+    origin: PathBuf,
     enabled: watch::Receiver<bool>,
     mut stopped: watch::Receiver<bool>,
     active: Arc<AtomicUsize>,
@@ -95,7 +100,7 @@ async fn accept(
             accepted = listener.accept() => {
                 let (client, _) = accepted.unwrap();
                 if !*enabled.borrow() || streams.len() >= MAX_PROXY_STREAMS { continue; }
-                streams.spawn(forward(client, origin, enabled.clone(), stopped.clone(), active.clone()));
+                streams.spawn(forward(client, origin.clone(), enabled.clone(), stopped.clone(), active.clone()));
             }
         }
     }
@@ -104,8 +109,8 @@ async fn accept(
 }
 
 async fn forward(
-    mut client: TcpStream,
-    origin: SocketAddr,
+    mut client: UnixStream,
+    origin: PathBuf,
     mut enabled: watch::Receiver<bool>,
     mut stopped: watch::Receiver<bool>,
     active: Arc<AtomicUsize>,
@@ -116,7 +121,7 @@ async fn forward(
     let connected = tokio::select! {
         _ = stopped.changed() => return,
         _ = enabled.changed() => return,
-        result = timeout_at(deadline(), TcpStream::connect(origin)) => result,
+        result = timeout_at(deadline(), UnixStream::connect(&origin)) => result,
     };
     let Ok(Ok(mut server)) = connected else {
         return;

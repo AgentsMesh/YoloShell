@@ -1,23 +1,22 @@
 mod address;
 mod constants;
 mod file_roots;
-pub use address::{DialTransport, PeerAddress, SshProfileRef};
+mod migration;
+pub use address::{PeerAddress, SshProfileRef, validate_socket};
 use anyhow::{Result, ensure};
 pub use constants::*;
 use serde::{Deserialize, Serialize};
-use std::{
-    collections::{BTreeMap, BTreeSet},
-    net::SocketAddr,
-    num::NonZeroUsize,
-};
+use std::{collections::{BTreeMap, BTreeSet}, num::NonZeroUsize};
 use yolo_hub_delegation::{MAX_DELEGATION_DEPTH, PeerIdentity};
 use yolo_hub_identity::HubId;
 use yolo_hub_routing::{Right, Rights, RoutingLimits};
 
 #[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(
+    try_from = "migration::ConfigurationWire",
+    into = "migration::ConfigurationOut"
+)]
 pub struct Configuration {
-    pub listen: Option<SocketAddr>,
     pub peers: Vec<Peer>,
     pub trusted_origins: Vec<PeerIdentity>,
     pub file_roots: Vec<yolo_hub_file_protocol::FileRootConfiguration>,
@@ -68,6 +67,7 @@ impl Configuration {
             if let Some(address) = &peer.dial {
                 address.validate()?;
             }
+            ensure!(!peer.consume || peer.dial.is_some(), INVALID);
             ensure!(peer.exports.len() <= MAX_ORIGINS, INVALID);
             let mut origins = BTreeSet::new();
             for export in &peer.exports {

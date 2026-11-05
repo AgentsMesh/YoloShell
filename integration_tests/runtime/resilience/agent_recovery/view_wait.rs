@@ -36,7 +36,7 @@ async fn report_timeout(client: &Client, id: Uuid, harness: &Harness, view: Term
     let processes = view
         .runtime
         .as_ref()
-        .and_then(|runtime| SystemProcessSource.descendants(runtime.child_pid).ok());
+        .and_then(|runtime| RuntimeProcessSource::new([]).descendants(runtime.child_pid).ok());
     let output = client.attach(id, 0).await.ok().map(|attachment| {
         attachment
             .initial

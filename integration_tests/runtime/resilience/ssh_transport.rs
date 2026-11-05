@@ -79,6 +79,8 @@ async fn open_ssh_reset_preserves_remote_pty_and_broker_reconnects() {
             cwd: sshd.remote_home().to_path_buf(),
             cols: Some(90),
             rows: Some(25),
+            initial_input: None,
+            context: None,
         },
     )
     .await;

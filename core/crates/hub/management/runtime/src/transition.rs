@@ -1,6 +1,5 @@
 use crate::{ManagementResult, ManagementService, constants::*, generation::Running};
 use yolo_hub_configuration_store::{RevisionConflict, RevisionExhausted};
-use yolo_hub_local_backend::LocalBackend;
 use yolo_hub_management_protocol::ConfigurationChange;
 use yolo_hub_terminal_protocol::PublicError;
 
@@ -22,41 +21,14 @@ impl ManagementService {
         if current.last_change == change.request_id && self.running.is_some() {
             return self.confirmed_snapshot().await;
         }
-        if self.bindings.verify(&current).is_err() {
-            let _ = self.retire().await;
-            self.listener = None;
-            return Err(PublicError::Unreachable);
-        }
-        // Reserve changed endpoints before disrupting the current, valid generation.
-        let unchanged = self.configuration.configuration.listen == change.configuration.listen;
-        let replacement = if unchanged {
-            None
-        } else {
-            Some(
-                crate::listener::prepare(change.configuration.listen)
-                    .map_err(|_| PublicError::Conflict)?,
-            )
-        };
         let directory = self
             .hub
             .state
             .directory()
             .map_err(|_| PublicError::Unreachable)?;
-        let prepared_backend = self
-            .backend
+        let prepared_backend = self.backend
             .prepare_files(directory.path(), &change.configuration.file_roots)
             .await?;
-        let planned = self
-            .store
-            .planned(&change)
-            .map_err(|_| PublicError::Unreachable)?;
-        let address = crate::listener::address(replacement.as_ref().unwrap_or(&self.listener))
-            .map_err(|_| PublicError::Internal)?;
-        if planned != current && self.bindings.prepare(&current, &planned, address).is_err() {
-            let _ = self.retire().await;
-            self.listener = None;
-            return Err(PublicError::Unreachable);
-        }
         self.retire()
             .await
             .map_err(|_| PublicError::OutcomeUnknown)?;
@@ -74,9 +46,6 @@ impl ManagementService {
             }
         };
         self.configuration = state;
-        if let Some(replacement) = replacement {
-            self.listener = replacement;
-        }
         match self.start_generation(prepared_backend).await {
             Ok(()) => self.confirmed_snapshot().await,
             Err(error) => {
@@ -90,7 +59,7 @@ impl ManagementService {
         }
     }
 
-    async fn start_generation(&mut self, prepared_backend: LocalBackend) -> anyhow::Result<()> {
+    async fn start_generation(&mut self, prepared_backend: yolo_hub_local_backend::LocalBackend) -> anyhow::Result<()> {
         let running = Running::start(
             self.hub.state.clone(),
             prepared_backend,
@@ -99,7 +68,6 @@ impl ManagementService {
             self.history.clone(),
             self.hub.dialer.clone(),
             self.origin.clone(),
-            Some(self.enrollment.clone()),
         )
         .await?;
         *self.hub.generation.write().await = Some(running.node.clone());
@@ -119,7 +87,7 @@ impl ManagementService {
         if !self.activation_pending {
             return false;
         }
-        let current = match self.store.current() {
+        let _current = match self.store.current() {
             Ok(current) if current == self.configuration => current,
             Ok(_) => {
                 tracing::warn!(message = ACTIVATION_RETRY_FAILED);
@@ -130,10 +98,6 @@ impl ManagementService {
                 return false;
             }
         };
-        if let Err(error) = self.bindings.verify(&current) {
-            tracing::warn!(%error, message = ACTIVATION_RETRY_FAILED);
-            return false;
-        }
         let directory = match self.hub.state.directory() {
             Ok(directory) => directory,
             Err(error) => {
@@ -141,8 +105,7 @@ impl ManagementService {
                 return false;
             }
         };
-        let prepared_backend = match self
-            .backend
+        let prepared_backend = match self.backend
             .prepare_files(
                 directory.path(),
                 &self.configuration.configuration.file_roots,
@@ -166,7 +129,6 @@ impl ManagementService {
             }
         }
     }
-
     async fn confirmed_snapshot(&mut self) -> ManagementResult {
         let snapshot = self.checked_snapshot().await?;
         if snapshot.applied {

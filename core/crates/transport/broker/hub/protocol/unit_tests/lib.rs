@@ -4,6 +4,8 @@ mod decode;
 mod fixtures;
 use crate::*;
 
+const MAX_SOCKET_BYTES: usize = 100;
+
 #[test]
 fn requests_bind_every_profile_connection_and_peer_field() {
     let request = fixtures::request();
@@ -30,7 +32,7 @@ fn requests_bind_every_profile_connection_and_peer_field() {
 }
 
 #[test]
-fn invalid_profile_binding_and_nonloopback_or_scoped_endpoint_are_rejected() {
+fn invalid_profile_binding_and_noncanonical_socket_paths_are_rejected() {
     for invalid in ["", "../other", "with space"] {
         let mut profile = fixtures::profile();
         profile.host_id = invalid.into();
@@ -57,9 +59,17 @@ fn invalid_profile_binding_and_nonloopback_or_scoped_endpoint_are_rejected() {
         }
         assert_eq!(binding.validate(), Err(BrokerHubError::Binding));
     }
-    for endpoint in ["127.0.0.1:0", "192.0.2.1:22", "[::1%2]:22", "[::]:22"] {
+    let long = format!("/{}", "a".repeat(MAX_SOCKET_BYTES));
+    for socket in [
+        "peer.sock",
+        "relative/peer.sock",
+        "/tmp/../peer.sock",
+        "/tmp/./peer.sock",
+        "/tmp/peer\n.sock",
+        long.as_str(),
+    ] {
         let mut request = fixtures::request();
-        request.endpoint = endpoint.parse().unwrap();
+        request.socket = socket.into();
         assert_eq!(request.validate(), Err(BrokerHubError::Endpoint));
     }
 }

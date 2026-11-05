@@ -26,7 +26,7 @@ pub(super) fn respond(state: &mut State, request: &Request) -> Option<Reply> {
                 state.snapshot.state.configuration = change.configuration.clone();
                 state.snapshot.state.last_change = change.request_id;
                 state.snapshot.state.revision += CONFIGURATION_REVISION_STEP;
-                state.snapshot.listen_address = Some((std::net::Ipv4Addr::LOCALHOST, PORT).into());
+                state.snapshot.peer_socket = Some("/run/user/1000/yolo/hub/peer.sock".into());
                 if std::mem::take(&mut state.lose_reply) {
                     None
                 } else {

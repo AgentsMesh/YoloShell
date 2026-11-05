@@ -22,7 +22,7 @@ fn fixture() -> (Request, ConfigurationSnapshot) {
             configuration: change.configuration.clone(),
         },
         applied: true,
-        listen_address: None,
+        peer_socket: Some("/run/user/1000/yolo/hub/peer.sock".into()),
     };
     (
         Request::new(identity.hub(), Command::Configure { change }).unwrap(),
@@ -45,7 +45,7 @@ fn configure_response_requires_the_exact_applied_revision_request_and_payload() 
         |snapshot| snapshot.applied = false,
         |snapshot| snapshot.state.revision += CONFIGURATION_REVISION_STEP,
         |snapshot| snapshot.state.last_change = Uuid::new_v4(),
-        |snapshot| snapshot.state.configuration.listen = Some("127.0.0.1:0".parse().unwrap()),
+        |snapshot| snapshot.peer_socket = None,
         |snapshot| snapshot.state.schema_version = u16::MAX,
     ];
     for mutate in mutations {
@@ -61,6 +61,7 @@ fn get_configuration_can_report_unapplied_state_but_cannot_substitute_another_hu
     let request =
         Request::new(original.fields().destination, Command::GetConfiguration {}).unwrap();
     snapshot.applied = false;
+    snapshot.peer_socket = None;
     Response::new(
         &request,
         request.fields().destination,

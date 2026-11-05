@@ -169,8 +169,8 @@ pub(crate) async fn run(options: Options) -> anyhow::Result<()> {
         println!("Yolo Hub {hub}\n{}\n{public_identity}", socket.display());
         println!("{}", connectors.socket_path().display());
         println!("{}", public.socket_path().display());
-        if let Some(address) = service.listen_address()? {
-            println!("{address}");
+        if let Ok(peer_socket) = service.peer_socket() {
+            println!("{}", peer_socket.display());
         }
     }
     services::run(server, connectors, service, public, access, terminate).await

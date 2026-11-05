@@ -38,7 +38,7 @@ pub async fn upgrade(listener: &UnixListener, peer: PeerIdentity) -> UnixStream 
     };
     assert_eq!(request.binding, binding);
     assert_eq!(request.peer, peer);
-    assert_eq!(request.endpoint.to_string(), ENDPOINT);
+    assert_eq!(request.socket.to_string_lossy(), SOCKET);
     reply(
         &mut tunnel,
         envelope.request_id,

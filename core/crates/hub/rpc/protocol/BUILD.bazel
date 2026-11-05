@@ -20,7 +20,6 @@ _DEPS = [
     "//core/crates/hub/build/protocol:yolo_hub_build_protocol",
     "//core/crates/crypto:yolo_crypto",
     "//core/crates/hub/agent/protocol:yolo_hub_agent_protocol",
-    "//core/crates/hub/enrollment/protocol:yolo_hub_enrollment_protocol",
     "//core/crates/hub/agent/run/protocol:yolo_hub_agent_run_protocol",
     "//core/crates/hub/events/protocol:yolo_hub_events_protocol",
     "//core/crates/hub/file/protocol:yolo_hub_file_protocol",

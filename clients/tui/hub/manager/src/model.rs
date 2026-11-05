@@ -34,7 +34,6 @@ pub(crate) enum Action {
     AddExport(HubId),
     EditExport(HubId, HubId),
     RemoveExport(HubId, HubId),
-    Listener,
     AddFileRoot,
     EditFileRoot(FileRootId),
     RemoveFileRoot(yolo_hub_file_protocol::FileRootConfiguration),

@@ -7,4 +7,4 @@ pub const PEER_STATE_DIRECTORY: &str = "lifecycle-peer";
 pub const PEER_HOST_DIRECTORY: &str = "lifecycle-peer-host";
 pub const PENDING_RESPONSE: &str =
     "registry read unexpectedly yielded before rejecting lost authority";
-pub const CLOSURE_OBSERVATION: std::time::Duration = std::time::Duration::from_millis(250);
+pub const CLOSURE_OBSERVATION: std::time::Duration = std::time::Duration::from_secs(2);

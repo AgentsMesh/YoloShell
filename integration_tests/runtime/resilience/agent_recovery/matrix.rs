@@ -1,11 +1,9 @@
 use super::*;
-
 #[path = "assertions.rs"]
 mod assertions;
 use assertions::*;
 
 const CREATE_SESSION_FAILURE_DETAIL: &str = "agent matrix shell creation failed";
-
 #[path = "explicit_fail_closed.rs"]
 mod explicit_fail_closed;
 
@@ -125,6 +123,8 @@ async fn create_detected_agent(
             cwd: harness.home.path().to_path_buf(),
             cols: None,
             rows: None,
+            initial_input: None,
+            context: None,
         })
         .await
         .unwrap_or_else(|error| {

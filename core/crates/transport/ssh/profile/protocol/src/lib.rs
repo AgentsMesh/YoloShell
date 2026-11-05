@@ -57,6 +57,22 @@ impl TryFrom<ProfileFields> for SshProfileRef {
     }
 }
 
+/// A peer dial names a profile by id; the runtime resolves the current
+/// authority revision from the local profile store before opening transport.
+pub fn validate_profile_id(profile_id: &str) -> Result<()> {
+    use constants::*;
+    ensure!(
+        !profile_id.is_empty()
+            && profile_id.len() <= MAX_PROFILE_ID_BYTES
+            && ![CURRENT_DIRECTORY, PARENT_DIRECTORY].contains(&profile_id)
+            && profile_id
+                .bytes()
+                .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'_' | b'.')),
+        INVALID_PROFILE
+    );
+    Ok(())
+}
+
 impl From<SshProfileRef> for ProfileFields {
     fn from(profile: SshProfileRef) -> Self {
         profile.0

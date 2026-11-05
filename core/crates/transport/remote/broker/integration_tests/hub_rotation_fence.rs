@@ -32,7 +32,7 @@ async fn delayed_tunnel_open_cannot_be_promoted_after_rotation_cutoff() {
     .await
     .unwrap();
     fixture.ssh.release_pending_channel();
-    let (mut remote, _) = timeout_at(deadline(), fixture.target.accept())
+    let (mut remote, _) = timeout_at(deadline(), fixture.target.listener.accept())
         .await
         .unwrap()
         .unwrap();

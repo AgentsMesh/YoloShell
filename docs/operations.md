@@ -73,10 +73,12 @@ shell in its original pane should acquire control without that action.
 ## Hubs and Remote Runtime
 
 The Hubs inventory exposes `Configure Hub` (`m`). Configuration belongs to the
-entry Hub: it manages peer connections, trusted origins, file roots, listener
-settings, and per-peer export policies. Reciprocal identity enrollment and
-export authorization must also be configured at the other Hub; the TUI does not
-silently enroll an unknown key. See [TUI Hub management](tui-hub-management.md).
+entry Hub: it manages peer SSH/socket dials, trusted origins, file roots and
+per-peer export policies. Reciprocal identity pinning and export authorization
+must also be configured at the other Hub; the TUI never trusts an unknown key.
+Peer links use the user's SSH access to `<hub-state>/peer.sock` and open no
+public Hub port. See [Hub peer links](hub-peer-links.md) and [TUI Hub
+management](tui-hub-management.md).
 
 One SSH transport multiplexes runtime, attachment, bounded command, SFTP read,
 and deployment channels. Host keys are verified before authentication against

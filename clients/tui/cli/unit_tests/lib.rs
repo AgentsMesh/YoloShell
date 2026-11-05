@@ -3,7 +3,6 @@ mod clients;
 mod commands;
 mod entry;
 mod hub;
-mod hub_join;
 mod layouts;
 mod lifecycle;
 use clap::{Parser, error::ErrorKind};

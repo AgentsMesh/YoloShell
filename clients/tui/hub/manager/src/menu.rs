@@ -36,16 +36,6 @@ impl Manager {
                     Action::Page(Page::Origins),
                     format!("{ORIGINS} ({})", draft.trusted_origins.len()),
                 ));
-                items.push(Item::new(
-                    Action::Listener,
-                    format!(
-                        "{LISTENER}: {}",
-                        draft
-                            .listen
-                            .map(|address| address.to_string())
-                            .unwrap_or_default()
-                    ),
-                ));
                 items.push(Item {
                     action: Action::Page(Page::FileRoots),
                     label: format!("{FILE_ROOTS} ({})", draft.file_roots.len()),
@@ -70,11 +60,10 @@ impl Manager {
             }
             Page::Peers => {
                 for peer in &draft.peers {
-                    let dial = peer
-                        .dial
-                        .as_ref()
-                        .map(|dial| format!("{}:{}", dial.host, dial.port))
-                        .unwrap_or_else(|| INBOUND.into());
+                    let dial = peer.dial.as_ref().map_or_else(
+                        || INBOUND.into(),
+                        |dial| format!("{}:{}", dial.profile, dial.socket.display()),
+                    );
                     items.push(Item::new(
                         Action::Page(Page::Peer(peer.identity.hub())),
                         format!(

@@ -77,6 +77,12 @@ pub use protocol::{
 };
 #[doc(hidden)]
 pub use rpc::probe_runtime_channel;
+#[cfg(any(
+    all(test, feature = "yolo-unit-tests"),
+    feature = "broker-test-support"
+))]
+#[doc(hidden)]
+pub use russh_backend::HubPeerTarget;
 #[cfg(feature = "broker-test-support")]
 #[doc(hidden)]
 pub use russh_backend::{BROKER_COMMAND_CANCELLATION_PROGRAM, BrokerCommandCleanupFixture};

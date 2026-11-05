@@ -29,10 +29,11 @@ fn unknown_delivery_only_resolves_against_the_exact_applied_receipt() {
     manager.complete(check.token, Ok(original.clone()));
     assert!(manager.dirty() && manager.blocked && manager.unresolved.is_some());
     let mut applied = original;
+    let retained_socket = applied.peer_socket.clone();
     applied.state.revision += CONFIGURATION_REVISION_STEP;
     applied.state.last_change = change.request_id;
     applied.state.configuration = change.configuration;
-    applied.listen_address = applied.state.configuration.listen;
+    applied.peer_socket = retained_socket;
     let check = manager.query(true);
     manager.complete(check.token, Ok(applied));
     assert!(!manager.dirty() && !manager.blocked && manager.unresolved.is_none());
@@ -72,6 +73,7 @@ fn inactive_persisted_configuration_can_be_explicitly_activated_without_inventin
     let (mut manager, request) = crate::Manager::open(snapshot.state.identity.hub());
     let mut inactive = snapshot;
     inactive.applied = false;
+    inactive.peer_socket = None;
     manager.complete(request.token, Ok(inactive));
     assert!(!manager.dirty());
     assert!(manager.can_apply());

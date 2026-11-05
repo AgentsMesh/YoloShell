@@ -53,7 +53,6 @@ impl Command {
             Self::CleanupArchive { .. } => Method::CleanupArchive,
             Self::GetConfiguration {} => Method::GetConfiguration,
             Self::Configure { .. } => Method::Configure,
-            Self::MintInvite { .. } => Method::MintInvite,
             Self::ListFileRoots { .. } => Method::ListFileRoots,
             Self::ReadFile { .. } => Method::ReadFile,
             Self::AgentControl { .. } => Method::AgentControl,

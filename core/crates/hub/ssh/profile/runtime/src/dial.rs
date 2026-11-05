@@ -3,9 +3,8 @@ use anyhow::{Context, Result, ensure};
 use tokio::time::Instant;
 use yolo_broker_hub_protocol::BrokerHubOpenRequest;
 use yolo_hub_delegation::PeerIdentity;
-use yolo_hub_federation_settings::{DialTransport, PeerAddress};
-use yolo_hub_peer_dialer::{PeerDialFuture, PeerDialer, TcpPeerDialer};
-use yolo_hub_peer_transport::PeerIo;
+use yolo_hub_federation_settings::PeerAddress;
+use yolo_hub_peer_dialer::{PeerDialFuture, PeerDialer, PeerIo};
 use yolo_remote_broker::{BrokerClient, BrokerPaths};
 
 impl PeerDialer for SshProfileRuntime {
@@ -18,13 +17,11 @@ impl PeerDialer for SshProfileRuntime {
         Box::pin(async move {
             self.state.verify().inspect_err(|_| self.close_all())?;
             address.validate()?;
-            let DialTransport::Ssh { profile } = &address.transport else {
-                return TcpPeerDialer.dial(peer, address, deadline).await;
-            };
+            let profile = address.profile.as_str();
             let changed = self.changed.subscribe();
             let registration = self.registration(profile)?;
             let binding = {
-                let (reserved, reservation) = self.reserve_profile(profile)?;
+                let (reserved, reservation) = self.reserve_profile(&registration.profile)?;
                 ensure!(reserved == registration, REGISTRY_CHANGED);
                 self.ensure_broker(&reservation, None, deadline).await?
             };
@@ -33,7 +30,7 @@ impl PeerDialer for SshProfileRuntime {
             let client = BrokerClient::new(paths.management_socket());
             let request = BrokerHubOpenRequest {
                 binding,
-                endpoint: address.ssh_endpoint()?,
+                socket: address.socket.clone(),
                 peer,
             };
             let tunnel = client.open_hub_peer(request, deadline).await?;
@@ -72,10 +69,7 @@ impl PeerDialer for SshProfileRuntime {
 }
 
 impl SshProfileRuntime {
-    fn registration(
-        &self,
-        profile: &yolo_hub_federation_settings::SshProfileRef,
-    ) -> Result<yolo_hub_ssh_profiles::SshBrokerProfile> {
+    fn registration(&self, profile: &str) -> Result<yolo_hub_ssh_profiles::SshBrokerProfile> {
         let store = self
             .store
             .lock()
@@ -86,7 +80,7 @@ impl SshProfileRuntime {
             .configuration
             .profiles
             .into_iter()
-            .find(|entry| &entry.profile == profile)
+            .find(|entry| entry.profile.profile_id() == profile)
             .context(REGISTRY_CHANGED)
     }
 }

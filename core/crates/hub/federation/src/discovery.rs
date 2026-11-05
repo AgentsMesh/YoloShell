@@ -21,13 +21,11 @@ impl Federation {
     pub(crate) async fn discover(&self, link: &Link) -> Result<DiscoveryRefresh> {
         self.require_open()?;
         let deadline = Instant::now() + OPERATION_TIMEOUT;
-        let Some(channel) = discovery_channel::open(link, deadline).await? else {
-            return Ok(DiscoveryRefresh::DeferredLocalAdmission);
-        };
         let request_id = Uuid::new_v4();
         let allowed_origins = self.book.lock().await.allowed_origins();
         self.require_open()?;
-        let response = channel
+        let response = link
+            .client
             .request(
                 PeerRequest::Discover {
                     request_id,
@@ -36,7 +34,10 @@ impl Federation {
                 },
                 deadline,
             )
-            .await?;
+            .await;
+        let Some(response) = discovery_channel::classify(response)? else {
+            return Ok(DiscoveryRefresh::DeferredLocalAdmission);
+        };
         ensure!(response.updates.is_none(), INVALID_DISCOVERY);
         let PeerReply::Directory {
             request_id: observed,
@@ -49,13 +50,7 @@ impl Federation {
         ensure!(request_id == observed, INVALID_DISCOVERY);
         let mut book = self.book.lock().await;
         self.require_open()?;
-        book.install(
-            link.connection.peer(),
-            link.id,
-            revision,
-            origins,
-            now_ms()?,
-        )?;
+        book.install(link.peer, link.id, revision, origins, now_ms()?)?;
         let _ = self.observation_cache.record(book.history());
         self.require_open()?;
         Ok(DiscoveryRefresh::Updated)

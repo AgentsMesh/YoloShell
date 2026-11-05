@@ -114,7 +114,6 @@ pub(crate) fn valid(reply: &Reply, method: Method, origin: HubId, version: u16) 
             (Reply::Configuration { snapshot }, Method::GetConfiguration | Method::Configure) => {
                 snapshot.validate().is_ok() && snapshot.state.identity.hub() == origin
             }
-            (Reply::Minted { invite }, Method::MintInvite) => invite.validate().is_ok(),
             (Reply::Error { .. }, _) => true,
             (Reply::Hubs { hubs, next }, Method::ListHubs) => {
                 hubs.len() <= MAX_CATALOG_PAGE_HUBS

@@ -7,21 +7,21 @@ The manager is a full-width terminal view, separate from Agent PTY surfaces.
 
 ## Editing
 
-The view displays the entry Hub ID, public key, configuration revision, and actual
-listening address, including the assigned port for a dynamic listener.
-Connections, trusted origins, file roots, listener settings, and per-peer export policies
+The view displays the entry Hub ID, public key, configuration revision, and the
+local peer socket path.
+Connections, trusted origins, file roots, and per-peer export policies
 have separate forms. Keyboard and mouse navigation, bounded paste, UTF-8 text
 editing, checkboxes, depth controls, scrolling, and wrapped identity fields are
 supported. Read-only identity fields cannot be altered while editing a connection.
 File root creation, editing and confirmed removal are described in
 [Native file root management](hub-file-root-management.md).
 
-Adding a connection requires the peer's Hub ID and pinned public key. Dial host
-and port are optional together: an inbound-only peer can still export or import
-resources on an independently authorized connection. Import direction is an
-explicit checkbox, independent of who dials. Reciprocal identity enrollment and
-export authorization must be configured at the other Hub as well; the TUI does
-not silently enroll an unknown key.
+Adding a connection requires the peer's Hub ID and pinned public key. A dial
+names an SSH profile and the remote Hub's peer socket path; it is optional: an
+accepted-only peer can still export resources on an independently authorized
+link. Import direction is an explicit checkbox and requires a dial. The peer's
+identity and export authorization must be configured at the other Hub as well;
+the TUI does not silently trust an unknown key.
 
 Trusted origins support downstream origins such as C in A -> B -> C without
 turning C into A's direct peer. Exports select an origin, independent permissions,

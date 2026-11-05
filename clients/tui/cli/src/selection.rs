@@ -1,14 +1,12 @@
 use crate::command::Command;
-use crate::constants::{
-    ENROLLMENT_TIMEOUT, LIFECYCLE_LOCAL_ONLY, MANAGEMENT_LOCAL_ONLY, MANAGEMENT_TIMEOUT,
-};
+use crate::constants::{LIFECYCLE_LOCAL_ONLY, MANAGEMENT_LOCAL_ONLY, MANAGEMENT_TIMEOUT};
 use crate::recipe::RecipeCommand;
 use std::path::{Path, PathBuf};
 use yolo_hub_client::HubEndpoint;
 use yolo_hub_state::HubState;
 use yolo_local_profile::LocalProfile;
 use yolo_tui_app::Options;
-use yolo_tui_hub_cli::{HubCommand, PeerCommand};
+use yolo_tui_hub_cli::HubCommand;
 
 pub(crate) enum Selection {
     Explicit(Options),
@@ -48,13 +46,7 @@ impl Selection {
         }
         if let Some(Command::Hub { command }) = &command {
             let (socket, entry) = self.local_hub_endpoint().await?;
-            let timeout = match command {
-                HubCommand::Peer {
-                    command: PeerCommand::Join(_),
-                } => ENROLLMENT_TIMEOUT,
-                _ => MANAGEMENT_TIMEOUT,
-            };
-            let deadline = tokio::time::Instant::now() + timeout;
+            let deadline = tokio::time::Instant::now() + MANAGEMENT_TIMEOUT;
             return yolo_tui_hub_cli::run(&socket, entry, command, deadline).await;
         }
         if let Some(Command::Audit {

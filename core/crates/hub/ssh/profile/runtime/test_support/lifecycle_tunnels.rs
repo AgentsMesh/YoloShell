@@ -6,31 +6,65 @@ use super::super::{
 };
 use std::sync::Arc;
 use tokio::{
-    io::{AsyncReadExt, AsyncWriteExt},
     net::UnixListener,
+    task::JoinHandle,
     time::{timeout, timeout_at},
 };
 use yolo_hub_federation_settings::{PeerAddress, SshProfileRef};
 use yolo_hub_peer_dialer::dial_peer;
-use yolo_hub_peer_transport::{
-    PeerConnection, PeerIo, PeerPins, PeerStream, accept_io, connect_io,
-};
+use yolo_hub_peer_link::{accept, connect};
+use yolo_hub_peer_protocol::{FIRST_REVISION, PEER_PROTOCOL_VERSION, PeerReply, PeerRequest};
+use yolo_hub_peer_rpc::{Client, Handler, Response, RpcFuture};
 use yolo_hub_state::HubState;
 use yolo_remote_broker::BrokerPaths;
+use uuid::Uuid;
+
+struct Echo;
+impl Handler for Echo {
+    fn request(&self, request: PeerRequest) -> RpcFuture<'_, Response> {
+        Box::pin(async move {
+            let PeerRequest::Discover { request_id, .. } = request else {
+                return Err(yolo_hub_peer_rpc::RpcError::Invalid);
+            };
+            Ok(Response {
+                reply: PeerReply::Directory {
+                    request_id,
+                    revision: FIRST_REVISION,
+                    origins: Vec::new(),
+                },
+                updates: None,
+            })
+        })
+    }
+}
+
+fn discover() -> PeerRequest {
+    PeerRequest::Discover {
+        request_id: Uuid::new_v4(),
+        version: PEER_PROTOCOL_VERSION,
+        allowed_origins: Vec::new(),
+    }
+}
+
+async fn responds(client: &Client) -> bool {
+    client.request(discover(), deadline()).await.is_ok()
+}
 
 pub struct Tunnels {
-    connections: Vec<(PeerConnection, PeerConnection)>,
-    _streams: Vec<(PeerStream, PeerStream)>,
+    clients: Vec<Client>,
+    tasks: Vec<JoinHandle<()>>,
     _brokers: Vec<(BrokerPaths, UnixListener)>,
-    _peer: HubState,
+    _peer: Arc<HubState>,
 }
 impl Tunnels {
     pub async fn open(fixture: &Fixture) -> Self {
-        let peer = HubState::open(
-            &fixture.root.path().join(PEER_STATE_DIRECTORY),
-            &fixture.root.path().join(PEER_HOST_DIRECTORY),
-        )
-        .unwrap();
+        let peer = Arc::new(
+            HubState::open(
+                &fixture.root.path().join(PEER_STATE_DIRECTORY),
+                &fixture.root.path().join(PEER_HOST_DIRECTORY),
+            )
+            .unwrap(),
+        );
         let brokers = (0..TUNNEL_COUNT)
             .map(|index| {
                 broker::bind(
@@ -55,79 +89,72 @@ impl Tunnels {
             })
             .collect::<Vec<_>>();
         fixture.apply(profiles.clone()).await;
-        let mut connections = Vec::new();
-        let mut streams = Vec::new();
+        let mut clients = Vec::new();
+        let mut tasks = Vec::new();
         for (profile, (_, listener)) in profiles.into_iter().zip(&brokers) {
-            let address = PeerAddress::ssh(profile.profile, ENDPOINT.parse().unwrap()).unwrap();
+            let address = PeerAddress::ssh(profile.profile.profile_id().to_owned(), SOCKET.into()).unwrap();
             let remote = peer.peer_identity();
             let (opened, accepted) = tokio::join!(
                 dial_peer(fixture.runtime.as_ref(), remote, &address, deadline()),
                 timeout_at(deadline(), broker::upgrade(listener, remote)),
             );
-            let (client, server) = tokio::join!(
-                connect_io(
-                    opened.unwrap(),
-                    Arc::new(fixture.state.transport_key().unwrap()),
-                    remote,
-                    deadline()
-                ),
-                accept_io(
-                    PeerIo::new(accepted.unwrap(), || {}),
-                    Arc::new(peer.transport_key().unwrap()),
-                    PeerPins::new(vec![fixture.state.peer_identity()]).unwrap(),
-                    deadline()
-                ),
-            );
-            let (client, _) = client.unwrap();
-            let (server, mut incoming) = server.unwrap();
-            assert_eq!(client.peer(), remote);
-            assert_eq!(server.peer(), fixture.state.peer_identity());
-            let mut stream = client.open_channel(deadline()).await.unwrap();
-            let mut accepted = timeout_at(deadline(), incoming.recv())
-                .await
-                .unwrap()
-                .unwrap();
-            stream.write_all(PAYLOAD).await.unwrap();
-            let mut bytes = vec![0; PAYLOAD.len()];
-            timeout_at(deadline(), accepted.read_exact(&mut bytes))
-                .await
-                .unwrap()
-                .unwrap();
-            assert_eq!(bytes, PAYLOAD);
-            assert!(!client.is_closed() && !server.is_closed());
-            connections.push((client, server));
-            streams.push((stream, accepted));
+            let local = fixture.state.peer_identity();
+            let stream = accepted.unwrap();
+            let server_peer = peer.clone();
+            let handler = Arc::new(Echo);
+            tasks.push(tokio::spawn(async move {
+                let (_, stream) = accept(stream, remote, &*server_peer, &[local], deadline())
+                    .await
+                    .unwrap();
+                let _ = yolo_hub_peer_rpc::serve(stream, handler).await;
+            }));
+            let client = connect(
+                opened.unwrap(),
+                local,
+                fixture.state.as_ref(),
+                remote,
+                deadline(),
+            )
+            .await
+            .unwrap();
+            assert!(responds(&client).await);
+            clients.push(client);
         }
         Self {
-            connections,
-            _streams: streams,
+            clients,
+            tasks,
             _brokers: brokers,
             _peer: peer,
         }
     }
-    /// Socket shutdown is synchronous; russh publishes handler closure asynchronously.
-    pub async fn require_closed(&self) {
+    /// Tunnel shutdown is synchronous; RPC closure becomes observable asynchronously.
+    pub async fn require_closed(&mut self) {
         timeout(CLOSURE_OBSERVATION, async {
-            while self
-                .connections
-                .iter()
-                .any(|(local, remote)| !local.is_closed() || !remote.is_closed())
-            {
+            loop {
+                let mut live = false;
+                for client in &self.clients {
+                    if responds(client).await {
+                        live = true;
+                        break;
+                    }
+                }
+                if !live {
+                    break;
+                }
                 tokio::task::yield_now().await;
             }
         })
         .await
         .unwrap();
-        for (local, remote) in &self.connections {
-            assert!(local.open_channel(deadline()).await.is_err());
-            assert!(remote.open_channel(deadline()).await.is_err());
+        for task in &mut self.tasks {
+            timeout(CLOSURE_OBSERVATION, task)
+                .await
+                .expect("peer RPC server did not observe tunnel closure")
+                .expect("peer RPC server task failed");
         }
     }
-    pub async fn finish(&self) {
-        for (local, remote) in &self.connections {
-            let (left, right) = tokio::join!(local.close(deadline()), remote.close(deadline()));
-            left.unwrap();
-            right.unwrap();
-        }
+    pub async fn finish(&mut self) {
+        self.tasks.clear();
+        self.clients.clear();
     }
 }

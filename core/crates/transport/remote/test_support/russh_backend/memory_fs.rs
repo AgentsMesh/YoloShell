@@ -57,7 +57,7 @@ struct State {
     posix_rename_supported: bool,
     commands: CommandState,
     channel_open: Arc<channel_open::ChannelOpenControl>,
-    hub_peer_target: Option<std::net::SocketAddr>,
+    hub_peer_target: Option<std::path::PathBuf>,
     hub_peer_lifecycles: HashMap<russh::ChannelId, HubPeerLifecycle>,
     uid_response: (Vec<u8>, Vec<u8>, Option<u32>),
     uid_probes: usize,
@@ -103,11 +103,11 @@ impl Default for MemoryFilesystem {
 }
 
 impl MemoryFilesystem {
-    pub fn set_hub_peer_target(&self, target: std::net::SocketAddr) {
+    pub fn set_hub_peer_target(&self, target: std::path::PathBuf) {
         self.0.lock().unwrap().hub_peer_target = Some(target);
     }
-    pub(crate) fn hub_peer_target(&self) -> Option<std::net::SocketAddr> {
-        self.0.lock().unwrap().hub_peer_target
+    pub(crate) fn hub_peer_target(&self) -> Option<std::path::PathBuf> {
+        self.0.lock().unwrap().hub_peer_target.clone()
     }
     pub fn fail_once(&self, failure: FailurePoint) {
         self.0.lock().unwrap().failure = Some(failure);

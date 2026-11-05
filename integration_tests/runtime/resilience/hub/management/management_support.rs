@@ -1,6 +1,6 @@
 use super::federation_support::deadline;
 use crate::Harness;
-use std::{net::SocketAddr, path::PathBuf, sync::Arc};
+use std::{path::PathBuf, sync::Arc};
 use tokio::{sync::watch, task::JoinHandle};
 use yolo_hub_federation_settings::Configuration;
 use yolo_hub_identity::HubId;
@@ -12,7 +12,7 @@ use yolo_hub_state::HubState;
 
 pub struct ManagedNode {
     pub hub: HubId,
-    pub address: SocketAddr,
+    pub peer_socket: PathBuf,
     pub socket: PathBuf,
     stop: watch::Sender<bool>,
     service: Option<JoinHandle<anyhow::Result<()>>>,
@@ -43,10 +43,16 @@ impl ManagedNode {
         let backend = super::files_runtime::backend(harness, &state)
             .with_file_helper(file_helper)
             .unwrap();
-        let (managed, service) = ManagedHub::open(state.clone(), backend, Some(configuration))
-            .await
-            .unwrap();
-        let address = service.listen_address().unwrap().unwrap();
+        let (managed, service) = ManagedHub::open_with_dialer(
+            state.clone(),
+            backend,
+            Some(configuration),
+            None,
+            Arc::new(super::federation_support::DirectUnixDialer),
+        )
+        .await
+        .unwrap();
+        let peer_socket = service.peer_socket().unwrap();
         let server = HubServer::bind_dispatcher(state, managed).await.unwrap();
         let (stop, stopped) = watch::channel(false);
         let mut local_stop = stopped.clone();
@@ -56,7 +62,7 @@ impl ManagedNode {
         let service = tokio::spawn(service.run(stopped));
         Self {
             hub,
-            address,
+            peer_socket,
             socket,
             stop,
             local: Some(local),

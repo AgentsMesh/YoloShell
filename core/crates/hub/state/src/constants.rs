@@ -1,5 +1,6 @@
 pub const HUB_SOCKET_FILE: &str = yolo_paths::constants::HUB_SOCKET_FILE_NAME;
 pub const HUB_IDENTITY_FILE: &str = "identity.json";
+pub const PEER_SOCKET_FILE: &str = "peer.sock";
 pub const STATE_CONTRACT_FILE: &str = "runtime-contract.json";
 pub(crate) const HUB_LOCK_FILE: &str = "hub.lock";
 pub(crate) const STATE_SCHEMA_VERSION: u16 = 2;

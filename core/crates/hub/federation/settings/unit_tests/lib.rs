@@ -11,13 +11,12 @@ fn default_local_configuration_and_explicit_directed_peer_roundtrip() {
     let (local, remote) = (Identity::new(), Identity::new());
     Configuration::default().validate(local.identity).unwrap();
     let configuration = Configuration {
-        listen: None,
         trusted_origins: vec![],
         file_roots: vec![],
         peers: vec![Peer {
             identity: remote.identity,
             dial: None,
-            consume: true,
+            consume: false,
             exports: vec![ExportPolicy {
                 origin: local.identity.hub(),
                 rights: rights(),
@@ -43,11 +42,10 @@ fn duplicate_peers_unpinned_exports_and_self_connections_are_rejected() {
     let peer = Peer {
         identity: remote.identity,
         dial: None,
-        consume: true,
+        consume: false,
         exports: vec![],
     };
     let mut configuration = Configuration {
-        listen: None,
         trusted_origins: vec![],
         file_roots: vec![],
         peers: vec![peer.clone(), peer],
@@ -63,5 +61,67 @@ fn duplicate_peers_unpinned_exports_and_self_connections_are_rejected() {
     configuration.trusted_origins.push(unknown.identity);
     configuration.validate(local.identity).unwrap();
     configuration.peers[0].identity = local.identity;
+    assert!(configuration.validate(local.identity).is_err());
+}
+
+#[test]
+fn legacy_listener_and_dial_are_migrated_without_weakening_the_peer_pin() {
+    let (local, remote) = (Identity::new(), Identity::new());
+    let configuration = Configuration {
+        peers: vec![Peer {
+            identity: remote.identity,
+            dial: Some(
+                PeerAddress::ssh(
+                    "remote",
+                    "/run/user/1000/yolo/hub/peer.sock".into(),
+                )
+                .unwrap(),
+            ),
+            consume: true,
+            exports: vec![ExportPolicy {
+                origin: local.identity.hub(),
+                rights: rights(),
+                remaining_reexports: REEXPORT_DEPTH,
+            }],
+        }],
+        ..Configuration::default()
+    };
+    for dial in [
+        serde_json::json!({
+            "host": "127.0.0.1",
+            "port": 7400,
+            "transport": {"kind": "ssh", "profile": serde_json::to_value(
+                SshProfileRef::new("remote", "a".repeat(64)).unwrap()
+            ).unwrap()},
+        }),
+        serde_json::json!({
+            "host": "192.0.2.1",
+            "port": 7400,
+            "transport": {"kind": "tcp"},
+        }),
+    ] {
+        let mut value = serde_json::to_value(&configuration).unwrap();
+        value["listen"] = serde_json::json!("0.0.0.0:7400");
+        value["peers"][0]["dial"] = dial;
+        let decoded: Configuration = serde_json::from_value(value).unwrap();
+        assert_eq!(decoded.peers[0].identity, remote.identity);
+        assert!(decoded.peers[0].dial.is_none());
+        assert!(!decoded.peers[0].consume);
+        assert_eq!(decoded.peers[0].exports, configuration.peers[0].exports);
+    }
+}
+
+#[test]
+fn consuming_a_peer_requires_a_dial() {
+    let (local, remote) = (Identity::new(), Identity::new());
+    let configuration = Configuration {
+        peers: vec![Peer {
+            identity: remote.identity,
+            dial: None,
+            consume: true,
+            exports: vec![],
+        }],
+        ..Configuration::default()
+    };
     assert!(configuration.validate(local.identity).is_err());
 }

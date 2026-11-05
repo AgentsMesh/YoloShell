@@ -33,7 +33,6 @@ async fn real_multihop_files_require_independent_rights_and_preserve_origin_pty_
     let b_root = configure_root(&path, B_FILES, shared, B_CONTENT);
     let c_root = configure_root(&path, C_FILES, shared, C_CONTENT);
     let mut b_config = Configuration {
-        listen: Some(SocketAddr::new(Ipv4Addr::LOCALHOST.into(), 0)),
         peers: vec![
             peer(
                 a,
@@ -41,34 +40,29 @@ async fn real_multihop_files_require_independent_rights_and_preserve_origin_pty_
                 false,
                 vec![file_export(b.hub(), false), exports(c.hub(), false)],
             ),
-            peer(c, None, true, vec![]),
+            peer(c, Some(&c_state), true, vec![]),
         ],
         file_roots: vec![b_root],
         ..Configuration::default()
     };
     let b_node = ManagedNode::start(&b_host, b_state, b_config.clone()).await;
-    let a_listener = listener().await;
-    let c_listener = listener().await;
-    let c_address = c_listener.local_addr().unwrap();
     let a_config = Configuration {
-        listen: Some(a_listener.local_addr().unwrap()),
-        peers: vec![peer(b, Some(b_node.address), true, vec![])],
+        peers: vec![peer_at_socket(b, b_node.peer_socket.clone(), true, vec![])],
         trusted_origins: vec![c],
         file_roots: vec![a_root],
     };
     let c_config = Configuration {
-        listen: Some(c_address),
-        peers: vec![peer(
+        peers: vec![peer_at_socket(
             b,
-            Some(b_node.address),
+            b_node.peer_socket.clone(),
             false,
             vec![file_export(c.hub(), true)],
         )],
         file_roots: vec![c_root],
         ..Configuration::default()
     };
-    let a_node = RunningNode::start(&a_host, a_state, a_config, a_listener).await;
-    let c_node = RunningNode::start(&c_host, c_state.clone(), c_config.clone(), c_listener).await;
+    let a_node = RunningNode::start(&a_host, a_state, a_config).await;
+    let c_node = RunningNode::start(&c_host, c_state.clone(), c_config.clone()).await;
     let target = launch(&c_node, &c_host, NAME_C).await;
     a_node.wait_origins(&[c.hub()]).await;
     let before = c_host
@@ -117,8 +111,7 @@ async fn real_multihop_files_require_independent_rights_and_preserve_origin_pty_
         ))
     ));
     c_node.stop().await;
-    let c_listener = tokio::net::TcpListener::bind(c_address).await.unwrap();
-    let c_node = RunningNode::start(&c_host, c_state, c_config, c_listener).await;
+    let c_node = RunningNode::start(&c_host, c_state, c_config).await;
     a_node.wait_origins(&[c.hub()]).await;
     let reopened = roots(&a_node, c.hub()).await.roots.remove(0);
     assert_ne!(

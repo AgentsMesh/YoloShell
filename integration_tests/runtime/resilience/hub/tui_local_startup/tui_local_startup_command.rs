@@ -5,7 +5,7 @@ use std::{
     os::unix::fs::DirBuilderExt,
     path::{Path, PathBuf},
 };
-use yolo_runtime::agent::{FencedDescendants, ProcessSource, SystemProcessSource};
+use yolo_runtime::agent::{FencedDescendants, ProcessSource, RuntimeProcessSource};
 
 pub(super) struct Launch {
     nonce: String,
@@ -58,7 +58,7 @@ impl Launch {
             pid: root.pid,
             start_time: root.start_time,
         };
-        let FencedDescendants::Stable(descendants) = SystemProcessSource
+        let FencedDescendants::Stable(descendants) = RuntimeProcessSource::new([])
             .fenced_descendants(process_root)
             .unwrap()
         else {

@@ -1,8 +1,7 @@
 use yolo_hook_installation::HookInstallSpec;
-use yolo_hook_installation_catalog as catalog;
 
 pub fn launch_values(provider: &HookInstallSpec) -> (&'static str, &'static str, &'static str) {
-    if provider == &catalog::CLAUDE {
+    if provider == crate::support::claude_install_spec() {
         (
             yolo_runtime::agent::claude::constants::EXECUTABLE,
             crate::FAKE_CLAUDE_BINARY_RUNFILE,

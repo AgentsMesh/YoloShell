@@ -3,7 +3,7 @@ use crate::{
     wire_fields::key_text,
 };
 use yolo_hub_delegation::PeerIdentity;
-use yolo_hub_federation_settings::{DialTransport, ExportPolicy, Peer};
+use yolo_hub_federation_settings::{ExportPolicy, Peer};
 use yolo_hub_identity::{FileRootId, HubId};
 use yolo_hub_routing::Right;
 
@@ -15,7 +15,6 @@ pub(crate) enum FormKind {
         peer: HubId,
         original: Option<HubId>,
     },
-    Listener,
     FileRoot {
         id: FileRootId,
         existing: bool,
@@ -43,9 +42,6 @@ impl Form {
     pub fn peer(peer: Option<&Peer>) -> Self {
         let identity = peer.map(|peer| peer.identity);
         let read_only = identity.is_some();
-        let managed_transport = peer
-            .and_then(|peer| peer.dial.as_ref())
-            .is_some_and(|dial| matches!(dial.transport, DialTransport::Ssh { .. }));
         Self::new(
             FormKind::Peer(identity),
             vec![
@@ -60,18 +56,18 @@ impl Form {
                     read_only,
                 ),
                 Field::text(
-                    FieldId::Host,
+                    FieldId::Profile,
                     peer.and_then(|peer| peer.dial.as_ref())
-                        .map(|dial| dial.host.clone())
+                        .map(|dial| dial.profile.clone())
                         .unwrap_or_default(),
-                    managed_transport,
+                    false,
                 ),
                 Field::text(
-                    FieldId::Port,
+                    FieldId::Socket,
                     peer.and_then(|peer| peer.dial.as_ref())
-                        .map(|dial| dial.port.to_string())
+                        .map(|dial| dial.socket.display().to_string())
                         .unwrap_or_default(),
-                    managed_transport,
+                    false,
                 ),
                 Field::flag(FieldId::Import, peer.is_none_or(|peer| peer.consume), false),
             ],
@@ -84,18 +80,6 @@ impl Form {
                 Field::text(FieldId::Hub, "", false),
                 Field::text(FieldId::Key, "", false),
             ],
-        )
-    }
-    pub fn listener(address: Option<std::net::SocketAddr>) -> Self {
-        Self::new(
-            FormKind::Listener,
-            vec![Field::text(
-                FieldId::Listen,
-                address
-                    .map(|address| address.to_string())
-                    .unwrap_or_default(),
-                false,
-            )],
         )
     }
     pub fn export(peer: HubId, local: HubId, policy: Option<&ExportPolicy>) -> Self {

@@ -27,7 +27,6 @@ async fn real_tui_edits_file_roots_with_preflight_conflicts_and_exact_path_prese
     std::fs::write(changed_directory.join(FILE_NAME), CONTENTS).unwrap();
     let state = Arc::new(HubState::open(&base.join(STATE), host.home.path()).unwrap());
     let config = Configuration {
-        listen: Some(SocketAddr::new(Ipv4Addr::LOCALHOST.into(), DYNAMIC_PORT)),
         ..Configuration::default()
     };
     let node = ManagedNode::start(&host, state, config).await;
