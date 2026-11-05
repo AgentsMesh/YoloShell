@@ -32,7 +32,7 @@ fn delayed_creation_binds_its_original_inactive_tab_without_stealing_current_foc
     let active = fixture.switch_tab();
     let view = fixture.state.tab_layout().clone();
     fixture.state.filter = RETAINED_FILTER.into();
-    fixture.state.inventory.view = yolo_tui_inventory::View::Hubs;
+    fixture.state.inventory.view = yolo_tui_inventory::View::Machines;
     let selected = fixture.state.selected;
     let created = fixture.created();
     fixture.finish(request.clone(), created);
@@ -41,7 +41,7 @@ fn delayed_creation_binds_its_original_inactive_tab_without_stealing_current_foc
     assert_eq!(*fixture.state.tab_layout(), view);
     assert_eq!(fixture.state.selected, selected);
     assert_eq!(fixture.state.filter, RETAINED_FILTER);
-    assert_eq!(fixture.state.inventory.view, yolo_tui_inventory::View::Hubs);
+    assert_eq!(fixture.state.inventory.view, yolo_tui_inventory::View::Machines);
     fixture.assert_finalize(&request, created, true);
 }
 

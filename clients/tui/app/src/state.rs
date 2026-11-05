@@ -20,7 +20,6 @@ pub enum Mode {
     ConfirmRecreate,
     HubConfiguration,
 }
-
 pub struct Writer {
     pub grant: LeaseGrant,
     pub expires: Instant,
@@ -88,14 +87,11 @@ pub struct State {
     pub(crate) hub_manager: Option<yolo_tui_hub_manager::Manager>,
 }
 impl State {
-    /// Whether the control channel has completed its Hello handshake. This is
-    /// independent of the status line, which also carries transient hints and
-    /// errors and therefore cannot gate lifecycle recovery UI.
+    /// Whether the control channel completed its Hello handshake.
     pub(crate) fn connection_ready(&self) -> bool {
         self.client_capabilities.is_some() && self.client_startup_failure.is_none()
     }
 }
-
 impl Default for State {
     fn default() -> Self {
         let tabs = yolo_tui_tab::TabCatalog::default();

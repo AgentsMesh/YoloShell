@@ -10,7 +10,7 @@ fn selected_title(state: &State) -> Option<&str> {
             .selected
             .and_then(|address| state.terminals.get(&address))
             .map(|terminal| terminal.display_title()),
-        yolo_tui_inventory::View::Hubs => None,
+        yolo_tui_inventory::View::Machines => None,
     }
 }
 

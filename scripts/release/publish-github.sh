@@ -31,11 +31,11 @@ Update:
     yolo update
     yolo update --check
 
-Peer links:
+Machines:
 
-    yolo hub peer join <user@host>
+    yolo machine add <user@host>
 
-Both Hubs need this release; the SSH login must be non-interactive (key or agent).
+Both machines need this release; the SSH login must be non-interactive (key or agent).
 
 Nightly channel:
 

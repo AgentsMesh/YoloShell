@@ -9,7 +9,7 @@ use yolo_hub_terminal_protocol::TerminalSummary;
 pub(crate) enum RowEvidence {
     Terminal(TerminalSummary),
     Agent(AgentSnapshot, Option<TerminalSummary>),
-    Hub(HubSummary),
+    Machine(HubSummary),
 }
 impl RowEvidence {
     pub fn capture(
@@ -26,7 +26,7 @@ impl RowEvidence {
                     terminals.get(&agent.fields().terminal.address).cloned(),
                 )
             }
-            InventorySelection::Hub(hub) => Self::Hub(inventory.hubs.get(&hub)?.clone()),
+            InventorySelection::Machine(hub) => Self::Machine(inventory.machines.get(&hub)?.clone()),
         })
     }
 
@@ -41,7 +41,7 @@ impl RowEvidence {
                 inventory.agents.get(&expected.cursor().target()) == Some(expected)
                     && terminals.get(&expected.fields().terminal.address) == session.as_ref()
             }
-            Self::Hub(expected) => inventory.hubs.get(&expected.hub_id) == Some(expected),
+            Self::Machine(expected) => inventory.machines.get(&expected.hub_id) == Some(expected),
         }
     }
 }

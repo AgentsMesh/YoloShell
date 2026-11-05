@@ -49,7 +49,7 @@ impl InventoryViewport {
             history: inventory.history,
             details: inventory.details,
             current: inventory.current,
-            support: (inventory.agents_supported, inventory.hubs_supported),
+            support: (inventory.agents_supported, inventory.machines_supported),
             filter: filter.into(),
             selected: inventory.selected(selected),
             ordered: inventory.visible_selections(filter, terminals),
@@ -75,7 +75,7 @@ impl InventoryViewport {
             && self.history == inventory.history
             && self.details == inventory.details
             && self.current == inventory.current
-            && self.support == (inventory.agents_supported, inventory.hubs_supported)
+            && self.support == (inventory.agents_supported, inventory.machines_supported)
             && self.filter == filter
             && self.selected == inventory.selected(selected)
             && self.ordered == inventory.visible_selections(filter, terminals)

@@ -11,7 +11,7 @@ pub enum View {
     Terminals,
     #[default]
     Agents,
-    Hubs,
+    Machines,
 }
 
 #[derive(Debug, Default)]
@@ -23,13 +23,16 @@ pub struct Inventory {
     pub history: bool,
     pub details: Option<AgentTarget>,
     pub agents: BTreeMap<AgentTarget, AgentSnapshot>,
-    pub hubs: BTreeMap<HubId, HubSummary>,
+    pub machines: BTreeMap<HubId, HubSummary>,
     pub selected_agent: Option<AgentTarget>,
-    pub selected_hub: Option<HubId>,
+    pub selected_machine: Option<HubId>,
+    /// Last terminal opened per machine; a machine click returns to it when it
+    /// still has a live catalogue record.
+    pub last_terminal_by_machine: BTreeMap<HubId, TerminalAddress>,
     pub local_hub: Option<HubId>,
     pub local_hub_name: Option<String>,
     pub agents_supported: bool,
-    pub hubs_supported: bool,
+    pub machines_supported: bool,
     pub current: bool,
     pub attention: BTreeSet<TerminalAddress>,
     /// Optional workspace scope for terminals and agents; None shows all.
@@ -50,13 +53,13 @@ impl Inventory {
     /// instead retain these maps and set current=false; selection remains caller-owned.
     pub fn replace(&mut self, agents: Option<Vec<AgentSnapshot>>, hubs: Option<Vec<HubSummary>>) {
         self.agents_supported = agents.is_some();
-        self.hubs_supported = hubs.is_some();
+        self.machines_supported = hubs.is_some();
         self.agents = agents
             .unwrap_or_default()
             .into_iter()
             .map(|agent| (agent.cursor().target(), agent))
             .collect();
-        self.hubs = hubs
+        self.machines = hubs
             .unwrap_or_default()
             .into_iter()
             .map(|hub| (hub.hub_id, hub))
@@ -74,8 +77,16 @@ impl Inventory {
     }
 
     /// Name the Hub reached through a local Unix endpoint. Remote/federated
-    /// Hubs keep the compact identity fallback because the wire summary does
+    /// Machines keep the compact identity fallback because the wire summary does
     /// not carry a host name.
+    pub fn remember_terminal(&mut self, address: TerminalAddress) {
+        self.last_terminal_by_machine.insert(address.hub_id, address);
+    }
+
+    pub fn last_terminal_for(&self, hub: HubId) -> Option<TerminalAddress> {
+        self.last_terminal_by_machine.get(&hub).copied()
+    }
+
     pub fn set_local_hub(&mut self, hub: HubId, name: Option<String>) {
         self.local_hub = Some(hub);
         self.local_hub_name = name.filter(|name| !name.is_empty());

@@ -45,6 +45,13 @@ impl Dispatcher for ManagedHub {
                 if fields.destination != self.hub_id() {
                     return Err(PublicError::Unauthorized);
                 }
+                if matches!(fields.command, Command::ListConsumers {}) {
+                    let generation = self.generation.read().await;
+                    let federation = generation.as_ref().ok_or(PublicError::Unsupported)?;
+                    return Ok(Operation::Reply(Reply::Consumers {
+                        consumers: federation.consumers(),
+                    }));
+                }
                 let change = match &fields.command {
                     Command::Configure { change } => Some(change.clone()),
                     _ => None,

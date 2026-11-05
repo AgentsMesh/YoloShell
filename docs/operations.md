@@ -72,13 +72,13 @@ shell in its original pane should acquire control without that action.
 
 ## Hubs and Remote Runtime
 
-The Hubs inventory exposes `Configure Hub` (`m`). Configuration belongs to the
-entry Hub: it manages peer SSH/socket dials, trusted origins, file roots and
-per-peer export policies. Reciprocal identity pinning and export authorization
-must also be configured at the other Hub; the TUI never trusts an unknown key.
-Peer links use the user's SSH access to `<hub-state>/peer.sock` and open no
-public Hub port. See [Hub peer links](hub-peer-links.md) and [TUI Hub
-management](tui-hub-management.md).
+The Machines inventory exposes `Manage machines` (`m`). Configuration belongs
+to the local Hub: it manages machine SSH/socket dials, trusted origins, file
+roots and per-machine export policies. Reciprocal identity pinning and export authorization
+must also be configured at the remote machine; the TUI never trusts an unknown key.
+Machine links use the user's SSH access to `<hub-state>/peer.sock` and open no
+public Hub port. See [Machines](machines.md) and [TUI Hub
+management](tui-machine-management.md).
 
 One SSH transport multiplexes runtime, attachment, bounded command, SFTP read,
 and deployment channels. Host keys are verified before authentication against

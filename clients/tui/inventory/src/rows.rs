@@ -36,7 +36,7 @@ pub(crate) fn terminal(
         Line::from(title),
         muted(elide(&fields.cwd, row_width)),
         muted(format!(
-            "{HUB_LABEL} {} · {TERMINAL_LABEL} {}",
+            "{MACHINE_LABEL} {} · {TERMINAL_LABEL} {}",
             compact_id(&fields.address.hub_id.to_string()),
             compact_id(&fields.address.terminal_id.to_string())
         )),
@@ -127,7 +127,7 @@ pub(crate) fn agent(
     ListItem::new(Line::from(spans))
 }
 
-pub(crate) fn hub(
+pub(crate) fn machine(
     hub: &HubSummary,
     current: bool,
     local_name: Option<&str>,
@@ -144,7 +144,11 @@ pub(crate) fn hub(
     let name = local_name
         .or(hub.label.as_deref())
         .map_or_else(|| compact_id(&hub.hub_id.to_string()).to_owned(), str::to_owned);
-    let prefix = format!("{HUB_LABEL} ");
+    let prefix = if local_name.is_some() {
+        format!("{THIS_MACHINE_LABEL} ")
+    } else {
+        format!("{MACHINE_LABEL} ")
+    };
     let suffix = format!(" {glyph}");
     let fixed = Line::raw(&prefix).width() + Line::raw(&suffix).width();
     let name = elide(&name, row_width.saturating_sub(fixed));

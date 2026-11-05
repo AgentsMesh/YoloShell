@@ -12,7 +12,7 @@ impl Inventory {
         terminals: &BTreeMap<TerminalAddress, TerminalSummary>,
     ) {
         let agents = self.visible_agents(filter, terminals);
-        let hubs = self.visible_hubs(filter);
+        let hubs = self.visible_machines(filter);
         // A live detail view must not outlive the agent it describes. History
         // keeps the row (and its recovery path) available explicitly.
         if self
@@ -22,7 +22,7 @@ impl Inventory {
             self.details = None;
         }
         reconcile(&mut self.selected_agent, &agents);
-        reconcile(&mut self.selected_hub, &hubs);
+        reconcile(&mut self.selected_machine, &hubs);
     }
 
     pub fn move_selection(
@@ -37,9 +37,9 @@ impl Inventory {
                 let visible = self.visible_agents(filter, terminals);
                 move_selection(&mut self.selected_agent, &visible, forward);
             }
-            View::Hubs => {
-                let visible = self.visible_hubs(filter);
-                move_selection(&mut self.selected_hub, &visible, forward);
+            View::Machines => {
+                let visible = self.visible_machines(filter);
+                move_selection(&mut self.selected_machine, &visible, forward);
             }
         }
     }

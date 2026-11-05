@@ -110,3 +110,21 @@ fn configuration_commands_are_local_only_with_mutation_identity_and_revision_fen
     change.request_id = Uuid::nil();
     assert!(Request::new(request.fields().destination, Command::Configure { change }).is_err());
 }
+
+#[test]
+fn consumers_reply_is_local_only_and_roundtrips() {
+    let destination = HubId::new();
+    let request = Request::new(destination, Command::ListConsumers {}).unwrap();
+    assert!(!request.fields().command.mutates());
+    let reply = Reply::Consumers {
+        consumers: vec![ConsumerSummary {
+            hub: HubId::new(),
+            connected_since_ms: 1,
+            links: 1,
+        }],
+    };
+    let response = Response::new(&request, destination, reply);
+    response.validate_for(&request).unwrap();
+    let bytes = serde_json::to_vec(&response).unwrap();
+    assert_eq!(serde_json::from_slice::<Response>(&bytes).unwrap(), response);
+}

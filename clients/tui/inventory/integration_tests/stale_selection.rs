@@ -15,7 +15,7 @@ fn lost_entry_keeps_observation_data_but_cannot_open_its_cached_agent() {
     inventory.current = false;
     assert!(inventory.terminal_for_selected(&terminals).is_none());
     let mut terminal = Terminal::new(TestBackend::new(WIDTH, HEIGHT)).unwrap();
-    for view in [View::Terminals, View::Agents, View::Hubs] {
+    for view in [View::Terminals, View::Agents, View::Machines] {
         inventory.view = view;
         terminal
             .draw(|frame| render(frame, &inventory, &terminals, None, "", frame.area()))
@@ -37,7 +37,7 @@ fn lost_entry_keeps_observation_data_but_cannot_open_its_cached_agent() {
                 assert!(!content.contains("Working"));
                 assert!(!content.contains(AGENT_WORKING_DIRECTORY));
             }
-            View::Hubs => assert!(content.contains(HUB_UNKNOWN_GLYPH)),
+            View::Machines => assert!(content.contains(HUB_UNKNOWN_GLYPH)),
             View::Terminals => {}
         }
         assert!(!content.contains("Unreachable"));
@@ -71,8 +71,8 @@ fn lost_entry_keeps_observation_data_but_cannot_open_its_cached_agent() {
         assert!(details.contains(expected), "missing {expected}: {details}");
     }
     assert_eq!(inventory.agents, before);
-    assert!(inventory.hubs[&fixture.hub.hub_id].reachable);
-    assert_eq!(inventory.visible_hubs("unknown"), vec![fixture.hub.hub_id]);
+    assert!(inventory.machines[&fixture.hub.hub_id].reachable);
+    assert_eq!(inventory.visible_machines("unknown"), vec![fixture.hub.hub_id]);
 }
 
 #[test]
@@ -106,9 +106,9 @@ fn scope_only_limits_resources_and_does_not_hide_other_hub_choices() {
         Some(vec![first.hub.clone(), second.hub.clone()]),
     );
     inventory.scope = Some(first.hub.hub_id);
-    inventory.view = View::Hubs;
+    inventory.view = View::Machines;
     inventory.reconcile("", &terminals);
-    assert_eq!(inventory.visible_hubs("").len(), 2);
+    assert_eq!(inventory.visible_machines("").len(), 2);
     assert_eq!(inventory.visible_agents("", &terminals).len(), 1);
     assert_eq!(inventory.visible_terminals("", &terminals).len(), 1);
     let mut terminal = Terminal::new(TestBackend::new(WIDTH, HEIGHT)).unwrap();

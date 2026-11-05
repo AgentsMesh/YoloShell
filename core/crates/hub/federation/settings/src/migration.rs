@@ -7,7 +7,7 @@ use yolo_hub_delegation::PeerIdentity;
 /// dial addresses. 0.2.x dials named a broker profile. Both are retired: the
 /// peer transport is now the local SSH client with a stdio bridge. Peer pins,
 /// consume flags and export policy survive; a retired dial drops its import
-/// intent and is re-added with `yolo hub peer join`.
+/// intent and is re-added with `yolo machine add`.
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 pub(crate) struct ConfigurationWire {

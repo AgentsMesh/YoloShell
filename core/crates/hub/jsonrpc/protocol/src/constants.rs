@@ -46,6 +46,7 @@ pub(crate) mod reply_tag {
     pub const TERMINAL_HISTORY: &str = "terminal_history";
     pub const CREATION_TERMINATED: &str = "creation_terminated";
     pub const CONFIGURATION: &str = "configuration";
+    pub const CONSUMERS: &str = "consumers";
     pub const FILE_ROOTS: &str = "file_roots";
     pub const FILE: &str = "file";
     pub const AGENT_CONTROL: &str = "agent_control";

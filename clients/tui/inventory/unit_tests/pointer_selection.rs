@@ -5,7 +5,7 @@ use yolo_tui_inventory::{InventorySelection, View};
 fn explicit_row_selection_preserves_other_views_and_rejects_wrong_view_or_filter() {
     let (mut inventory, terminals) = catalogue();
     let mut session = None;
-    for view in [View::Terminals, View::Agents, View::Hubs] {
+    for view in [View::Terminals, View::Agents, View::Machines] {
         inventory.view = view;
         let visible = inventory.visible_selections("", &terminals);
         let selected = *visible.last().unwrap();
@@ -30,7 +30,7 @@ fn explicit_row_selection_preserves_other_views_and_rejects_wrong_view_or_filter
 fn scrolling_moves_one_visible_selection_and_clamps_at_the_ends() {
     let (mut inventory, terminals) = catalogue();
     let mut session = None;
-    for view in [View::Terminals, View::Agents, View::Hubs] {
+    for view in [View::Terminals, View::Agents, View::Machines] {
         inventory.view = view;
         let visible = inventory.visible_selections("", &terminals);
         assert!(inventory.select(visible[0], &mut session, "", &terminals));

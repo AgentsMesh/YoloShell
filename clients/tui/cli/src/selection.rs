@@ -6,7 +6,6 @@ use yolo_hub_client::HubEndpoint;
 use yolo_hub_state::HubState;
 use yolo_local_profile::LocalProfile;
 use yolo_tui_app::Options;
-use yolo_tui_hub_cli::HubCommand;
 
 pub(crate) enum Selection {
     Explicit(Options),
@@ -44,7 +43,7 @@ impl Selection {
                 _ => unreachable!(),
             };
         }
-        if let Some(Command::Hub { command }) = &command {
+        if let Some(Command::Machine { command }) = &command {
             let (socket, entry) = self.local_hub_endpoint().await?;
             let deadline = tokio::time::Instant::now() + MANAGEMENT_TIMEOUT;
             return yolo_tui_hub_cli::run(&socket, entry, command, deadline).await;

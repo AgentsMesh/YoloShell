@@ -1,21 +1,27 @@
 pub const INVALID_PUBLIC_KEY: &str = "Public key must be 64 hexadecimal characters";
-pub const PEER_ALREADY_CONFIGURED: &str = "Peer is already configured";
-pub const PEER_NOT_CONFIGURED: &str = "Peer is not configured";
-pub const PEER_IS_LOCAL: &str = "The local Hub cannot be its own peer";
-pub const PEER_IDENTITY_CHANGED: &str =
-    "The configured peer identity changed; remove the peer before joining again";
+pub const MACHINE_ALREADY_CONFIGURED: &str = "Machine is already configured";
+pub const MACHINE_NOT_CONFIGURED: &str = "Machine is not configured";
+pub const MACHINE_IS_LOCAL: &str = "The local machine cannot be added as a remote machine";
+pub const MACHINE_IDENTITY_CHANGED: &str =
+    "The configured machine identity changed; remove the machine before importing again";
 pub const PEER_SOCKET_UNAVAILABLE: &str = "The local Hub did not report a peer socket";
-pub const JOIN_SSH_FAILED: &str = "Could not read the provider Hub identity over SSH";
-pub const JOIN_INVALID_RESPONSE: &str = "The provider Hub identity response is invalid";
-pub const JOIN_REMOTE_YOLO: &str = "yolo";
-pub const INVALID_PEER_DIAL: &str = "Pass --ssh and --remote-socket together, or neither";
+pub const MACHINE_SSH_FAILED: &str = "Could not read the remote machine's Hub identity over SSH";
+pub const MACHINE_OLDER_PROVIDER_HINT: &str =
+    "the remote machine may run an older Yolo release; both machines need the same or a newer release";
+pub const MACHINE_INVALID_RESPONSE: &str = "The remote machine's Hub identity response is invalid";
+pub const REMOTE_YOLO_DEFAULT: &str = "yolo";
+pub const INVALID_MACHINE_DIAL: &str = "Pass --ssh and --remote-socket together, or neither";
 pub const HUB_CONFIGURATION_READ_FAILED: &str = "Could not read the Hub configuration";
 pub const HUB_CONFIGURATION_WRITE_FAILED: &str = "Could not change the Hub configuration";
-pub const HUB_PEER_HEADER: &str = "HUB\tSSH:SOCKET\tIMPORT\tEXPORTS";
-pub const PEER_LIST_EMPTY: &str =
-    "No peers configured. Add one with `yolo hub peer add <hub-id> <key> --ssh user@host --remote-socket <path>`.";
-pub const PEER_LIST_LEGEND: &str =
-    "IMPORT: this Hub imports the peer's resources; EXPORTS: origins this Hub exports to the peer";
+pub const MACHINE_LIST_HEADER: &str = "MACHINE\tHUB\tSOCKET\tIMPORTS FROM\tEXPORTS TO";
+pub const MACHINE_LIST_EMPTY: &str =
+    "No machines configured. Add one with `yolo machine add <user@host>`.";
+pub const MACHINE_CONSUMERS_HEADER: &str = "HUB\tLINKS\tCONNECTED_MS";
+pub const MACHINE_CONSUMERS_EMPTY: &str = "No machines are importing from this machine.";
+pub const UNEXPECTED_REPLY: &str = "Hub returned an unexpected consumers reply";
+pub const MACHINE_LIST_LEGEND: &str =
+    "IMPORTS FROM: agents this machine imports from the remote machine; EXPORTS TO: origins this machine shares with it";
+pub const IMPORT_ONE_WAY: &str = "one-way import; the remote machine does not import this machine";
 pub const PUBLIC_KEY_FIELD: &str = "public_key";
 pub const HUB_ID_FIELD: &str = "hub_id";
 pub const SSH_PROGRAM: &str = "ssh";

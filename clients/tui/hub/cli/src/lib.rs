@@ -2,7 +2,7 @@ mod configuration;
 mod constants;
 mod identity;
 mod output;
-mod peer;
+mod machine;
 
 use anyhow::Result;
 use clap::{ArgGroup, Args, Subcommand};
@@ -11,17 +11,40 @@ use std::path::{Path, PathBuf};
 use tokio::time::Instant;
 use yolo_hub_identity::HubId;
 
-pub use configuration::{add_change, join_change, remove_change};
+pub use configuration::{import_change, pin_change, remove_change};
 
 #[derive(Debug, Subcommand)]
-pub enum HubCommand {
-    /// Add, list or join federation peers on the local entry Hub.
+pub enum MachineCommand {
+    /// Import agents from another machine's Hub over SSH (one-way).
     #[command(group(connection_group()))]
-    Peer {
-        #[command(subcommand)]
-        command: PeerCommand,
+    Add(AddMachine),
+    /// Pin a machine with a known Hub ID and public key (advanced).
+    #[command(group(connection_group()))]
+    Pin(PinMachine),
+    /// List configured machines.
+    #[command(group(connection_group()))]
+    List {
+        /// Print one JSON document.
+        #[arg(long)]
+        json: bool,
     },
-    /// Print this Hub's public identity and peer socket.
+    /// Remove a configured machine.
+    #[command(group(connection_group()))]
+    Remove {
+        /// Machine Hub ID.
+        machine: HubId,
+        /// Print one JSON document.
+        #[arg(long)]
+        json: bool,
+    },
+    /// List machines currently importing from this machine.
+    #[command(group(connection_group()))]
+    Consumers {
+        /// Print one JSON document.
+        #[arg(long)]
+        json: bool,
+    },
+    /// Print this machine's Hub identity and peer socket.
     #[command(group(connection_group()))]
     Identity {
         /// Print one JSON document.
@@ -30,40 +53,15 @@ pub enum HubCommand {
     },
 }
 
-#[derive(Debug, Subcommand)]
-pub enum PeerCommand {
-    /// Add a peer explicitly with its Hub identity and SSH dial.
-    Add(AddPeer),
-    /// List configured peers.
-    #[command(group(connection_group()))]
-    List {
-        /// Print one JSON document.
-        #[arg(long)]
-        json: bool,
-    },
-    /// Join a provider Hub over the user's existing SSH access.
-    Join(JoinPeer),
-    /// Remove a configured peer.
-    #[command(group(connection_group()))]
-    Remove {
-        /// Peer Hub ID.
-        peer: HubId,
-        /// Print one JSON document.
-        #[arg(long)]
-        json: bool,
-    },
-}
-
 #[derive(Debug, Args)]
-#[command(group(connection_group()))]
-pub struct JoinPeer {
-    /// SSH destination of the provider Hub (user@host or an ssh_config alias).
+pub struct AddMachine {
+    /// SSH destination of the remote machine (user@host or an ssh_config alias).
     target: String,
-    /// Do not import resources from the provider.
+    /// Discover and pin the machine identity without importing its agents.
     #[arg(long)]
-    no_import: bool,
+    pin_only: bool,
     /// Remote yolo executable used for discovery.
-    #[arg(long, hide = true, default_value = JOIN_REMOTE_YOLO)]
+    #[arg(long, hide = true, default_value = REMOTE_YOLO_DEFAULT)]
     remote_yolo: String,
     /// Print one JSON document.
     #[arg(long)]
@@ -71,25 +69,25 @@ pub struct JoinPeer {
 }
 
 #[derive(Debug, Args)]
-#[command(group(connection_group()))]
-pub struct AddPeer {
-    /// Peer Hub ID.
-    peer: HubId,
-    /// Peer Ed25519 public key, 64 hexadecimal characters.
+pub struct PinMachine {
+    /// Machine Hub ID.
+    #[arg(value_parser = machine_id)]
+    machine: HubId,
+    /// Machine Ed25519 public key, 64 hexadecimal characters.
     key: String,
-    /// SSH destination used to reach the peer Hub (user@host or an ssh_config alias).
+    /// SSH destination used to reach the machine (user@host or an ssh_config alias).
     #[arg(long, requires = "remote_socket")]
     ssh: Option<String>,
-    /// Absolute Unix peer socket path on the remote Hub.
+    /// Absolute Unix peer socket path on the remote machine.
     #[arg(long, requires = "ssh")]
     remote_socket: Option<PathBuf>,
-    /// Do not import resources from this peer.
+    /// Pin the identity without importing resources from this machine.
     #[arg(long)]
-    no_import: bool,
-    /// Export an origin to this peer with Observe rights; repeatable.
+    pin_only: bool,
+    /// Export an origin to this machine with Observe rights; repeatable.
     #[arg(long = "export", value_name = "HUB_ID")]
     exports: Vec<HubId>,
-    /// Export this Hub's own origin with Observe rights.
+    /// Export this machine's own origin with Observe rights.
     #[arg(long)]
     export_local: bool,
     /// Print one JSON document.
@@ -106,22 +104,27 @@ fn connection_group() -> ArgGroup {
         .requires(HUB_ARGUMENT)
 }
 
+fn machine_id(value: &str) -> Result<HubId, String> {
+    value.parse().map_err(|_| {
+        format!("'{value}' is not a Hub ID; to add a machine over SSH run `yolo machine add {value}`")
+    })
+}
+
 pub async fn run(
     socket: &Path,
     entry: HubId,
-    command: &HubCommand,
+    command: &MachineCommand,
     deadline: Instant,
 ) -> Result<()> {
     match command {
-        HubCommand::Peer { command } => match command {
-            PeerCommand::Add(args) => peer::add(socket, entry, args, deadline).await,
-            PeerCommand::List { json } => peer::list(socket, entry, *json, deadline).await,
-            PeerCommand::Join(args) => peer::join(socket, entry, args, deadline).await,
-            PeerCommand::Remove { peer, json } => {
-                peer::remove(socket, entry, *peer, *json, deadline).await
-            }
-        },
-        HubCommand::Identity { json } => identity::run(socket, entry, *json, deadline).await,
+        MachineCommand::Add(args) => machine::import(socket, entry, args, deadline).await,
+        MachineCommand::Pin(args) => machine::pin(socket, entry, args, deadline).await,
+        MachineCommand::List { json } => machine::list(socket, entry, *json, deadline).await,
+        MachineCommand::Remove { machine, json } => {
+            machine::remove(socket, entry, *machine, *json, deadline).await
+        }
+        MachineCommand::Consumers { json } => machine::consumers(socket, entry, *json, deadline).await,
+        MachineCommand::Identity { json } => identity::run(socket, entry, *json, deadline).await,
     }
 }
 

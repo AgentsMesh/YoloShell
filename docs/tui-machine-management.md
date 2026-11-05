@@ -1,30 +1,30 @@
-# Native TUI Hub Management
+# Native TUI Machine Management
 
-The Hubs inventory exposes a `Configure Hub` command. Keyboard entry is `m`
-while viewing Hubs. Configuration always belongs to the current entry Hub;
-selecting an imported Hub or Agent never changes administrative authority.
+The Machines inventory exposes a `Manage machines` command. Keyboard entry is
+`m` while viewing Machines. Configuration always belongs to the current entry Hub;
+selecting an imported machine or Agent never changes administrative authority.
 The manager is a full-width terminal view, separate from Agent PTY surfaces.
 
 ## Editing
 
-The view displays the entry Hub ID, public key, configuration revision, and the
-local peer socket path.
-Connections, trusted origins, file roots, and per-peer export policies
+The view displays the local Hub ID, public key, configuration revision, and the
+local link socket path.
+Machines, trusted origins, file roots, and per-machine export policies
 have separate forms. Keyboard and mouse navigation, bounded paste, UTF-8 text
 editing, checkboxes, depth controls, scrolling, and wrapped identity fields are
-supported. Read-only identity fields cannot be altered while editing a connection.
+supported. Read-only identity fields cannot be altered while editing a machine.
 File root creation, editing and confirmed removal are described in
 [Native file root management](hub-file-root-management.md).
 
-Adding a connection requires the peer's Hub ID and pinned public key. A dial
-names an SSH profile and the remote Hub's peer socket path; it is optional: an
-accepted-only peer can still export resources on an independently authorized
-link. Import direction is an explicit checkbox and requires a dial. The peer's
-identity and export authorization must be configured at the other Hub as well;
+Adding a machine requires its Hub ID and pinned public key. A dial
+names an SSH destination and the remote peer socket path; it is optional: an
+pinned machine can still export resources on an independently authorized
+link. Import direction is an explicit checkbox and requires a dial. The remote machine's
+identity and export authorization must be configured on that machine as well;
 the TUI does not silently trust an unknown key.
 
 Trusted origins support downstream origins such as C in A -> B -> C without
-turning C into A's direct peer. Exports select an origin, independent permissions,
+turning C into A's direct machine. Exports select an origin, independent permissions,
 and a bounded reexport depth. New exports start with Observe only. File-read
 permission is independent of terminal input; granting it does not manufacture
 an origin capability that has not been implemented.
@@ -34,9 +34,9 @@ Each form edits an in-memory draft. Saving a form does not send a Hub mutation.
 revision. `Activate Configuration` is available when the persisted configuration
 is inactive. Neither command launches, resumes, or terminates an Agent.
 
-Removing a peer or trusted origin requires confirmation. Dependent exports are
-removed only when no remaining peer/trusted-origin pin still authorizes that
-origin. An export can be removed without removing its connection. Discarding a
+Removing a machine or trusted origin requires confirmation. Dependent exports are
+removed only when no remaining machine/trusted-origin pin still authorizes that
+origin. An export can be removed without removing its machine. Discarding a
 dirty draft on close or reload also requires explicit confirmation.
 
 ## Concurrency And Failure

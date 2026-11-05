@@ -10,12 +10,12 @@ use yolo_hub_rpc_protocol::Command as HubRpcCommand;
 pub(crate) async fn run(
     socket: &Path,
     entry: HubId,
-    hub: HubId,
+    machine: HubId,
     json: bool,
     deadline: Instant,
 ) -> Result<()> {
     let snapshot = super::read(socket, entry, deadline).await?;
-    let change = remove_change(&snapshot, hub)?;
+    let change = remove_change(&snapshot, machine)?;
     let updated = execute(socket, entry, HubRpcCommand::Configure { change }, deadline)
         .await
         .context(HUB_CONFIGURATION_WRITE_FAILED)?;
@@ -23,12 +23,12 @@ pub(crate) async fn run(
         println!(
             "{}",
             serde_json::json!({
-                "removed": hub.to_string(),
+                "removed": machine.to_string(),
                 "applied": updated.applied,
             })
         );
     } else {
-        println!("removed peer {hub}");
+        println!("removed machine {machine}");
         if !updated.applied {
             println!("configuration is persisted but not active");
         }

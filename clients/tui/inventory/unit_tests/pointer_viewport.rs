@@ -6,7 +6,7 @@ use yolo_tui_inventory::{InventoryHit, View};
 fn each_painted_row_maps_to_its_rendered_identity_after_selection_scrolls_the_list() {
     let (mut inventory, terminals) = catalogue();
     let mut session = None;
-    for view in [View::Terminals, View::Agents, View::Hubs] {
+    for view in [View::Terminals, View::Agents, View::Machines] {
         inventory.view = view;
         let selected = *inventory.visible_selections("", &terminals).last().unwrap();
         assert!(inventory.select(selected, &mut session, "", &terminals));
@@ -46,7 +46,7 @@ fn tab_labels_are_clickable_at_full_compact_and_single_label_widths_without_clic
         let tabs = (viewport.area().x..viewport.area().right())
             .filter_map(|x| viewport.hit(x, viewport.area().y))
             .collect::<Vec<_>>();
-        for view in [View::Agents, View::Hubs] {
+        for view in [View::Agents, View::Machines] {
             assert!(tabs.contains(&InventoryHit::Tab(view)));
         }
         assert!(!tabs.contains(&InventoryHit::Tab(View::Terminals)));
@@ -81,7 +81,7 @@ fn explicit_terminal_picker_has_no_sidebar_tab_hit_targets() {
 #[test]
 fn empty_unsupported_and_unpainted_list_tail_have_no_row_hits() {
     let (mut inventory, terminals) = catalogue();
-    for view in [View::Terminals, View::Agents, View::Hubs] {
+    for view in [View::Terminals, View::Agents, View::Machines] {
         inventory.view = view;
         let viewport = render(&inventory, &terminals, None, NONMATCHING_FILTER, area());
         let rows = viewport.rows_area();
@@ -121,7 +121,7 @@ fn empty_unsupported_and_unpainted_list_tail_have_no_row_hits() {
 fn collapsing_either_dimension_removes_hit_targets_until_a_real_repaint() {
     let (mut inventory, terminals) = catalogue();
     let mut session = None;
-    for view in [View::Terminals, View::Agents, View::Hubs] {
+    for view in [View::Terminals, View::Agents, View::Machines] {
         inventory.view = view;
         let selected = inventory.visible_selections("", &terminals)[0];
         assert!(inventory.select(selected, &mut session, "", &terminals));

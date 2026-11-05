@@ -10,7 +10,7 @@ YOLO terminal shows a status hint instead of recursively rendering itself.
 
 The terminal area reserves one Tab strip and one contextual status line. The
 selected Tab has a dark background in addition to its `●` marker and bold cyan
-label. The Agent runs / Hubs sidebar can remain visible while the terminal has
+label. The Agent runs / Machines sidebar can remain visible while the terminal has
 keyboard focus. See [Tab navigation](tui-tab-navigation.md) for the current interaction model. Healthy
 input readiness appears in the Tab marker and contextual status; read-only,
 synchronization and offline states are shown only when applicable. Input paused
@@ -28,7 +28,7 @@ The existing Ctrl+B prefix scopes manager shortcuts:
 | Key | Action |
 | --- | --- |
 | d / q | Detach the client, preserving all shells and agents |
-| s | Focus the Agent runs / Hubs sidebar |
+| s | Focus the Agent runs / Machines sidebar |
 | b | Show or hide the sidebar |
 | g | Open the existing-terminal picker |
 | w | Open the tab manager |
@@ -55,7 +55,7 @@ animates while the Agent is working; `‖` and `!` mark waiting-for-input and
 waiting-for-approval states. Directory, lifecycle, health and the full control
 description remain available in Agent details.
 
-Hubs use the machine host name when the selected Hub is reached through a local
+Machines use the machine host name when the selected Hub is reached through a local
 Unix endpoint, otherwise the compact Hub identity. The status glyph follows the
 name: `●` reachable, `○` unreachable and `?` stale or unknown. There is no second
 "Reachable" row.
@@ -63,15 +63,16 @@ name: `●` reachable, `○` unreachable and `?` stale or unknown. There is no s
 A healthy connection adds no title row above the sidebar: the section tabs name
 the view and the rows carry their own identity and status. A single compact
 `Disconnected` or `Refreshing` line appears only when that state needs
-attention. In Hubs view, `Configure Hub` shares the section row and `m` opens
+attention. In Machines view, `Manage machines` shares the section row and `m` opens
 the same manager.
 
 ## Inventory Mouse Navigation
 
-Click an Agent runs or Hubs sidebar tab to change catalogue. Clicking an Agent
+Click an Agent runs or Machines sidebar tab to change catalogue. Clicking an Agent
 runs row selects it and opens its existing terminal; if no terminal is available
-it opens the Agent details instead. Clicking a Hubs or Terminals row selects it
-for the existing Enter flow. Wheel input over the list moves selection by one
+it opens the Agent details instead. Clicking a Machines row opens that machine: it scopes the Agent runs list and
+returns to the machine's last terminal when one is still live. Clicking a
+Terminals row selects it for the existing Enter flow. Wheel input over the list moves selection by one
 item. Clicking an Agent runs row opens its existing view exactly like Enter:
 view activation may acquire write control through the normal terminal path, but
 the click itself never injects terminal input. Hit regions use actual rendered

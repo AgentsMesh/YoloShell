@@ -12,8 +12,8 @@ pub(crate) fn destination(state: &State, entry: HubId) -> HubId {
             return address.hub_id;
         }
     }
-    if state.inventory.view == yolo_tui_inventory::View::Hubs {
-        if let Some(hub) = state.inventory.selected_hub {
+    if state.inventory.view == yolo_tui_inventory::View::Machines {
+        if let Some(hub) = state.inventory.selected_machine {
             return hub;
         }
     }

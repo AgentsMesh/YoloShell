@@ -40,8 +40,8 @@ pub fn render_viewport(
     );
     let scope = inventory
         .scope
-        .filter(|_| inventory.view != View::Hubs)
-        .map_or_else(|| ALL_HUBS.to_owned(), |hub| format!("{HUB_LABEL} {hub}"));
+        .filter(|_| inventory.view != View::Machines)
+        .map_or_else(|| ALL_MACHINES.to_owned(), |hub| format!("{MACHINE_LABEL} {hub}"));
     let context = format!(
         "{} | {scope} | {}",
         if inventory.current {
@@ -112,20 +112,20 @@ pub fn render_viewport(
                 .collect();
             (items, selected, EMPTY_AGENTS)
         }
-        View::Hubs => {
-            if !inventory.hubs_supported {
-                empty(frame, HUBS_UNSUPPORTED, bands[2]);
+        View::Machines => {
+            if !inventory.machines_supported {
+                empty(frame, MACHINES_UNSUPPORTED, bands[2]);
                 return viewport;
             }
-            let visible = inventory.visible_hubs(filter);
+            let visible = inventory.visible_machines(filter);
             let selected = inventory
-                .selected_hub
+                .selected_machine
                 .and_then(|selected| visible.iter().position(|hub| *hub == selected));
             let items = visible
                 .iter()
-                .filter_map(|hub| inventory.hubs.get(hub))
+                .filter_map(|hub| inventory.machines.get(hub))
                 .map(|hub| {
-                    rows::hub(
+                    rows::machine(
                         hub,
                         inventory.current,
                         inventory.local_hub_name(hub.hub_id),
@@ -133,7 +133,7 @@ pub fn render_viewport(
                     )
                 })
                 .collect();
-            (items, selected, EMPTY_HUBS)
+            (items, selected, EMPTY_MACHINES)
         }
     };
     if items.is_empty() {

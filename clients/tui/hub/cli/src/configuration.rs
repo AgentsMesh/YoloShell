@@ -1,5 +1,5 @@
 use crate::constants::*;
-use crate::AddPeer;
+use crate::PinMachine;
 use anyhow::{Context, Result, ensure};
 use std::collections::BTreeSet;
 use uuid::Uuid;
@@ -9,13 +9,13 @@ use yolo_hub_identity::HubId;
 use yolo_hub_management_protocol::{ConfigurationChange, ConfigurationSnapshot};
 use yolo_hub_routing::Right;
 
-pub fn add_change(
+pub fn pin_change(
     snapshot: &ConfigurationSnapshot,
-    args: &AddPeer,
+    args: &PinMachine,
 ) -> Result<ConfigurationChange> {
     let local = snapshot.state.identity;
-    let identity = identity(args.peer, &args.key)?;
-    ensure!(identity.hub() != local.hub(), PEER_IS_LOCAL);
+    let identity = identity(args.machine, &args.key)?;
+    ensure!(identity.hub() != local.hub(), MACHINE_IS_LOCAL);
     ensure!(
         snapshot
             .state
@@ -23,14 +23,14 @@ pub fn add_change(
             .peers
             .iter()
             .all(|peer| peer.identity.hub() != identity.hub()),
-        PEER_ALREADY_CONFIGURED
+        MACHINE_ALREADY_CONFIGURED
     );
     let dial = match (&args.ssh, &args.remote_socket) {
         (Some(target), Some(socket)) => {
             Some(PeerAddress::ssh(target.clone(), socket.clone())?)
         }
         (None, None) => None,
-        _ => anyhow::bail!("{}", INVALID_PEER_DIAL),
+        _ => anyhow::bail!("{}", INVALID_MACHINE_DIAL),
     };
     let mut origins = args.exports.iter().copied().collect::<BTreeSet<_>>();
     if args.export_local {
@@ -45,7 +45,7 @@ pub fn add_change(
         })
         .collect();
     let mut configuration = snapshot.state.configuration.clone();
-    let consume = dial.is_some() && !args.no_import;
+    let consume = dial.is_some() && !args.pin_only;
     configuration.peers.push(Peer {
         identity,
         dial,
@@ -60,15 +60,15 @@ pub fn add_change(
     })
 }
 
-pub fn join_change(
+pub fn import_change(
     snapshot: &ConfigurationSnapshot,
     target: String,
     socket: std::path::PathBuf,
     identity: PeerIdentity,
-    no_import: bool,
+    pin_only: bool,
 ) -> Result<Option<ConfigurationChange>> {
     let local = snapshot.state.identity;
-    ensure!(identity.hub() != local.hub(), PEER_IS_LOCAL);
+    ensure!(identity.hub() != local.hub(), MACHINE_IS_LOCAL);
     let dial = PeerAddress::ssh(target, socket)?;
     let mut configuration = snapshot.state.configuration.clone();
     match configuration
@@ -77,14 +77,14 @@ pub fn join_change(
         .find(|peer| peer.identity.hub() == identity.hub())
     {
         Some(peer) => {
-            ensure!(peer.identity == identity, PEER_IDENTITY_CHANGED);
+            ensure!(peer.identity == identity, MACHINE_IDENTITY_CHANGED);
             peer.dial = Some(dial);
-            peer.consume = !no_import;
+            peer.consume = !pin_only;
         }
         None => configuration.peers.push(Peer {
             identity,
             dial: Some(dial),
-            consume: !no_import,
+            consume: !pin_only,
             exports: Vec::new(),
         }),
     }
@@ -106,7 +106,7 @@ pub fn remove_change(
     let mut configuration = snapshot.state.configuration.clone();
     let before = configuration.peers.len();
     configuration.peers.retain(|peer| peer.identity.hub() != hub);
-    ensure!(configuration.peers.len() != before, PEER_NOT_CONFIGURED);
+    ensure!(configuration.peers.len() != before, MACHINE_NOT_CONFIGURED);
     configuration.validate(snapshot.state.identity)?;
     Ok(ConfigurationChange {
         request_id: Uuid::new_v4(),

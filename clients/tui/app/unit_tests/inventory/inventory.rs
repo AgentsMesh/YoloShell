@@ -102,7 +102,7 @@ fn hub_scope_controls_shell_creation_destination_and_escape_restores_all_hubs() 
     let entry = HubId::new();
     let (jobs, mut incoming) = mpsc::channel(crate::constants::QUEUE_CAPACITY);
     handle(&mut state, &jobs, entry, key(KeyCode::BackTab));
-    assert_eq!(state.inventory.view, View::Hubs);
+    assert_eq!(state.inventory.view, View::Machines);
     handle(&mut state, &jobs, entry, key(KeyCode::Char('n')));
     assert_eq!(state.mode, Mode::Directory);
     handle(&mut state, &jobs, entry, key(KeyCode::Enter));

@@ -64,7 +64,7 @@ pub(crate) fn handle(state: &mut State, jobs: &mpsc::Sender<Job>, event: MouseEv
         ) {
             state.inventory.details = None;
             state.status = SELECTED_HINT.into();
-            if clicked && matches!(selection, InventorySelection::Agent(_)) {
+            if clicked && matches!(selection, InventorySelection::Agent(_) | InventorySelection::Machine(_)) {
                 crate::inventory_actions::open(state, jobs);
             }
         }

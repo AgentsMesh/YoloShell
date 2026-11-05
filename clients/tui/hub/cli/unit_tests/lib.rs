@@ -1,4 +1,4 @@
-use super::{AddPeer, add_change, join_change, remove_change};
+use super::{PinMachine, import_change, pin_change, remove_change};
 use std::path::PathBuf;
 use uuid::Uuid;
 use yolo_hub_delegation::PeerIdentity;
@@ -25,13 +25,13 @@ fn snapshot() -> ConfigurationSnapshot {
     }
 }
 
-fn args(ssh: Option<&str>, remote_socket: Option<&str>) -> AddPeer {
-    AddPeer {
-        peer: HubId::new(),
+fn args(ssh: Option<&str>, remote_socket: Option<&str>) -> PinMachine {
+    PinMachine {
+        machine: HubId::new(),
         key: PEER_KEY.into(),
         ssh: ssh.map(str::to_owned),
         remote_socket: remote_socket.map(PathBuf::from),
-        no_import: false,
+        pin_only: false,
         exports: vec![],
         export_local: true,
         json: false,
@@ -39,8 +39,8 @@ fn args(ssh: Option<&str>, remote_socket: Option<&str>) -> AddPeer {
 }
 
 #[test]
-fn adds_a_pinned_peer_with_an_ssh_socket_dial_and_exports() {
-    let change = add_change(&snapshot(), &args(Some(PROFILE), Some(SOCKET))).unwrap();
+fn pins_a_source_with_an_ssh_socket_dial_and_exports() {
+    let change = pin_change(&snapshot(), &args(Some(PROFILE), Some(SOCKET))).unwrap();
     let peer = &change.configuration.peers[0];
     let dial = peer.dial.as_ref().unwrap();
     assert_eq!(dial.ssh_target(), Some(PROFILE));
@@ -52,24 +52,24 @@ fn adds_a_pinned_peer_with_an_ssh_socket_dial_and_exports() {
 
 #[test]
 fn dial_flags_are_paired_and_the_key_is_validated() {
-    assert!(add_change(&snapshot(), &args(None, Some(SOCKET))).is_err());
-    assert!(add_change(&snapshot(), &args(Some(PROFILE), None)).is_err());
+    assert!(pin_change(&snapshot(), &args(None, Some(SOCKET))).is_err());
+    assert!(pin_change(&snapshot(), &args(Some(PROFILE), None)).is_err());
     let mut invalid = args(None, None);
     invalid.key = "not-a-key".into();
-    assert!(add_change(&snapshot(), &invalid).is_err());
+    assert!(pin_change(&snapshot(), &invalid).is_err());
 }
 
 #[test]
-fn a_peer_can_be_pinned_without_a_dial() {
-    let change = add_change(&snapshot(), &args(None, None)).unwrap();
+fn a_source_can_be_pinned_without_a_dial() {
+    let change = pin_change(&snapshot(), &args(None, None)).unwrap();
     assert!(change.configuration.peers[0].dial.is_none());
 }
 
 #[test]
-fn join_upserts_the_dial_and_remove_deletes_the_peer() {
+fn import_upserts_the_dial_and_remove_deletes_the_source() {
     let peer = PeerIdentity::new(HubId::new(), [0x11; 32]).unwrap();
     let mut snapshot = snapshot();
-    let change = join_change(
+    let change = import_change(
         &snapshot,
         PROFILE.into(),
         PathBuf::from(SOCKET),
@@ -87,7 +87,7 @@ fn join_upserts_the_dial_and_remove_deletes_the_peer() {
     assert!(joined.consume);
     snapshot.state.configuration = change.configuration;
     assert!(
-        join_change(
+        import_change(
             &snapshot,
             PROFILE.into(),
             PathBuf::from(SOCKET),
@@ -100,4 +100,19 @@ fn join_upserts_the_dial_and_remove_deletes_the_peer() {
     let removed = remove_change(&snapshot, peer.hub()).unwrap();
     assert!(removed.configuration.peers.is_empty());
     assert!(remove_change(&snapshot, HubId::new()).is_err());
+}
+
+#[test]
+fn import_with_pin_only_does_not_consume() {
+    let peer = PeerIdentity::new(HubId::new(), [0x22; 32]).unwrap();
+    let change = import_change(
+        &snapshot(),
+        PROFILE.into(),
+        PathBuf::from(SOCKET),
+        peer,
+        true,
+    )
+    .unwrap()
+    .unwrap();
+    assert!(!change.configuration.peers[0].consume);
 }

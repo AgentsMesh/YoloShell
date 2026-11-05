@@ -45,7 +45,7 @@ fn five_agents_fit_without_scrolling_in_seventeen_rows() {
     );
     assert!(!content.contains(AGENT_WORKING_DIRECTORY));
     assert!(content.contains("Agent runs"));
-    assert!(content.contains("Hubs"));
+    assert!(content.contains("Machines"));
     assert!(!content.contains("Terminals"));
 }
 
