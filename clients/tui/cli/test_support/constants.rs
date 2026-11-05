@@ -48,3 +48,23 @@ pub const ARCHIVE_COMMAND: &str = "archive";
 pub const TERMINATE_COMMAND: &str = "terminate";
 pub const FORCE_ARGUMENT: &str = "--force";
 pub const NAME: &str = "alpha";
+pub const HUB_COMMAND: &str = "hub";
+pub const WORKSPACE_ENTRY: &str = "workspace";
+pub const STATUS_COMMAND: &str = "status";
+// Not named `_COMMAND`: the literal would enter the architecture registry and
+// collide with generic "version" fields outside the CLI.
+pub const VERSION_ENTRY: &str = "version";
+pub const START_COMMAND: &str = "start";
+pub const STOP_COMMAND: &str = "stop";
+pub const RESTART_COMMAND: &str = "restart";
+pub const PEER_COMMAND: &str = "peer";
+pub const ADD_COMMAND: &str = "add";
+pub const INVITE_COMMAND: &str = "invite";
+pub const JOIN_COMMAND: &str = "join";
+pub const NO_IMPORT_ARGUMENT: &str = "--no-import";
+pub const NO_EXPORT_ARGUMENT: &str = "--no-export";
+pub const IMPORT_PEER_ARGUMENT: &str = "--import-peer";
+pub const TTL_ARGUMENT: &str = "--ttl-minutes";
+pub const HOST_ARGUMENT: &str = "--host";
+pub const PORT_ARGUMENT: &str = "--port";
+pub const EXPORT_LOCAL_ARGUMENT: &str = "--export-local";

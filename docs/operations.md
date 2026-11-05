@@ -30,36 +30,17 @@ hooks, not terminal output. Disabled, untrusted, restricted, or incomplete hooks
 remain unmanaged/Unknown; Yolo does not grant provider hook trust. Resume
 requires verified durable identity.
 
-## GitHub Releases and Updates
+## Local Services and Updates
 
-Official assets are published to GitHub Releases by the GitHub Actions release
-workflow, triggered by the GitLab tag or schedule pipeline. A tag that starts
-with `v` creates a stable release; the scheduled nightly pipeline creates a
-prerelease on the `nightly-<date>-<sha>` channel.
+Use `yolo status` and `yolo version` to distinguish the installed image from the
+images the running Host and Hub mapped. `yolo start`, `yolo stop` and
+`yolo restart` control the current profile; stopping services preserves live
+Workers and PTYs. `yolo update` checks for a newer release, installs it, and
+activates it through the same restart path; `--check` is the read-only mode.
 
-Install the latest stable release:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/AgentsMesh/YoloShell/main/scripts/install.sh | sh
-```
-
-Check or install a newer GitHub release:
-
-```bash
-yolo update --check-release
-yolo update --install-release
-yolo update --install-release --channel nightly
-```
-
-The updater downloads the platform archive and `SHA256SUMS`, verifies the
-digest, installs an immutable image under `~/.local/lib/yolo/<sha>/yolo`, and
-atomically points `~/.local/bin/yolo` at it. It does not restart services.
-Run `yolo update` without release flags to probe the live Host/Hub image,
-protocol and storage contract; restart the Host runner and Hub only after that
-admission check reports `ready`.
-
-Release assets cover macOS arm64, Linux x86_64 and Linux arm64. Linux archives
-are built against glibc 2.31 so they run on the supported Linux baseline.
+See [local service lifecycle](local-service-lifecycle.md) for the command
+contract and [upgrade admission](upgrade-admission.md) for the compatibility
+checks.
 
 ## Tabs, Panes, and Terminals
 

@@ -1,4 +1,4 @@
-use crate::peer_diagnostics::{
+use yolo_hub_peer_diagnostics::{
     ExportDepthDenials, INBOUND_REJECTION_INTERVAL, InboundRejections, OutboundFailures,
     PeerAttempt,
 };

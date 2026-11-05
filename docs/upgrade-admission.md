@@ -15,7 +15,8 @@ The operational upgrade order is:
 2. Probe the running Host/Hub image, protocol and state contract.
 3. Keep the persistent custody domain and live Workers running while the result
    is compatible.
-4. Restart only the independently replaceable Host runner and Hub.
+4. Restart only the independently replaceable Host runner and Hub (`yolo restart`
+   preserves the custody domain and live Workers).
 5. Recheck Hub identity, TerminalAddress, RuntimeEpoch, Worker identity and Agent
    execution identity before accepting the deployment.
 
@@ -29,13 +30,22 @@ still use the immutable `/home/<user>/.local/lib/yolo/<sha256>/yolo` path so
 each service has an explicit image owner. The link under `.local/bin` remains
 for interactive CLI selection only.
 
-If the probe reports incompatibility, `yolo update` stops before any service
-mutation and prints a structured refusal containing the old image, state path,
-protocol and failed service-unit checks. The current release has no public
-force/apply subcommands: stopping the old Hub and runner is an operator action
-after this refusal, and must leave `yolo-host.service` and its PTY custody domain
-alone. The admission step never retries an uncertain state mutation or deletes
-old state.
+If the probe reports incompatibility, `yolo update` exits nonzero with
+`upgrade admission refused` plus the failed checks. When the installed image is
+newer than the running services, activate it with `yolo restart` or
+`yolo update --restart`; `yolo stop` leaves the profile stopped for inspection.
+Restarting preserves PTY custody: the Host closes ingress but Workers remain
+attached to their PTYs. A restart is refused before stopping anything when
+`runtime-contract.json` is incompatible with the installed image, or when the
+caller cannot create a new Host (for example an un-delegated Linux shell). There
+is no force/apply subcommand: admission never retries an uncertain state mutation
+or deletes old state.
+
+`yolo update` checks the selected release, installs it when newer, restarts
+before probing, and then reports admission. `--check` is read-only, `--admit`
+probes the installed image without the network, and `--no-restart` installs
+without activating. The probe always describes the image that will be left
+running.
 
 On systemd hosts, each managed unit must pin both the absolute immutable image
 path and its exact image metadata:

@@ -12,7 +12,9 @@ pub const CONTROLS: &str = concat!(
     "Ctrl-B m switches an agent pane between Terminal and Chat; Escape returns to Terminal.\n",
     "Ctrl-B d detaches. Ordinary keys (including q) go to the shell.\n",
     "Detaching leaves shells and agents running. An agent can finish while its shell remains usable.\n",
-    "Also: yolo agent --help · yolo protocol describe · yolo conversation --help."
+    "Auxiliary commands: yolo agent · yolo conversation · yolo workspace ·\n",
+    "yolo worktree · yolo protocol · yolo plugin · yolo update.\n",
+    "Their options follow the command; root connection options may precede or follow it."
 );
 pub const TERMINALS_COMMAND: &str = "terminals";
 pub const CATALOG_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(10);
@@ -63,6 +65,14 @@ pub const MAX_SNAPSHOT_LIMIT: u16 = 128;
 pub const DEFAULT_EVENTS_LIMIT: u16 = 64;
 pub const MAX_EVENTS_LIMIT: u16 = 256;
 pub const AUDIT_LOCAL_ONLY: &str = "audit reads require the local profile";
+pub const MANAGEMENT_LOCAL_ONLY: &str =
+    "Hub management requires the local entry Hub (use --local-profile or --socket/--hub)";
+pub const STARTING_LOCAL_SERVICES: &str = "ensuring local Host and Hub are running...";
+pub const LIFECYCLE_LOCAL_ONLY: &str =
+    "local service lifecycle commands operate on the local profile only";
+pub const MANAGEMENT_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(10);
+/// Pairing spans an SSH handshake and a remote configuration activation.
+pub const ENROLLMENT_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(60);
 
 pub const RECIPE_SCHEMA_VERSION: u16 = 1;
 pub const SCHEMA_VERSION_FIELD: &str = "schema_version";

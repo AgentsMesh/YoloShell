@@ -14,6 +14,7 @@ _DEPS = [
     "//core/crates/plugin/client/host:yolo_builtin_client_host",
     "//core/crates/application/launch/contract:yolo_launch_contract",
     "//core/crates/application/attach/cli:yolo_attach_cli",
+    "//core/crates/application/command:yolo_command_cli",
     "//core/crates/application/remote/cli:yolo_remote_cli",
     "//core/crates/application/upgrade/cli:yolo_upgrade_cli",
     "//core/crates/hub/cli:yolo_hub_cli",

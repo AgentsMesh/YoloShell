@@ -108,7 +108,7 @@ pub(crate) async fn ensure(
 /// capability belongs here rather than at the client entry point: an already
 /// running Host can be reused by a caller without delegated custody.
 #[cfg(target_os = "linux")]
-fn require_custody() -> Result<()> {
+pub(crate) fn require_custody() -> Result<()> {
     require_custody_available(
         yolo_process::linux_containment::LinuxContainmentBroker::discover()?.is_some(),
     )

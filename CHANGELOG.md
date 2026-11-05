@@ -3,6 +3,115 @@
 All notable changes to Yolo are recorded here. The project follows semantic
 versioning once a stable release exists.
 
+## 0.1.7 — Alpha
+
+### Added
+
+- `yolo hub listen <address>` configures and applies the local Hub's peer
+  listener. `yolo hub peer invite --host` then defaults the port from it.
+
+### Changed
+
+- `yolo update` now checks the selected release, installs a newer image,
+  restarts when needed, and probes admission in one command. `--check`,
+  `--admit` and `--no-restart` select the explicit modes; `--install-release`
+  remains only as a hidden legacy install-only alias.
+- Top-level help lists the auxiliary `agent`, `conversation`, `workspace`,
+  `worktree`, `protocol`, `plugin` and `update` commands. These share one clap
+  tree, so root connection options are accepted before or after the command;
+  unsupported combinations report a command-specific error.
+- `yolo update` accepts `--local-profile`.
+- `yolo hub peer list` explains its IMPORT/EXPORTS columns and prints guidance
+  when no peers are configured.
+- Command and argument help now covers `update`, workspace, conversation,
+  recipe and plugin commands, including the plugin `--trust` review step.
+- `yolo workspace update` uses the revision it just resolved when
+  `--expected-revision` is omitted; passing it still rejects a concurrent
+  change.
+- `yolo worktree create` requires `--trust-repository` at parse time, and its
+  name, branch and base options are documented.
+- `yolo update --check` prints `update available` or `already current`;
+  `--no-restart` reports the `yolo restart` activation step instead of probing
+  admission against older running services.
+- `agent send`, `ask` and `prompt` help states the wait and atomicity
+  difference; `hub peer add` is marked as the advanced pre-shared-key path.
+
+### Fixed
+
+- `yolo hub peer invite` now reports whether `--host`, `--port` or an applied
+  listener is missing instead of always asking for both.
+- Invite expiry is printed as a remaining duration instead of epoch
+  milliseconds.
+- Auto-starting local services prints a notice only when no local Hub socket
+  exists. Startup failures no longer append the internal child-exit chain.
+- Missing profile files and missing local Hub state produce actionable errors;
+  `yolo audit` no longer succeeds silently on a never-started profile.
+
+## 0.1.6 — Alpha
+
+### Added
+
+- `yolo status`, `yolo version`, `yolo start`, `yolo stop` and `yolo restart`
+  expose the local Host/Hub lifecycle. Status distinguishes the installed image
+  from the images the running services reported; `yolo version` complements the
+  unchanged one-line `yolo --version` contract.
+- `yolo update --restart` and `yolo update --install-release --restart` activate
+  the installed image and then run upgrade admission against the restarted
+  services.
+
+### Changed
+
+- Upgrade refusal now names `yolo restart` as the activation step.
+- `yolo stop` and `yolo restart` resolve exact service PIDs from private socket
+  peer credentials; Host shutdown leaves Workers attached to their PTYs.
+- `yolo restart` preflights the state contract and Linux delegated Host custody
+  before stopping any service.
+
+### Fixed
+
+- Removed the stale `yolo web` dispatch integration test left by the gateway
+  extraction (ADR 0035).
+
+## 0.1.5 — Alpha
+
+### Added
+
+- Hubs pair with a single-use, expiring `yolo1_` code. `yolo hub peer invite`
+  mints a code signed by the inviting Hub; `yolo hub peer join` verifies the
+  inviting Hub's SSH host key, admits the joining identity and configures both
+  peer directions without copying Hub IDs, keys, hosts or ports. Codes expire
+  in 1–60 minutes, are consumed durably, and grant only the minted export and
+  import directions.
+
+### Changed
+
+- Peer-connection diagnostics moved to their own package so Hub federation stays
+  within its architecture budget.
+
+## 0.1.4 — Alpha
+
+### Fixed
+
+- `yolo update` resolves the installer symlink before validating the running
+  executable, so admission checks work on the standard macOS installation.
+
+## 0.1.3 — Alpha
+
+### Added
+
+- `yolo hub peer add` and `yolo hub peer list` manage federation peers through
+  the local entry Hub, with explicit dial addresses, import control and export
+  policies.
+
+### Fixed
+
+- A YOLO client running inside a YOLO terminal no longer attaches to its own
+  terminal; it shows a status hint and keeps the pane read-only instead of
+  recursively rendering itself.
+- A terminal snapshot taken on the alternate screen carries the screen mode, so
+  reattaching to a full-screen program no longer leaves its content smeared on
+  the primary screen.
+
 ## 0.1.2 — Alpha
 
 ### Added

@@ -1,9 +1,9 @@
 use crate::{
-    PeerConnection, PeerIo, PeerPins, PeerStream,
+    Accepted, EnrollmentVerifier, PeerConnection, PeerIo, PeerPins, PeerStream,
     client::{self, ClientHandler},
     connection::Role,
     constants::*,
-    server::{self, ServerHandler},
+    server::{self, AuthEvent, ServerHandler},
 };
 use anyhow::{Context, Result, ensure};
 use russh::keys::{PrivateKey, PrivateKeyWithHashAlg};
@@ -53,7 +53,7 @@ pub async fn connect_io(
     ensure!(result.success(), AUTH_FAILED);
     Ok((
         PeerConnection {
-            peer,
+            peer: Some(peer),
             role: Role::Client(Mutex::new(Some(handle))),
             transport,
             capacity,
@@ -78,39 +78,81 @@ pub async fn accept_io(
     pins: PeerPins,
     deadline: Instant,
 ) -> Result<(PeerConnection, mpsc::Receiver<PeerStream>)> {
+    match accept_io_with_enrollment(transport, key, pins, None, deadline).await? {
+        Accepted::Peer {
+            connection,
+            incoming,
+        } => Ok((connection, incoming)),
+        Accepted::Enrollment { .. } => Err(anyhow::anyhow!(AUTH_FAILED)),
+    }
+}
+
+pub async fn accept_with_enrollment(
+    stream: TcpStream,
+    key: Arc<PrivateKey>,
+    pins: PeerPins,
+    verifier: Option<Arc<dyn EnrollmentVerifier>>,
+    deadline: Instant,
+) -> Result<Accepted> {
+    accept_io_with_enrollment(PeerIo::from_tcp(stream)?, key, pins, verifier, deadline).await
+}
+
+pub(crate) async fn accept_io_with_enrollment(
+    transport: PeerIo,
+    key: Arc<PrivateKey>,
+    pins: PeerPins,
+    verifier: Option<Arc<dyn EnrollmentVerifier>>,
+    deadline: Instant,
+) -> Result<Accepted> {
     let (stream, transport) = transport.into_parts();
+    let enrollment_enabled = verifier.is_some();
     let capacity = Arc::new(Semaphore::new(MAX_PEER_CHANNELS));
     let closed = Arc::new(AtomicBool::new(false));
-    let (incoming, receiver) = mpsc::channel(MAX_QUEUED_CHANNELS);
-    let (authenticated, mut authenticated_peer) = mpsc::channel(AUTH_EVENT_CAPACITY);
+    let (incoming, incoming_rx) = mpsc::channel(MAX_QUEUED_CHANNELS);
+    let (enrollment, enrollment_rx) = mpsc::channel(MAX_QUEUED_CHANNELS);
+    let (authenticated, mut events) = mpsc::channel(AUTH_EVENT_CAPACITY);
     let handler = ServerHandler {
         pins,
         authenticated,
         peer: None,
+        invite: None,
+        verifier,
         incoming,
+        enrollment,
         capacity: capacity.clone(),
         closed: closed.clone(),
     };
     let running = timeout_at(
         deadline,
-        russh::server::run_stream(server::config(key), stream, handler),
+        russh::server::run_stream(server::config(key, enrollment_enabled), stream, handler),
     )
     .await??;
-    let peer = timeout_at(deadline, authenticated_peer.recv())
+    let event = timeout_at(deadline, events.recv())
         .await?
         .context(AUTH_FAILED)?;
     let role = Role::Server {
         handle: running.handle(),
         running: Mutex::new(Some(running)),
     };
-    Ok((
-        PeerConnection {
-            peer,
-            role,
-            transport,
-            capacity,
-            closed,
+    let peer = match event {
+        AuthEvent::Peer(peer) => Some(peer),
+        AuthEvent::Enrollment => None,
+    };
+    let connection = PeerConnection {
+        peer,
+        role,
+        transport,
+        capacity,
+        closed,
+    };
+    Ok(match event {
+        AuthEvent::Peer(_) => Accepted::Peer {
+            connection,
+            incoming: incoming_rx,
         },
-        receiver,
-    ))
+        AuthEvent::Enrollment => Accepted::Enrollment {
+            connection,
+            incoming: enrollment_rx,
+        },
+    })
 }

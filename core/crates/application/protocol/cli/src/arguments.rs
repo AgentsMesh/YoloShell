@@ -16,8 +16,8 @@ pub(crate) enum Command {
     },
 }
 
-#[derive(Subcommand)]
-pub(crate) enum ProtocolCommand {
+#[derive(Debug, Subcommand)]
+pub enum ProtocolCommand {
     /// Describe the public Hub contract. Output is machine-readable JSON.
     Describe {
         /// Print machine-readable JSON (this command's only output format).
