@@ -4,10 +4,11 @@ Yolo images are immutable deployments. The CLI symlink is only a selector for
 new launches; it is not a migration mechanism for an already-running Host or Hub.
 
 Before a new image opens a Hub state directory, the Hub validates
-`runtime-contract.json`. The record binds the current public Hub protocol and
-state schema. A missing record is treated as an old or unproven state, and a
-mismatched record fails with an upgrade admission error. The new process does not
-rewrite identity, catalog, runtime records or creation journals in that case.
+`runtime-contract.json`. The record binds the public Hub protocol and state
+schema. An older Hub protocol is an upgrade and is rewritten by the new Hub; a
+newer protocol, a different contract schema or a different state schema is
+rejected, as is a missing record for an existing identity. The new process does
+not rewrite identity, catalog, runtime records or creation journals.
 
 The operational upgrade order is:
 
@@ -45,7 +46,9 @@ or deletes old state.
 before probing, and then reports admission. `--check` is read-only, `--admit`
 probes the installed image without the network, and `--no-restart` installs
 without activating. The probe always describes the image that will be left
-running.
+running. Before stopping services, `yolo update` asks the installed image to
+validate `runtime-contract.json`; the invoking updater's protocol constants
+never decide the upgrade. A refused preflight leaves services untouched.
 
 On systemd hosts, each managed unit must pin both the absolute immutable image
 path and its exact image metadata:

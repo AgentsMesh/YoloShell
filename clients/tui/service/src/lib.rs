@@ -4,7 +4,9 @@ mod render;
 use anyhow::Result;
 use clap::Args;
 use render::{print_status, print_stop, print_version};
-use yolo_local_lifecycle::{StatusReport, StopReport, restart, start, status, stop};
+use yolo_local_lifecycle::{
+    StatusReport, StopReport, restart, start, status, stop, validate_state,
+};
 use yolo_local_profile::LocalProfile;
 
 #[derive(Clone, Copy, Debug, Args)]
@@ -32,6 +34,7 @@ pub async fn stop_command(profile: &LocalProfile, options: FormatOptions) -> Res
 }
 
 pub async fn restart_command(profile: &LocalProfile, options: FormatOptions) -> Result<()> {
+    validate_state(profile)?;
     let stopped = restart(profile, &std::env::current_exe()?).await?;
     let report = status(profile).await?;
     if options.json {

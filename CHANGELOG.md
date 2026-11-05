@@ -3,6 +3,13 @@
 All notable changes to Yolo are recorded here. The project follows semantic
 versioning once a stable release exists.
 
+## 0.2.2 — Alpha
+
+### Fixed
+- `yolo update` validates the local state contract with the installed image
+  before stopping services; `yolo start` explains an early Hub exit and points
+  to `yolo restart` when the running Host belongs to an older image.
+
 ## 0.2.1 — Alpha
 
 ### Fixed
@@ -40,27 +47,22 @@ versioning once a stable release exists.
 
 ### Changed
 
-- `yolo update` now checks the selected release, installs a newer image,
-  restarts when needed, and probes admission in one command. `--check`,
-  `--admit` and `--no-restart` select the explicit modes; `--install-release`
-  remains only as a hidden legacy install-only alias.
-- Top-level help lists the auxiliary `agent`, `conversation`, `workspace`,
-  `worktree`, `protocol`, `plugin` and `update` commands. These share one clap
-  tree, so root connection options are accepted before or after the command;
-  unsupported combinations report a command-specific error.
+- `yolo update` checks, installs, restarts when needed and probes admission in
+  one command; `--check`, `--admit` and `--no-restart` select explicit modes,
+  and `--install-release` remains a hidden legacy alias.
+- Top-level help lists the auxiliary commands; one clap tree accepts root
+  connection options before or after the command.
 - `yolo update` accepts `--local-profile`.
 - `yolo hub peer list` explains its IMPORT/EXPORTS columns and prints guidance
   when no peers are configured.
-- Command and argument help now covers `update`, workspace, conversation,
-  recipe and plugin commands, including the plugin `--trust` review step.
-- `yolo workspace update` uses the revision it just resolved when
-  `--expected-revision` is omitted; passing it still rejects a concurrent
-  change.
-- `yolo worktree create` requires `--trust-repository` at parse time, and its
-  name, branch and base options are documented.
-- `yolo update --check` prints `update available` or `already current`;
-  `--no-restart` reports the `yolo restart` activation step instead of probing
-  admission against older running services.
+- Help covers `update`, workspace, conversation, recipe and plugin commands,
+  including the plugin `--trust` review step.
+- `yolo workspace update` uses the resolved revision unless
+  `--expected-revision` rejects a concurrent change.
+- `yolo worktree create` requires `--trust-repository` and documents its name,
+  branch and base options.
+- `yolo update --check` reports `update available` or `already current`;
+  `--no-restart` prints the `yolo restart` activation step.
 - `agent send`, `ask` and `prompt` help states the wait and atomicity
   difference; `hub peer add` is marked as the advanced pre-shared-key path.
 
@@ -81,8 +83,7 @@ versioning once a stable release exists.
 
 - `yolo status`, `yolo version`, `yolo start`, `yolo stop` and `yolo restart`
   expose the local Host/Hub lifecycle. Status distinguishes the installed image
-  from the images the running services reported; `yolo version` complements the
-  unchanged one-line `yolo --version` contract.
+  from the images the running services reported.
 - `yolo update --restart` and `yolo update --install-release --restart` activate
   the installed image and then run upgrade admission against the restarted
   services.
@@ -90,10 +91,9 @@ versioning once a stable release exists.
 ### Changed
 
 - Upgrade refusal now names `yolo restart` as the activation step.
-- `yolo stop` and `yolo restart` resolve exact service PIDs from private socket
-  peer credentials; Host shutdown leaves Workers attached to their PTYs.
-- `yolo restart` preflights the state contract and Linux delegated Host custody
-  before stopping any service.
+- `yolo stop` and `yolo restart` resolve exact PIDs from private socket
+  credentials; Host shutdown leaves Workers attached to their PTYs.
+- `yolo restart` preflights state and Linux Host custody before stopping.
 
 ### Fixed
 

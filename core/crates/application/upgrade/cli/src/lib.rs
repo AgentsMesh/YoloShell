@@ -1,3 +1,4 @@
+mod candidate;
 mod check;
 mod constants;
 mod github;

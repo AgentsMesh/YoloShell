@@ -41,6 +41,10 @@ On Linux a new Host requires delegated cgroup v2 custody. `yolo start` reports
 that requirement before launching anything; start the profile under a delegated
 systemd service, or attach to an existing Hub instead.
 
+If a Host from another image is already running, `yolo start` leaves it intact
+and reports the new Hub's exit, its error and the running Host image; restart
+the profile with `yolo restart` to replace both services.
+
 ## GitHub Releases and Updates
 
 Official assets are published to GitHub Releases by the GitHub Actions release

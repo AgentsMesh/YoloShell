@@ -13,7 +13,7 @@ use yolo_paths::namespace_lease::NamespaceLease;
 use yolo_paths::{coordination::CoordinationLock, directory::PrivateDirectory};
 
 use constants::*;
-pub use constants::{HUB_IDENTITY_FILE, HUB_SOCKET_FILE, PEER_SOCKET_FILE};
+pub use constants::{HUB_IDENTITY_FILE, HUB_SOCKET_FILE, PEER_SOCKET_FILE, STATE_CONTRACT_FILE};
 
 /// Read-only admission probe used by the upgrade coordinator.
 pub fn validate_runtime_contract(path: &Path) -> Result<()> {

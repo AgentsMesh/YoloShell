@@ -6,7 +6,11 @@ pub(crate) const HUB_ARGUMENT: &str = "hub";
 pub(crate) const STATE_ARGUMENT: &str = "state";
 pub(crate) const JSON_ARGUMENT: &str = "json";
 pub(crate) const INSTALLED_ADMISSION_FAILED: &str = "installed image admission failed to start";
+pub(crate) const INSTALLED_STATE_FAILED: &str = "installed image state check failed to start";
+pub(crate) const INSTALLED_STATE_REFUSED: &str =
+    "installed image rejected the local Hub state; local services were left running";
 pub(crate) const ADMIT_FLAG: &str = "--admit";
+pub(crate) const VALIDATE_STATE_FLAG: &str = "--validate-state";
 pub(crate) const JSON_FLAG: &str = "--json";
 pub(crate) const LOCAL_PROFILE_FLAG: &str = "--local-profile";
 pub(crate) const SOCKET_FLAG: &str = "--socket";
