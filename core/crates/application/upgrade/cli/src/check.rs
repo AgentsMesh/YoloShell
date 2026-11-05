@@ -95,6 +95,9 @@ fn admit(
     runtime: &tokio::runtime::Runtime,
     installed: Option<PathBuf>,
 ) -> Result<()> {
+    if let Some(installed) = installed {
+        return admit_installed(options, installed);
+    }
     let options = local_options(options.clone(), profile)?;
     let candidate_path = match installed {
         Some(link) => link.canonicalize()?,
@@ -108,6 +111,36 @@ fn admit(
         report.print();
     }
     anyhow::ensure!(report.ready(), "{}", UPGRADE_REFUSED);
+    Ok(())
+}
+
+/// Admission after an install must run with the candidate image. The invoking
+/// CLI may be an older protocol and would otherwise reject the Hub it just
+/// started. The installed binary re-runs the same read-only checks with its own
+/// protocol and state-contract constants.
+fn admit_installed(options: &Options, installed: PathBuf) -> Result<()> {
+    let mut command = std::process::Command::new(installed.canonicalize()?);
+    command.arg(COMMAND).arg(ADMIT_FLAG);
+    if options.json {
+        command.arg(JSON_FLAG);
+    }
+    if let Some(profile) = &options.local_profile {
+        command.arg(LOCAL_PROFILE_FLAG).arg(profile);
+    }
+    if let Some(socket) = &options.socket {
+        command.arg(SOCKET_FLAG).arg(socket);
+    }
+    if let Some(hub) = options.hub {
+        command.arg(HUB_FLAG).arg(hub.to_string());
+    }
+    if let Some(state) = &options.state {
+        command.arg(STATE_FLAG).arg(state);
+    }
+    for unit in &options.service_units {
+        command.arg(SERVICE_UNIT_FLAG).arg(unit);
+    }
+    let status = command.status().context(INSTALLED_ADMISSION_FAILED)?;
+    anyhow::ensure!(status.success(), "{}", UPGRADE_REFUSED);
     Ok(())
 }
 

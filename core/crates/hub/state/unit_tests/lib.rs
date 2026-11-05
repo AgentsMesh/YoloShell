@@ -145,3 +145,48 @@ fn symlinked_identity_and_relative_paths_are_rejected() {
     .unwrap();
     assert!(HubState::open(directory.path(), &host).is_err());
 }
+
+fn rewrite_contract(state: &HubState, path: &Path, update: impl FnOnce(&mut serde_json::Value)) {
+    let file = path.join(crate::constants::STATE_CONTRACT_FILE);
+    let mut contract: serde_json::Value = state.namespace.read_json(&file).unwrap();
+    update(&mut contract);
+    state.namespace.write_json(&file, &contract).unwrap();
+}
+
+#[test]
+fn older_protocol_contract_is_validated_read_only_and_migrated_on_open() {
+    let (_root, path, host) = fixture();
+    let state = HubState::open(&path, &host).unwrap();
+    let current = yolo_hub_rpc_protocol::HUB_PROTOCOL_VERSION;
+    rewrite_contract(&state, &path, |contract| {
+        contract[crate::constants::HUB_PROTOCOL_FIELD] = serde_json::json!(u16::MIN);
+    });
+    let file = path.join(crate::constants::STATE_CONTRACT_FILE);
+    let before = std::fs::read(&file).unwrap();
+    drop(state);
+    validate_runtime_contract(&path).unwrap();
+    assert_eq!(std::fs::read(&file).unwrap(), before);
+    let state = HubState::open(&path, &host).unwrap();
+    let contract: serde_json::Value = state.namespace.read_json(&file).unwrap();
+    assert_eq!(
+        contract[crate::constants::HUB_PROTOCOL_FIELD],
+        serde_json::json!(current)
+    );
+}
+
+#[test]
+fn newer_protocol_or_state_schema_is_rejected() {
+    for (field, value) in [
+        (crate::constants::HUB_PROTOCOL_FIELD, u16::MAX),
+        ("state_schema", u16::MAX),
+    ] {
+        let (_root, path, host) = fixture();
+        let state = HubState::open(&path, &host).unwrap();
+        rewrite_contract(&state, &path, |contract| {
+            contract[field] = serde_json::json!(value);
+        });
+        drop(state);
+        assert!(validate_runtime_contract(&path).is_err());
+        assert!(HubState::open(&path, &host).is_err());
+    }
+}
