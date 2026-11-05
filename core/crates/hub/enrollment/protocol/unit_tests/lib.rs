@@ -35,6 +35,12 @@ impl TestSigner {
     pub(crate) fn invite(&self, lifetime_ms: u64, policy: InvitePolicy) -> SignedInvite {
         SignedInvite::issue(claims(self, lifetime_ms, policy), self).unwrap()
     }
+
+    pub(crate) fn invite_v2(&self, lifetime_ms: u64, policy: InvitePolicy) -> SignedInvite {
+        let mut claims = claims(self, lifetime_ms, policy);
+        claims.dial = None;
+        SignedInvite::issue(claims, self).unwrap()
+    }
 }
 
 impl Signer for TestSigner {
@@ -59,10 +65,10 @@ pub(crate) fn claims(
     InviteClaims {
         invite_id: Uuid::new_v4(),
         issuer: signer.identity,
-        dial: InviteDial {
+        dial: Some(InviteDial {
             host: HOST.into(),
             port: NonZeroU16::new(7400).unwrap(),
-        },
+        }),
         not_before_ms: NOW_MS,
         expires_at_ms: NOW_MS + lifetime_ms,
         policy,

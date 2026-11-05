@@ -1,9 +1,12 @@
-pub(crate) const CODE_VERSION: u8 = 1;
-pub(crate) const CODE_PREFIX: &str = "yolo1_";
+pub(crate) const CODE_VERSION: u8 = 2;
+pub(crate) const CODE_PREFIX: &str = "yolo2_";
+pub(crate) const LEGACY_CODE_VERSION: u8 = 1;
+pub(crate) const LEGACY_CODE_PREFIX: &str = "yolo1_";
 pub(crate) const POLICY_EXPORT_LOCAL: u8 = 1;
 pub(crate) const POLICY_IMPORT_PEER: u8 = 2;
 pub(crate) const SIGNATURE_DOMAIN: &str = "yolo.enrollment.invite";
-pub(crate) const SIGNATURE_VERSION: u16 = 1;
+pub(crate) const SIGNATURE_VERSION: u16 = 2;
+pub(crate) const LEGACY_SIGNATURE_VERSION: u16 = 1;
 pub(crate) const MIN_LIFETIME_MS: u64 = 60 * 1000;
 pub(crate) const MAX_LIFETIME_MS: u64 = 60 * 60 * 1000;
 pub(crate) const CLOCK_SKEW_MS: u64 = 60 * 1000;

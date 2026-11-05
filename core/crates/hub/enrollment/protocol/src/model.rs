@@ -10,7 +10,10 @@ use yolo_hub_delegation::PeerIdentity;
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct InviteRequest {
-    pub dial: InviteDial,
+    /// Legacy dial address. A request without one mints an address-free code
+    /// that the joining side completes with `join --host/--port`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub dial: Option<InviteDial>,
     pub lifetime_ms: u64,
     pub policy: InvitePolicy,
 }
@@ -31,7 +34,8 @@ pub struct InviteClaims {
     #[serde(with = "yolo_crypto::serde_non_nil_uuid")]
     pub invite_id: Uuid,
     pub issuer: PeerIdentity,
-    pub dial: InviteDial,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub dial: Option<InviteDial>,
     pub not_before_ms: u64,
     pub expires_at_ms: u64,
     pub policy: InvitePolicy,
@@ -55,7 +59,9 @@ pub struct InvitePolicy {
 
 impl InviteRequest {
     pub fn validate(&self) -> Result<(), InviteError> {
-        self.dial.validate()?;
+        if let Some(dial) = &self.dial {
+            dial.validate()?;
+        }
         valid_lifetime(self.lifetime_ms)?;
         valid_policy(self.policy)
     }
@@ -94,7 +100,9 @@ impl InviteClaims {
         if self.invite_id.is_nil() || self.issuer.hub().as_uuid().is_nil() {
             return Err(InviteError::Claims);
         }
-        self.dial.validate()?;
+        if let Some(dial) = &self.dial {
+            dial.validate()?;
+        }
         valid_policy(self.policy)?;
         if self.not_before_ms >= self.expires_at_ms {
             return Err(InviteError::Claims);

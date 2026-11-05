@@ -94,36 +94,21 @@ fn invite_args(extra: &[&str]) -> InvitePeer {
 }
 
 #[test]
-fn invite_defaults_to_the_applied_listener_and_local_export() {
-    let mut snapshot = snapshot();
-    snapshot.listen_address = Some("192.168.1.5:7400".parse().unwrap());
-    let request = invite_request(&snapshot, &invite_args(&[])).unwrap();
-    assert_eq!(request.dial.host, "192.168.1.5");
-    assert_eq!(request.dial.port.get(), 7400);
+fn invite_is_address_free_and_honors_policy_flags() {
+    let request = invite_request(&invite_args(&[])).unwrap();
+    assert_eq!(request.dial, None);
     assert_eq!(request.lifetime_ms, 10 * 60 * 1000);
     assert!(request.policy.export_local);
     assert!(!request.policy.import_peer);
-}
 
-#[test]
-fn invite_requires_a_dial_address_and_honors_flags() {
-    assert!(invite_request(&snapshot(), &invite_args(&[])).is_err());
-    let request = invite_request(
-        &snapshot(),
-        &invite_args(&[
-            HOST_ARGUMENT,
-            "10.0.0.2",
-            PORT_ARGUMENT,
-            "7443",
-            NO_EXPORT_ARGUMENT,
-            IMPORT_PEER_ARGUMENT,
-            TTL_ARGUMENT,
-            "5",
-        ]),
-    )
+    let request = invite_request(&invite_args(&[
+        NO_EXPORT_ARGUMENT,
+        IMPORT_PEER_ARGUMENT,
+        TTL_ARGUMENT,
+        "5",
+    ]))
     .unwrap();
-    assert_eq!(request.dial.host, "10.0.0.2");
-    assert_eq!(request.dial.port.get(), 7443);
+    assert_eq!(request.dial, None);
     assert_eq!(request.lifetime_ms, 5 * 60 * 1000);
     assert!(!request.policy.export_local);
     assert!(request.policy.import_peer);

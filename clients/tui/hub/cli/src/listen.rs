@@ -11,8 +11,9 @@ use yolo_hub_rpc_protocol::Command as HubRpcCommand;
 
 #[derive(Debug, Args)]
 pub struct Listen {
-    /// Address the peer listener should bind, such as 0.0.0.0:7400 or 127.0.0.1:0.
-    pub address: SocketAddr,
+    /// Address the peer listener should bind; defaults to 0.0.0.0:7400.
+    /// Use 127.0.0.1:0 for a dynamic loopback port.
+    pub address: Option<SocketAddr>,
     /// Print one JSON document.
     #[arg(long)]
     pub json: bool,
@@ -27,7 +28,10 @@ pub(crate) async fn run(
     let snapshot = execute(socket, entry, HubRpcCommand::GetConfiguration {}, deadline)
         .await
         .context(HUB_CONFIGURATION_READ_FAILED)?;
-    let change = crate::listen_change(&snapshot, args.address)?;
+    let requested = args
+        .address
+        .unwrap_or_else(|| SocketAddr::from(([0, 0, 0, 0], DEFAULT_PEER_PORT)));
+    let change = crate::listen_change(&snapshot, requested)?;
     let updated = execute(socket, entry, HubRpcCommand::Configure { change }, deadline)
         .await
         .context(HUB_CONFIGURATION_WRITE_FAILED)?;
@@ -36,15 +40,15 @@ pub(crate) async fn run(
     } else if updated.applied {
         let address = updated
             .listen_address
-            .map_or_else(|| args.address.to_string(), |address| address.to_string());
+            .map_or_else(|| requested.to_string(), |address| address.to_string());
         println!(
             "listening on {address} at revision {}",
             updated.state.revision
         );
     } else {
         println!(
-            "listener {} is persisted at revision {} but not active",
-            args.address, updated.state.revision
+            "listener {requested} is persisted at revision {} but not active",
+            updated.state.revision
         );
     }
     Ok(())

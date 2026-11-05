@@ -15,9 +15,10 @@ Mac, TUI, and independent clients can use the same public command contract:
   latest change receipt, configuration, activation status, and actual listener.
 - `Configure { change }` carries a non-nil request ID, expected revision, and the
   complete desired `federation_settings::Configuration`.
-- `MintInvite { request }` signs a compact, expiring `yolo1_` pairing code with
-  the local Hub identity. The request supplies the dial address, lifetime and
-  export/import directions; the Hub supplies the invite ID and time.
+- `MintInvite { request }` signs a compact, expiring `yolo2_` pairing code with
+  the local Hub identity. The request supplies the lifetime and export/import
+  directions; the Hub supplies the invite ID and time. A legacy dial address is
+  accepted and mints a `yolo1_` code for older joiners.
 
 These methods are advertised only by the managed dispatcher. They administer
 the current entry Hub; addressing another Hub is unauthorized. Signed peer calls
@@ -35,12 +36,13 @@ The [TUI](tui-hub-management.md) has a configuration editor using this
 entry-local administration boundary. `yolo hub peer invite` mints a code through
 `MintInvite`; `yolo hub peer join` consumes it through the enrollment handshake
 described in [Hub pairing](hub-pairing.md). The code names the issuing Hub
-identity, its dial address, a 1–60 minute lifetime, and whether the joining Hub
-may import this Hub's local resources and whether this Hub imports the joining
-Hub's resources. The code is compact base64url over a fixed payload and carries
-an Ed25519 signature over the canonical claims; it is a bearer secret and must be
-transferred privately. Admission applies exactly one peer with the minted policy;
-`Configure` remains the only general configuration mutation.
+identity, a 1–60 minute lifetime, and whether the joining Hub may import this
+Hub's local resources and whether this Hub imports the joining Hub's resources.
+The joining side supplies the reachable address. The code is compact base64url
+over a fixed payload and carries an Ed25519 signature over the canonical
+claims; it is a bearer secret and must be transferred privately. Admission
+applies exactly one peer with the minted policy; `Configure` remains the only
+general configuration mutation.
 
 ## Persistence And Concurrency
 

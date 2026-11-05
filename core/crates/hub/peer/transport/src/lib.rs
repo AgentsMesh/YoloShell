@@ -16,7 +16,7 @@ pub use admission::ChannelAdmissionError;
 pub use connect::{accept, accept_io, accept_with_enrollment, connect, connect_io};
 pub use connection::PeerConnection;
 pub use constants::{MAX_PEER_CHANNELS, MAX_QUEUED_CHANNELS};
-pub use enrollment::{Accepted, EnrollmentStream, EnrollmentVerifier, join};
+pub use enrollment::{Accepted, EnrollmentStream, EnrollmentVerifier, JoinFailure, join};
 pub use io::PeerIo;
 pub use pins::PeerPins;
 pub use stream::{Duplex, PeerStream};

@@ -1,6 +1,6 @@
 use super::*;
 use yolo_hub_enrollment_protocol::{
-    InviteError, InvitePolicy, InviteRequest, MintedInvite, SignedInvite, encode, mint,
+    InviteError, InvitePolicy, InviteRequest, MintedInvite, SignedInvite, decode, encode, mint,
 };
 
 #[test]
@@ -36,10 +36,10 @@ fn a_different_key_cannot_issue_an_invite() {
 fn mint_binds_issuer_id_and_expiry() {
     let signer = TestSigner::new();
     let request = InviteRequest {
-        dial: InviteDial {
+        dial: Some(InviteDial {
             host: HOST.into(),
             port: NonZeroU16::new(7400).unwrap(),
-        },
+        }),
         lifetime_ms: LIFETIME_MS,
         policy: mutual(),
     };
@@ -68,13 +68,30 @@ fn mint_binds_issuer_id_and_expiry() {
 }
 
 #[test]
+fn an_address_free_request_mints_a_v2_code() {
+    let signer = TestSigner::new();
+    let request = InviteRequest {
+        dial: None,
+        lifetime_ms: LIFETIME_MS,
+        policy: mutual(),
+    };
+    let invite = mint(&request, Uuid::new_v4(), NOW_MS, &signer).unwrap();
+    assert_eq!(invite.claims().dial, None);
+    let code = encode(&invite).unwrap();
+    assert!(code.starts_with("yolo2_"), "{code}");
+    let decoded = decode(&code).unwrap();
+    assert_eq!(decoded.claims(), invite.claims());
+    decoded.verify_at(NOW_MS).unwrap();
+}
+
+#[test]
 fn invalid_mint_requests_are_rejected() {
     let signer = TestSigner::new();
     let request = |host: &str, lifetime_ms: u64, policy: InvitePolicy| InviteRequest {
-        dial: InviteDial {
+        dial: Some(InviteDial {
             host: host.into(),
             port: NonZeroU16::new(7400).unwrap(),
-        },
+        }),
         lifetime_ms,
         policy,
     };

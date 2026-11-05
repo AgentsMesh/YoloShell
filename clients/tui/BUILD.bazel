@@ -13,6 +13,7 @@ filegroup(
         "//clients/tui/input:architecture_check_data",
         "//clients/tui/input/line:architecture_check_data",
         "//clients/tui/hub/manager:architecture_check_data",
+        "//clients/tui/hub/cli:architecture_check_data",
         "//clients/tui/constants:architecture_check_data",
         "//clients/tui/descriptor:architecture_check_data",
         "//clients/tui/document:architecture_check_data",

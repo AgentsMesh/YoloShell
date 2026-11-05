@@ -3,6 +3,21 @@
 All notable changes to Yolo are recorded here. The project follows semantic
 versioning once a stable release exists.
 
+## 0.1.8 — Alpha
+
+### Changed
+
+- Hub pairing moves the reachable address to the joining side. `yolo hub peer
+  invite` now mints an address-free `yolo2_` code and provisions the default
+  `0.0.0.0:7400` listener when none is active; `yolo hub peer join <code>
+  --host <address> [--port 7400]` supplies the address it can reach. `yolo1_`
+  codes remain accepted, and their embedded address is used unless overridden.
+- `yolo hub peer join` distinguishes connection failure, SSH host-key
+  mismatch, code rejection and admission refusal, so a wrong address is not
+  reported as a refused pairing.
+- `yolo hub listen` without an address defaults to `0.0.0.0:7400`; a persisted
+  but inactive listener is never overwritten.
+
 ## 0.1.7 — Alpha
 
 ### Added

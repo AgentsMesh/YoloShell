@@ -12,7 +12,7 @@ use std::path::Path;
 use tokio::time::Instant;
 use yolo_hub_identity::HubId;
 
-pub use configuration::{add_change, invite_request, join_change, listen_change};
+pub use configuration::{add_change, invite_request, join_change, join_dial, listen_change};
 pub use listen::Listen;
 
 #[derive(Debug, Subcommand)]
@@ -32,10 +32,10 @@ pub enum HubCommand {
 pub enum PeerCommand {
     /// Add a peer by Hub ID and public key; prefer invite and join for pairing.
     Add(AddPeer),
-    /// Mint a signed pairing code for a joining Hub.
+    /// Mint a pairing code; provisions 0.0.0.0:7400 if no listener is active.
     #[command(group(connection_group()))]
     Invite(InvitePeer),
-    /// Join another Hub with its pairing code.
+    /// Join another Hub with its code and a reachable address.
     #[command(group(connection_group()))]
     Join(JoinPeer),
     /// List configured peers.
@@ -76,12 +76,6 @@ pub struct AddPeer {
 
 #[derive(Debug, Args)]
 pub struct InvitePeer {
-    /// Host the joining Hub should dial; defaults to the applied listener.
-    #[arg(long)]
-    host: Option<String>,
-    /// Port the joining Hub should dial; defaults to the applied listener.
-    #[arg(long)]
-    port: Option<NonZeroU16>,
     /// Pairing code lifetime in minutes.
     #[arg(long, default_value_t = DEFAULT_INVITE_MINUTES)]
     ttl_minutes: u64,
@@ -100,6 +94,12 @@ pub struct InvitePeer {
 pub struct JoinPeer {
     /// Pairing code printed by the other Hub's `peer invite`.
     code: String,
+    /// Host of the inviting Hub; required for yolo2_ codes.
+    #[arg(long)]
+    host: Option<String>,
+    /// Port of the inviting Hub; defaults to the code's port, else 7400.
+    #[arg(long)]
+    port: Option<NonZeroU16>,
     /// Print one JSON document.
     #[arg(long)]
     json: bool,

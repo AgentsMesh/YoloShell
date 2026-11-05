@@ -13,8 +13,14 @@ pub struct SignedInvite(SignedInviteFields);
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct SignedInviteFields {
+    #[serde(default = "legacy_version")]
+    pub version: u16,
     pub claims: InviteClaims,
     pub signature: Vec<u8>,
+}
+
+fn legacy_version() -> u16 {
+    LEGACY_SIGNATURE_VERSION
 }
 
 #[derive(Serialize)]
@@ -30,15 +36,29 @@ impl SignedInvite {
         if signer.identity() != claims.issuer {
             return Err(InviteError::Issuer);
         }
+        let version = if claims.dial.is_some() {
+            LEGACY_SIGNATURE_VERSION
+        } else {
+            SIGNATURE_VERSION
+        };
         let signature = signer
-            .sign(&signing_bytes(&claims)?)
+            .sign(&signing_bytes(version, &claims)?)
             .map_err(|_| InviteError::Signing)?
             .to_vec();
-        SignedInviteFields { claims, signature }.try_into()
+        SignedInviteFields {
+            version,
+            claims,
+            signature,
+        }
+        .try_into()
     }
 
     pub fn claims(&self) -> &InviteClaims {
         &self.0.claims
+    }
+
+    pub fn version(&self) -> u16 {
+        self.0.version
     }
 
     pub fn signature(&self) -> &[u8] {
@@ -52,7 +72,10 @@ impl SignedInvite {
 
     fn verify_signature(&self) -> Result<(), InviteError> {
         signature::UnparsedPublicKey::new(&signature::ED25519, self.0.claims.issuer.key())
-            .verify(&signing_bytes(&self.0.claims)?, &self.0.signature)
+            .verify(
+                &signing_bytes(self.0.version, &self.0.claims)?,
+                &self.0.signature,
+            )
             .map_err(|_| InviteError::Signature)
     }
 }
@@ -81,10 +104,10 @@ pub fn mint(
     )
 }
 
-fn signing_bytes(claims: &InviteClaims) -> Result<Vec<u8>, InviteError> {
+fn signing_bytes(version: u16, claims: &InviteClaims) -> Result<Vec<u8>, InviteError> {
     yolo_capnp_codec::canonical(&Signable {
         domain: SIGNATURE_DOMAIN,
-        version: SIGNATURE_VERSION,
+        version,
         claims,
     })
     .map_err(|_| InviteError::Signing)
@@ -95,6 +118,10 @@ impl TryFrom<SignedInviteFields> for SignedInvite {
 
     fn try_from(fields: SignedInviteFields) -> Result<Self, Self::Error> {
         fields.claims.validate()?;
+        match (fields.version, fields.claims.dial.is_some()) {
+            (LEGACY_SIGNATURE_VERSION, true) | (SIGNATURE_VERSION, false) => {}
+            _ => return Err(InviteError::Claims),
+        }
         if fields.signature.len() != ED25519_SIGNATURE_BYTES {
             return Err(InviteError::Signature);
         }

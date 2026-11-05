@@ -1,4 +1,4 @@
-use crate::constants::PUBLIC_KEY_FIELD;
+use crate::constants::{EXPIRES_AT_MS_FIELD, PUBLIC_KEY_FIELD};
 use anyhow::Result;
 use yolo_hub_delegation::PeerIdentity;
 use yolo_hub_federation_settings::Peer;
@@ -39,15 +39,16 @@ pub(crate) fn invite_json(
         "hub": snapshot.state.identity.hub().to_string(),
         "invite_id": invite.invite_id,
         "code": invite.code,
-        "expires_at_ms": invite.expires_at_ms,
+        (EXPIRES_AT_MS_FIELD): invite.expires_at_ms,
     }))?)
 }
 
 pub(crate) fn join_json(
     snapshot: &ConfigurationSnapshot,
-    invite: &yolo_hub_enrollment_protocol::SignedInvite,
+    dial: &yolo_hub_enrollment_protocol::InviteDial,
     reply: &yolo_hub_enrollment_wire::JoinReply,
     changed: bool,
+    expires_at_ms: u64,
 ) -> Result<String> {
     Ok(serde_json::to_string_pretty(&serde_json::json!({
         "changed": changed,
@@ -56,10 +57,10 @@ pub(crate) fn join_json(
         "peer_revision": reply.revision,
         "peer_applied": reply.applied,
         "dial": {
-            "host": invite.claims().dial.host,
-            "port": invite.claims().dial.port.get(),
+            "host": dial.host,
+            "port": dial.port.get(),
         },
-        "expires_at_ms": invite.claims().expires_at_ms,
+        (EXPIRES_AT_MS_FIELD): expires_at_ms,
     }))?)
 }
 

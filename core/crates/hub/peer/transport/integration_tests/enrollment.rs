@@ -13,7 +13,7 @@ use yolo_hub_enrollment_wire::{
     JOIN_SCHEMA_VERSION, JoinOutcome, JoinReply, JoinRequest, read_request, write_outcome,
 };
 
-struct InviteSigner {
+pub(crate) struct InviteSigner {
     identity: PeerIdentity,
     key: Ed25519KeyPair,
 }
@@ -31,7 +31,13 @@ impl Signer for InviteSigner {
     }
 }
 
-struct Verifier(SignedInvite);
+pub(crate) struct Verifier(SignedInvite);
+
+impl Verifier {
+    pub(crate) fn new(invite: SignedInvite) -> Self {
+        Self(invite)
+    }
+}
 
 impl yolo_hub_peer_transport::EnrollmentVerifier for Verifier {
     fn verify(&self, code: &str) -> Option<SignedInvite> {
@@ -39,7 +45,7 @@ impl yolo_hub_peer_transport::EnrollmentVerifier for Verifier {
     }
 }
 
-fn hub() -> (InviteSigner, Arc<russh::keys::PrivateKey>) {
+pub(crate) fn hub() -> (InviteSigner, Arc<russh::keys::PrivateKey>) {
     let document = Ed25519KeyPair::generate_pkcs8(&SystemRandom::new()).unwrap();
     let key = Ed25519KeyPair::from_pkcs8(document.as_ref()).unwrap();
     let identity = PeerIdentity::new(
@@ -51,15 +57,15 @@ fn hub() -> (InviteSigner, Arc<russh::keys::PrivateKey>) {
     (InviteSigner { identity, key }, Arc::new(transport))
 }
 
-fn invite(signer: &InviteSigner, port: NonZeroU16) -> SignedInvite {
+pub(crate) fn invite(signer: &InviteSigner, port: NonZeroU16) -> SignedInvite {
     SignedInvite::issue(
         InviteClaims {
             invite_id: uuid::Uuid::new_v4(),
             issuer: signer.identity,
-            dial: InviteDial {
+            dial: Some(InviteDial {
                 host: "127.0.0.1".into(),
                 port,
-            },
+            }),
             not_before_ms: 0,
             expires_at_ms: 60 * 60 * 1000,
             policy: InvitePolicy {
@@ -167,6 +173,6 @@ async fn enrollment_rejects_a_wrong_code() {
     assert!(accepted.is_err());
     assert_eq!(
         result.unwrap_err(),
-        yolo_hub_enrollment_wire::JoinErrorCode::Unauthorized
+        yolo_hub_peer_transport::JoinFailure::Authentication
     );
 }

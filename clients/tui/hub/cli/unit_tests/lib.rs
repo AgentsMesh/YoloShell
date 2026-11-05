@@ -1,13 +1,18 @@
 use super::{InvitePeer, invite_request, listen_change};
+use crate::configuration::resolve_dial;
+use crate::peer::provisioned_listener;
 use std::net::SocketAddr;
 use std::num::NonZeroU16;
 use uuid::Uuid;
 use yolo_hub_delegation::PeerIdentity;
+use yolo_hub_enrollment_protocol::InviteDial;
 use yolo_hub_federation_settings::Configuration;
 use yolo_hub_identity::HubId;
 use yolo_hub_management_protocol::{
     CONFIGURATION_SCHEMA, ConfigurationSnapshot, ConfigurationState,
 };
+
+mod constants;
 
 fn snapshot(listen: Option<SocketAddr>, applied: bool) -> ConfigurationSnapshot {
     ConfigurationSnapshot {
@@ -23,10 +28,8 @@ fn snapshot(listen: Option<SocketAddr>, applied: bool) -> ConfigurationSnapshot 
     }
 }
 
-fn invite(host: Option<&str>, port: Option<u16>) -> InvitePeer {
+fn invite() -> InvitePeer {
     InvitePeer {
-        host: host.map(str::to_owned),
-        port: port.and_then(NonZeroU16::new),
         ttl_minutes: 10,
         no_export: false,
         import_peer: false,
@@ -34,48 +37,80 @@ fn invite(host: Option<&str>, port: Option<u16>) -> InvitePeer {
     }
 }
 
-#[test]
-fn a_host_without_a_listener_needs_a_port_and_names_the_remedy() {
-    let error = invite_request(&snapshot(None, true), &invite(Some("100.85.238.9"), None))
-        .unwrap_err()
-        .to_string();
-    assert!(error.contains("--port"), "{error}");
-    assert!(error.contains("yolo hub listen"), "{error}");
+fn port(value: u16) -> Option<NonZeroU16> {
+    NonZeroU16::new(value)
+}
+
+fn dial(host: &str, value: u16) -> InviteDial {
+    InviteDial {
+        host: host.into(),
+        port: NonZeroU16::new(value).unwrap(),
+    }
 }
 
 #[test]
-fn explicit_host_and_port_pair_even_without_a_listener() {
-    let request = invite_request(
-        &snapshot(None, true),
-        &invite(Some("100.85.238.9"), Some(7400)),
-    )
-    .unwrap();
-    assert_eq!(request.dial.host, "100.85.238.9");
-    assert_eq!(request.dial.port.get(), 7400);
+fn an_invite_is_address_free() {
+    let request = invite_request(&invite()).unwrap();
+    assert_eq!(request.dial, None);
     assert!(request.policy.export_local);
     assert!(!request.policy.import_peer);
 }
 
 #[test]
-fn an_applied_listener_supplies_the_default_port() {
-    let listener = Some(SocketAddr::from(([0, 0, 0, 0], 7400)));
-    let request = invite_request(
-        &snapshot(listener, true),
-        &invite(Some("100.85.238.9"), None),
-    )
-    .unwrap();
-    assert_eq!(request.dial.host, "100.85.238.9");
-    assert_eq!(request.dial.port.get(), 7400);
+fn invite_policy_and_lifetime_are_bounded() {
+    let mut empty = invite();
+    empty.no_export = true;
+    assert!(invite_request(&empty).is_err());
+    let mut short = invite();
+    short.ttl_minutes = 0;
+    assert!(invite_request(&short).is_err());
 }
 
 #[test]
-fn an_unspecified_listener_still_requires_a_dialable_host() {
-    let listener = Some(SocketAddr::from(([0, 0, 0, 0], 7400)));
-    let error = invite_request(&snapshot(listener, true), &invite(None, None))
-        .unwrap_err()
-        .to_string();
-    assert!(error.contains("--host"), "{error}");
-    assert!(error.contains("current listener"), "{error}");
+fn an_inviter_without_a_listener_provisions_the_default() {
+    assert_eq!(
+        provisioned_listener(&snapshot(None, true)).unwrap(),
+        Some(SocketAddr::from(([0, 0, 0, 0], 7400)))
+    );
+    let active = Some(SocketAddr::from(([0, 0, 0, 0], 7500)));
+    assert_eq!(provisioned_listener(&snapshot(active, true)).unwrap(), None);
+}
+
+#[test]
+fn a_persisted_listener_is_not_overwritten() {
+    let mut pending = snapshot(None, false);
+    pending.state.configuration.listen = Some(SocketAddr::from(([127, 0, 0, 1], 7400)));
+    let error = provisioned_listener(&pending).unwrap_err().to_string();
+    assert!(error.contains("not active"), "{error}");
+    assert!(error.contains("127.0.0.1:7400"), "{error}");
+}
+
+#[test]
+fn a_v2_code_requires_a_host_and_defaults_the_port() {
+    let error = resolve_dial(None, None, None).unwrap_err().to_string();
+    assert!(error.contains(constants::HOST_ARGUMENT), "{error}");
+    assert_eq!(resolve_dial(None, Some("100.85.238.9"), None).unwrap(), dial("100.85.238.9", 7400));
+    assert_eq!(
+        resolve_dial(None, Some("100.85.238.9"), port(7500)).unwrap(),
+        dial("100.85.238.9", 7500)
+    );
+}
+
+#[test]
+fn a_v1_code_keeps_its_embedded_address_and_accepts_overrides() {
+    let embedded = dial("192.168.1.10", 7500);
+    assert_eq!(
+        resolve_dial(Some(&embedded), None, None).unwrap(),
+        embedded.clone()
+    );
+    assert_eq!(
+        resolve_dial(Some(&embedded), Some("100.85.238.9"), None).unwrap(),
+        dial("100.85.238.9", 7500)
+    );
+    assert_eq!(
+        resolve_dial(Some(&embedded), None, port(7400)).unwrap(),
+        dial("192.168.1.10", 7400)
+    );
 }
 
 #[test]

@@ -1,49 +1,58 @@
 use crate::constants::*;
-use crate::{AddPeer, InvitePeer};
+use crate::{AddPeer, InvitePeer, JoinPeer};
 use anyhow::{Context, Result, ensure};
 use std::collections::BTreeSet;
 use std::net::SocketAddr;
 use std::num::NonZeroU16;
 use uuid::Uuid;
 use yolo_hub_delegation::{ED25519_PUBLIC_KEY_BYTES, PeerIdentity};
-use yolo_hub_enrollment_protocol::{InviteClaims, InviteDial, InvitePolicy, InviteRequest};
+use yolo_hub_enrollment_protocol::{
+    InviteClaims, InviteDial, InvitePolicy, InviteRequest, SignedInvite,
+};
 use yolo_hub_federation_settings::{ExportPolicy, Peer, PeerAddress};
 use yolo_hub_identity::HubId;
 use yolo_hub_management_protocol::{ConfigurationChange, ConfigurationSnapshot};
 use yolo_hub_routing::Right;
 
-pub fn invite_request(
-    snapshot: &ConfigurationSnapshot,
-    args: &InvitePeer,
-) -> Result<InviteRequest> {
+pub fn invite_request(args: &InvitePeer) -> Result<InviteRequest> {
     ensure!(!(args.no_export && !args.import_peer), INVITE_POLICY_EMPTY);
     ensure!(
         (MIN_INVITE_MINUTES..=MAX_INVITE_MINUTES).contains(&args.ttl_minutes),
         INVITE_TTL_INVALID
     );
-    let listener = snapshot.listen_address.filter(|_| snapshot.applied);
-    let port = args
-        .port
-        .or_else(|| listener.and_then(|address| NonZeroU16::new(address.port())));
-    let host = match (&args.host, listener) {
-        (Some(host), _) => host.clone(),
-        (None, Some(address)) if !address.ip().is_unspecified() => address.ip().to_string(),
-        (None, Some(address)) => {
-            anyhow::bail!("{INVITE_HOST_REQUIRED} (current listener: {address})")
-        }
-        (None, None) => anyhow::bail!(INVITE_LISTENER_MISSING),
-    };
-    let Some(port) = port else {
-        anyhow::bail!(INVITE_PORT_REQUIRED)
-    };
     Ok(InviteRequest {
-        dial: InviteDial { host, port },
+        dial: None,
         lifetime_ms: args.ttl_minutes.saturating_mul(MINUTE_MS),
         policy: InvitePolicy {
             export_local: !args.no_export,
             import_peer: args.import_peer,
         },
     })
+}
+
+/// The joining side owns the reachable address. Legacy codes still carry one;
+/// explicit flags override it field by field.
+pub fn join_dial(invite: &SignedInvite, args: &JoinPeer) -> Result<InviteDial> {
+    resolve_dial(
+        invite.claims().dial.as_ref(),
+        args.host.as_deref(),
+        args.port,
+    )
+}
+
+pub fn resolve_dial(
+    embedded: Option<&InviteDial>,
+    host: Option<&str>,
+    port: Option<NonZeroU16>,
+) -> Result<InviteDial> {
+    let host = host
+        .map(str::to_owned)
+        .or_else(|| embedded.map(|dial| dial.host.clone()))
+        .context(JOIN_HOST_REQUIRED)?;
+    let port = port
+        .or_else(|| embedded.map(|dial| dial.port))
+        .unwrap_or_else(|| NonZeroU16::new(DEFAULT_PEER_PORT).expect("default port is non-zero"));
+    Ok(InviteDial { host, port })
 }
 
 pub fn listen_change(
@@ -63,6 +72,7 @@ pub fn listen_change(
 pub fn join_change(
     snapshot: &ConfigurationSnapshot,
     claims: &InviteClaims,
+    dial: &InviteDial,
 ) -> Result<Option<ConfigurationChange>> {
     let local = snapshot.state.identity;
     ensure!(
@@ -79,11 +89,11 @@ pub fn join_change(
     } else {
         Vec::new()
     };
-    let dial = PeerAddress::tcp(claims.dial.host.clone(), claims.dial.port);
+    let address = PeerAddress::tcp(dial.host.clone(), dial.port);
     if let Some(peer) = snapshot.state.configuration.peer(claims.issuer.hub()) {
         let same = peer.identity == claims.issuer
             && peer.consume == consume
-            && peer.dial.as_ref() == Some(&dial)
+            && peer.dial.as_ref() == Some(&address)
             && peer.exports == exports;
         return if same {
             Ok(None)
@@ -94,7 +104,7 @@ pub fn join_change(
     let mut configuration = snapshot.state.configuration.clone();
     configuration.peers.push(Peer {
         identity: claims.issuer,
-        dial: Some(dial),
+        dial: Some(address),
         consume,
         exports,
     });

@@ -39,10 +39,10 @@ fn claims(policy: InvitePolicy) -> InviteClaims {
     InviteClaims {
         invite_id: Uuid::new_v4(),
         issuer: peer_identity(),
-        dial: InviteDial {
+        dial: Some(InviteDial {
             host: "10.0.0.2".into(),
             port: NonZeroU16::new(7443).unwrap(),
-        },
+        }),
         not_before_ms: 0,
         expires_at_ms: 600_000,
         policy,
@@ -79,9 +79,16 @@ fn join_parses_the_pairing_code_and_requires_one() {
     );
 }
 
+fn dial(claims: &InviteClaims) -> InviteDial {
+    claims.dial.clone().unwrap()
+}
+
 #[test]
 fn join_pins_the_inviter_and_mirrors_the_policy() {
-    let change = join_change(&snapshot(), &claims(exported())).unwrap().unwrap();
+    let exported_claims = claims(exported());
+    let change = join_change(&snapshot(), &exported_claims, &dial(&exported_claims))
+        .unwrap()
+        .unwrap();
     let peer = &change.configuration.peers[0];
     assert_eq!(peer.identity, peer_identity());
     assert_eq!(peer.dial.as_ref().unwrap().host, "10.0.0.2");
@@ -89,11 +96,14 @@ fn join_pins_the_inviter_and_mirrors_the_policy() {
     assert!(peer.consume);
     assert!(peer.exports.is_empty());
 
-    let mutual = InvitePolicy {
+    let policy = InvitePolicy {
         export_local: true,
         import_peer: true,
     };
-    let change = join_change(&snapshot(), &claims(mutual)).unwrap().unwrap();
+    let mutual = claims(policy);
+    let change = join_change(&snapshot(), &mutual, &dial(&mutual))
+        .unwrap()
+        .unwrap();
     let peer = &change.configuration.peers[0];
     let export = &peer.exports[0];
     assert_eq!(export.origin, LOCAL_HUB.parse().unwrap());
@@ -103,18 +113,25 @@ fn join_pins_the_inviter_and_mirrors_the_policy() {
 #[test]
 fn join_is_idempotent_and_rejects_conflicts() {
     let claims = claims(exported());
-    let change = join_change(&snapshot(), &claims).unwrap().unwrap();
+    let change = join_change(&snapshot(), &claims, &dial(&claims))
+        .unwrap()
+        .unwrap();
     let mut applied = snapshot();
     applied.state.configuration = change.configuration.clone();
-    assert!(join_change(&applied, &claims).unwrap().is_none());
+    assert!(
+        join_change(&applied, &claims, &dial(&claims))
+            .unwrap()
+            .is_none()
+    );
 
     applied.state.configuration.peers[0].consume = false;
-    assert!(join_change(&applied, &claims).is_err());
+    assert!(join_change(&applied, &claims, &dial(&claims)).is_err());
 }
 
 #[test]
 fn join_rejects_a_local_invite() {
     let mut claims = claims(exported());
     claims.issuer = local_identity();
-    assert!(join_change(&snapshot(), &claims).is_err());
+    let dial = claims.dial.clone().unwrap();
+    assert!(join_change(&snapshot(), &claims, &dial).is_err());
 }

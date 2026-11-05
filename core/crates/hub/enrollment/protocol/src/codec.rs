@@ -12,27 +12,49 @@ const POLICY_MASK: u8 = POLICY_EXPORT_LOCAL | POLICY_IMPORT_PEER;
 
 pub fn encode(invite: &SignedInvite) -> Result<String, InviteError> {
     let claims = invite.claims();
-    let host = claims.dial.host.as_bytes();
-    if host.len() > MAX_HOST_BYTES || invite.signature().len() != ED25519_SIGNATURE_BYTES {
+    let version = u8::try_from(invite.version()).map_err(|_| InviteError::Code)?;
+    if invite.signature().len() != ED25519_SIGNATURE_BYTES {
         return Err(InviteError::Code);
     }
     let mut payload = Vec::with_capacity(MAX_PAYLOAD_BYTES);
-    payload.push(CODE_VERSION);
+    payload.push(version);
     payload.extend_from_slice(claims.invite_id.as_bytes());
     payload.extend_from_slice(claims.issuer.hub().as_uuid().as_bytes());
     payload.extend_from_slice(claims.issuer.key());
-    payload.push(host.len() as u8);
-    payload.extend_from_slice(host);
-    payload.extend_from_slice(&claims.dial.port.get().to_be_bytes());
+    match (version, &claims.dial) {
+        (LEGACY_CODE_VERSION, Some(dial)) => {
+            let host = dial.host.as_bytes();
+            if host.is_empty() || host.len() > MAX_HOST_BYTES {
+                return Err(InviteError::Code);
+            }
+            payload.push(host.len() as u8);
+            payload.extend_from_slice(host);
+            payload.extend_from_slice(&dial.port.get().to_be_bytes());
+        }
+        (CODE_VERSION, None) => {}
+        _ => return Err(InviteError::Code),
+    }
     payload.extend_from_slice(&claims.not_before_ms.to_be_bytes());
     payload.extend_from_slice(&claims.expires_at_ms.to_be_bytes());
     payload.push(policy_bits(claims.policy));
     payload.extend_from_slice(invite.signature());
-    Ok(format!("{CODE_PREFIX}{}", URL_SAFE_NO_PAD.encode(payload)))
+    let prefix = if version == LEGACY_CODE_VERSION {
+        LEGACY_CODE_PREFIX
+    } else {
+        CODE_PREFIX
+    };
+    Ok(format!("{prefix}{}", URL_SAFE_NO_PAD.encode(payload)))
 }
 
 pub fn decode(code: &str) -> Result<SignedInvite, InviteError> {
-    let encoded = code.trim().strip_prefix(CODE_PREFIX).ok_or(InviteError::Code)?;
+    let code = code.trim();
+    let (version, encoded) = if let Some(encoded) = code.strip_prefix(CODE_PREFIX) {
+        (CODE_VERSION, encoded)
+    } else if let Some(encoded) = code.strip_prefix(LEGACY_CODE_PREFIX) {
+        (LEGACY_CODE_VERSION, encoded)
+    } else {
+        return Err(InviteError::Code);
+    };
     if encoded.is_empty() || encoded.len() > MAX_CODE_BYTES {
         return Err(InviteError::Code);
     }
@@ -40,20 +62,25 @@ pub fn decode(code: &str) -> Result<SignedInvite, InviteError> {
         .decode(encoded)
         .map_err(|_| InviteError::Code)?;
     let mut reader = Reader::new(&bytes);
-    if reader.u8()? != CODE_VERSION {
+    if reader.u8()? != version {
         return Err(InviteError::Code);
     }
     let invite_id = Uuid::from_bytes(reader.array()?);
     let hub = HubId::from_uuid(Uuid::from_bytes(reader.array()?)).map_err(|_| InviteError::Code)?;
     let issuer = PeerIdentity::new(hub, reader.array()?).map_err(|_| InviteError::Code)?;
-    let host_len = usize::from(reader.u8()?);
-    if host_len == 0 || host_len > MAX_HOST_BYTES {
-        return Err(InviteError::Code);
-    }
-    let host = std::str::from_utf8(reader.take(host_len)?)
-        .map_err(|_| InviteError::Code)?
-        .to_owned();
-    let port = NonZeroU16::new(u16::from_be_bytes(reader.array()?)).ok_or(InviteError::Code)?;
+    let dial = if version == LEGACY_CODE_VERSION {
+        let host_len = usize::from(reader.u8()?);
+        if host_len == 0 || host_len > MAX_HOST_BYTES {
+            return Err(InviteError::Code);
+        }
+        let host = std::str::from_utf8(reader.take(host_len)?)
+            .map_err(|_| InviteError::Code)?
+            .to_owned();
+        let port = NonZeroU16::new(u16::from_be_bytes(reader.array()?)).ok_or(InviteError::Code)?;
+        Some(InviteDial { host, port })
+    } else {
+        None
+    };
     let not_before_ms = u64::from_be_bytes(reader.array()?);
     let expires_at_ms = u64::from_be_bytes(reader.array()?);
     let bits = reader.u8()?;
@@ -69,10 +96,11 @@ pub fn decode(code: &str) -> Result<SignedInvite, InviteError> {
         return Err(InviteError::Code);
     }
     SignedInviteFields {
+        version: u16::from(version),
         claims: InviteClaims {
             invite_id,
             issuer,
-            dial: InviteDial { host, port },
+            dial,
             not_before_ms,
             expires_at_ms,
             policy,

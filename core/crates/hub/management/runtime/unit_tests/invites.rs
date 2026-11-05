@@ -3,10 +3,10 @@ use yolo_hub_enrollment_protocol::{InviteDial, InvitePolicy, InviteRequest, deco
 
 fn invite() -> InviteRequest {
     InviteRequest {
-        dial: InviteDial {
+        dial: Some(InviteDial {
             host: "192.0.2.10".into(),
             port: std::num::NonZeroU16::new(7400).unwrap(),
-        },
+        }),
         lifetime_ms: 10 * 60 * 1000,
         policy: InvitePolicy {
             export_local: true,
@@ -36,7 +36,10 @@ async fn mint_invite_is_local_verifiable_and_does_not_touch_configuration() {
     assert_eq!(decoded.claims().issuer, hub.state.peer_identity());
     assert_eq!(decoded.claims().invite_id, invite.invite_id);
     assert_eq!(decoded.claims().expires_at_ms, invite.expires_at_ms);
-    assert_eq!(decoded.claims().dial.host, "192.0.2.10");
+    assert_eq!(
+        decoded.claims().dial.as_ref().unwrap().host,
+        "192.0.2.10"
+    );
     assert!(receiver.is_empty());
 }
 

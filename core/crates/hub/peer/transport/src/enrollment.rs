@@ -1,6 +1,6 @@
 use crate::{PeerStream, client, constants::*, pins::matches_key};
 use russh::client as ssh_client;
-use std::num::NonZeroU16;
+use std::{fmt, num::NonZeroU16};
 use tokio::net::TcpStream;
 use tokio::time::{Instant, timeout_at};
 use yolo_hub_delegation::PeerIdentity;
@@ -19,6 +19,31 @@ pub struct EnrollmentStream {
     pub stream: PeerStream,
     pub invite: SignedInvite,
 }
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum JoinFailure {
+    Connect,
+    HostKeyMismatch,
+    Authentication,
+    Rejected(JoinErrorCode),
+    Exchange,
+}
+
+impl fmt::Display for JoinFailure {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Connect => formatter.write_str("could not connect to the inviting Hub"),
+            Self::HostKeyMismatch => {
+                formatter.write_str("the address is not the inviting Hub (SSH host key mismatch)")
+            }
+            Self::Authentication => formatter.write_str("the inviting Hub rejected the pairing code"),
+            Self::Rejected(code) => write!(formatter, "{code}"),
+            Self::Exchange => formatter.write_str("the enrollment exchange failed"),
+        }
+    }
+}
+
+impl std::error::Error for JoinFailure {}
 
 /// The result of accepting one inbound SSH connection.
 pub enum Accepted {
@@ -56,11 +81,11 @@ pub async fn join(
     invite: &SignedInvite,
     request: &JoinRequest,
     deadline: Instant,
-) -> Result<JoinReply, JoinErrorCode> {
+) -> Result<JoinReply, JoinFailure> {
     let stream = timeout_at(deadline, TcpStream::connect((host, port.get())))
         .await
-        .map_err(|_| JoinErrorCode::Unavailable)?
-        .map_err(|_| JoinErrorCode::Unavailable)?;
+        .map_err(|_| JoinFailure::Connect)?
+        .map_err(|_| JoinFailure::Connect)?;
     let handler = JoinClientHandler {
         expected: invite.claims().issuer,
     };
@@ -69,41 +94,50 @@ pub async fn join(
         ssh_client::connect_stream(client::config(), stream, handler),
     )
     .await
-    .map_err(|_| JoinErrorCode::Unavailable)?
-    .map_err(|_| JoinErrorCode::Unavailable)?;
+    .map_err(|_| JoinFailure::Connect)?
+    .map_err(|error| {
+        if error
+            .downcast_ref::<russh::Error>()
+            .is_some_and(|error| matches!(error, russh::Error::UnknownKey))
+        {
+            JoinFailure::HostKeyMismatch
+        } else {
+            JoinFailure::Connect
+        }
+    })?;
     let authenticated = timeout_at(deadline, handle.authenticate_password(ENROLL_USER, code))
         .await
-        .map_err(|_| JoinErrorCode::Unavailable)?
-        .map_err(|_| JoinErrorCode::Unavailable)?;
+        .map_err(|_| JoinFailure::Exchange)?
+        .map_err(|_| JoinFailure::Exchange)?;
     if !authenticated.success() {
-        return Err(JoinErrorCode::Unauthorized);
+        return Err(JoinFailure::Authentication);
     }
     let channel = timeout_at(deadline, handle.channel_open_session())
         .await
-        .map_err(|_| JoinErrorCode::Unavailable)?
-        .map_err(|_| JoinErrorCode::Unavailable)?;
+        .map_err(|_| JoinFailure::Exchange)?
+        .map_err(|_| JoinFailure::Exchange)?;
     let mut stream = channel.into_stream();
     timeout_at(deadline, write_request(&mut stream, request))
         .await
-        .map_err(|_| JoinErrorCode::Unavailable)?
+        .map_err(|_| JoinFailure::Exchange)?
         .map_err(map_wire_error)?;
     let outcome = timeout_at(deadline, read_outcome(&mut stream))
         .await
-        .map_err(|_| JoinErrorCode::Unavailable)?
+        .map_err(|_| JoinFailure::Exchange)?
         .map_err(map_wire_error)?;
     // Closing the channel after a successful read lets the server confirm the
     // reply was consumed before it retires the SSH session.
     let _ = timeout_at(deadline, tokio::io::AsyncWriteExt::shutdown(&mut stream)).await;
     match outcome {
         JoinOutcome::Accepted { reply } if reply.hub == invite.claims().issuer => Ok(reply),
-        JoinOutcome::Accepted { .. } => Err(JoinErrorCode::Unauthorized),
-        JoinOutcome::Rejected { code } => Err(code),
+        JoinOutcome::Accepted { .. } => Err(JoinFailure::Exchange),
+        JoinOutcome::Rejected { code } => Err(JoinFailure::Rejected(code)),
     }
 }
 
-fn map_wire_error(error: WireError) -> JoinErrorCode {
+fn map_wire_error(error: WireError) -> JoinFailure {
     match error {
-        WireError::Rejected(code) => code,
-        WireError::Io(_) | WireError::Codec | WireError::Size => JoinErrorCode::Unavailable,
+        WireError::Rejected(code) => JoinFailure::Rejected(code),
+        WireError::Io(_) | WireError::Codec | WireError::Size => JoinFailure::Exchange,
     }
 }

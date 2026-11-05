@@ -10,21 +10,26 @@ use yolo_hub_enrollment_protocol::{
     InviteDial, InvitePolicy, InviteRequest, MintedInvite, SignedInvite, decode,
 };
 use yolo_hub_enrollment_wire::{JOIN_SCHEMA_VERSION, JoinErrorCode, JoinRequest};
+use yolo_hub_peer_transport::JoinFailure;
 use yolo_hub_identity::HubId;
 use yolo_hub_rpc_protocol::{Command, Reply, Request};
 
 const INVITE_LIFETIME_MS: u64 = 10 * 60 * 1000;
 const JOIN_DEADLINE: std::time::Duration = std::time::Duration::from_secs(15);
 
-async fn mint(hub: &ManagedHub, address: std::net::SocketAddr) -> (String, SignedInvite) {
+fn address_dial(address: std::net::SocketAddr) -> InviteDial {
+    InviteDial {
+        host: address.ip().to_string(),
+        port: NonZeroU16::new(address.port()).unwrap(),
+    }
+}
+
+async fn mint(hub: &ManagedHub, dial: Option<InviteDial>) -> (String, SignedInvite) {
     let request = Request::new(
         hub.hub_id(),
         Command::MintInvite {
             request: InviteRequest {
-                dial: InviteDial {
-                    host: address.ip().to_string(),
-                    port: NonZeroU16::new(address.port()).unwrap(),
-                },
+                dial,
                 lifetime_ms: INVITE_LIFETIME_MS,
                 policy: InvitePolicy {
                     export_local: true,
@@ -56,7 +61,7 @@ async fn join(
     code: &str,
     invite: &SignedInvite,
     request: &JoinRequest,
-) -> Result<yolo_hub_enrollment_wire::JoinReply, JoinErrorCode> {
+) -> Result<yolo_hub_enrollment_wire::JoinReply, JoinFailure> {
     yolo_hub_peer_transport::join(
         &address.ip().to_string(),
         NonZeroU16::new(address.port()).unwrap(),
@@ -88,7 +93,7 @@ async fn enrollment_adds_the_joining_hub_once_and_rejects_replay() {
         state: _state,
     } = reopen(directory, backend).await.unwrap();
     let address = service.listen_address().unwrap().unwrap();
-    let (code, invite) = mint(&hub, address).await;
+    let (code, invite) = mint(&hub, Some(address_dial(address))).await;
     let (shutdown, stopped) = watch::channel(false);
     let task = tokio::spawn(service.run(stopped));
     let peer = PeerIdentity::new(HubId::new(), [0x42; 32]).unwrap();
@@ -112,10 +117,35 @@ async fn enrollment_adds_the_joining_hub_once_and_rejects_replay() {
         join(address, &code, &invite, &join_request(&invite, other))
             .await
             .unwrap_err(),
-        JoinErrorCode::Unauthorized
+        JoinFailure::Rejected(JoinErrorCode::Unauthorized)
     );
     assert!(applied.state.configuration.peer(other.hub()).is_none());
 
+    shutdown.send_replace(true);
+    task.await.unwrap().unwrap();
+}
+
+#[tokio::test]
+async fn an_address_free_invite_joins_with_an_explicit_address() {
+    let startup = InitialStartup::new();
+    let (directory, backend, _) = startup.release();
+    let Fixture {
+        directory: _directory,
+        hub,
+        service,
+        state: _state,
+    } = reopen(directory, backend).await.unwrap();
+    let address = service.listen_address().unwrap().unwrap();
+    let (code, invite) = mint(&hub, None).await;
+    assert!(code.starts_with("yolo2_"), "{code}");
+    let (shutdown, stopped) = watch::channel(false);
+    let task = tokio::spawn(service.run(stopped));
+    let peer = PeerIdentity::new(HubId::new(), [0x44; 32]).unwrap();
+    let reply = join(address, &code, &invite, &join_request(&invite, peer))
+        .await
+        .unwrap();
+    assert_eq!(reply.hub, hub.state.peer_identity());
+    assert!(reply.applied);
     shutdown.send_replace(true);
     task.await.unwrap().unwrap();
 }

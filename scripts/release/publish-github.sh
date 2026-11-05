@@ -31,6 +31,11 @@ Update:
     yolo update
     yolo update --check
 
+Pairing:
+
+    yolo hub peer invite
+    yolo hub peer join <code> --host <address>
+
 Nightly channel:
 
     yolo update --channel nightly
