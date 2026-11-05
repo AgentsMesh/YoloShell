@@ -38,16 +38,27 @@ pub async fn connect<S: Duplex + 'static>(
     Client::connect(stream, deadline).await.map_err(Into::into)
 }
 
+/// Which peer identities an inbound link may present.
+///
+/// `Any` is the SSH-trusted default: the provider's peer socket is reachable
+/// only by its own user, so the SSH account is the admission boundary. `Only`
+/// is the strict mode that requires an explicit local pin.
+#[derive(Clone, Copy)]
+pub enum Admission<'a> {
+    Any,
+    Only(&'a [PeerIdentity]),
+}
+
 /// Verifies the client hello against the configured peers and returns the
 /// authenticated identity plus the stream for `yolo_hub_peer_rpc::serve`.
 pub async fn accept<S: Duplex + 'static>(
     mut stream: S,
     local: PeerIdentity,
     signer: &impl Signer,
-    allowed_clients: &[PeerIdentity],
+    admission: Admission<'_>,
     deadline: Instant,
 ) -> Result<(PeerIdentity, S), LinkError> {
-    let peer = handshake::server(&mut stream, local, signer, allowed_clients, deadline).await?;
+    let peer = handshake::server(&mut stream, local, signer, admission, deadline).await?;
     Ok((peer, stream))
 }
 

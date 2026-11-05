@@ -64,7 +64,7 @@ async fn real_hub_starts_detached_ssh_broker_and_reuses_it_after_entry_restart()
         peers: vec![Peer {
             identity: origin_peer,
             dial: Some(
-                PeerAddress::ssh(
+                PeerAddress::profile(
                     broker.registration.profile.profile_id().to_owned(),
                     origin_peer_socket.clone(),
                 )

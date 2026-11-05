@@ -7,8 +7,10 @@ _DEPS = [
     "//core/crates/hub/delegation:yolo_hub_delegation",
     "//core/crates/hub/federation/settings:yolo_hub_federation_settings",
     "//core/crates/hub/peer/io:yolo_hub_peer_io",
+    "//core/crates/runtime/engine/process:yolo_process",
     "@crates//:anyhow",
     "@crates//:tokio",
+    "@crates//:tracing",
 ]
 
 _TEST_DEPS = [
@@ -20,4 +22,4 @@ filegroup(name = "architecture_check_data", srcs = glob(["**/*"], exclude = ["BU
 
 rust_library(name = "yolo_hub_peer_dialer", srcs = glob(["src/**/*.rs"]), crate_name = "yolo_hub_peer_dialer", crate_root = "src/lib.rs", edition = "2024", version = YOLO_MARKETING_VERSION, deps = _DEPS)
 
-rust_test(name = "unit_tests", srcs = glob(["unit_tests/**/*.rs", "test_support/**/*.rs"]), crate_name = "yolo_hub_peer_dialer_unit_tests", crate_root = "unit_tests/lib.rs", edition = "2024", deps = _DEPS + _TEST_DEPS + [":yolo_hub_peer_dialer"])
+rust_test(name = "unit_tests", srcs = glob(["unit_tests/**/*.rs", "test_support/**/*.rs"]), crate_name = "yolo_hub_peer_dialer_unit_tests", crate_root = "unit_tests/lib.rs", edition = "2024", deps = _DEPS + _TEST_DEPS + [":yolo_hub_peer_dialer", "@crates//:tempfile"])

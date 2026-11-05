@@ -5,3 +5,4 @@ mod deadline;
 mod fixture;
 #[path = "../test_support/dialer.rs"]
 mod support;
+mod ssh;

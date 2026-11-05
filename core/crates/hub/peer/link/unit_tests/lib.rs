@@ -1,5 +1,5 @@
 use crate::handshake;
-use crate::LinkError;
+use crate::{Admission, LinkError};
 use std::time::Duration;
 use tokio::io::{AsyncReadExt, AsyncWriteExt, duplex};
 use tokio::time::Instant;
@@ -23,7 +23,7 @@ async fn client_and_server_bind_the_expected_identities() {
             &mut server_stream,
             server.identity,
             &server,
-            &[expected_client],
+            Admission::Only(&[expected_client]),
             deadline(),
         )
         .await
@@ -58,7 +58,7 @@ async fn a_wrong_server_identity_is_rejected() {
             &mut server_stream,
             server.identity,
             &server,
-            &[expected_client],
+            Admission::Only(&[expected_client]),
             deadline(),
         )
         .await;
@@ -96,7 +96,7 @@ async fn a_wrong_client_identity_is_rejected() {
         &mut server_stream,
         server.identity,
         &server,
-        &[stranger.identity],
+        Admission::Only(&[stranger.identity]),
         deadline(),
     )
     .await
@@ -120,4 +120,35 @@ async fn a_mismatched_identity_fails_before_the_hello() {
     .await
     .unwrap_err();
     assert!(matches!(error, LinkError::Identity), "{error}");
+}
+
+#[tokio::test]
+async fn ssh_trusted_admission_accepts_an_unpinned_client_identity() {
+    let client = Identity::new();
+    let server = Identity::new();
+    let (mut client_stream, mut server_stream) = duplex(64 * 1024);
+    let expected_client = client.identity;
+    let expected_server = server.identity;
+    let server_task = tokio::spawn(async move {
+        let peer = handshake::server(
+            &mut server_stream,
+            server.identity,
+            &server,
+            Admission::Any,
+            deadline(),
+        )
+        .await
+        .unwrap();
+        assert_eq!(peer, expected_client);
+    });
+    handshake::client(
+        &mut client_stream,
+        client.identity,
+        &client,
+        expected_server,
+        deadline(),
+    )
+    .await
+    .unwrap();
+    server_task.await.unwrap();
 }

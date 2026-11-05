@@ -1,13 +1,13 @@
-use crate::{Configuration, ExportPolicy, Peer, PeerAddress};
+use crate::{Configuration, ExportPolicy, Peer, PeerAddress, SshPeerPolicy};
 use serde::{Deserialize, Serialize, de::IgnoredAny};
 use std::num::NonZeroU16;
 use yolo_hub_delegation::PeerIdentity;
 
 /// 0.1.x configurations carried a TCP `listen` field and TCP/loopback-peer
-/// dial addresses. The listener is now derived from Hub state and dials are
-/// Unix sockets behind SSH, so legacy dials are dropped while peer pins,
-/// consume flags and export policy survive. Re-running remote setup restores
-/// the dial on the consuming side.
+/// dial addresses. 0.2.x dials named a broker profile. Both are retired: the
+/// peer transport is now the local SSH client with a stdio bridge. Peer pins,
+/// consume flags and export policy survive; a retired dial drops its import
+/// intent and is re-added with `yolo hub peer join`.
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 pub(crate) struct ConfigurationWire {
@@ -16,6 +16,8 @@ pub(crate) struct ConfigurationWire {
     peers: Vec<PeerWire>,
     trusted_origins: Vec<PeerIdentity>,
     file_roots: Vec<yolo_hub_file_protocol::FileRootConfiguration>,
+    #[serde(default)]
+    ssh_peers: SshPeerPolicy,
 }
 
 #[derive(Deserialize)]
@@ -31,6 +33,7 @@ struct PeerWire {
 #[serde(untagged)]
 enum PeerDialWire {
     Current(PeerAddress),
+    #[allow(dead_code)]
     Legacy(LegacyPeerAddress),
 }
 
@@ -70,6 +73,7 @@ impl TryFrom<ConfigurationWire> for Configuration {
             peers: wire.peers.into_iter().map(Peer::from).collect(),
             trusted_origins: wire.trusted_origins,
             file_roots: wire.file_roots,
+            ssh_peers: wire.ssh_peers,
         })
     }
 }
@@ -97,6 +101,7 @@ pub(crate) struct ConfigurationOut {
     peers: Vec<PeerOut>,
     trusted_origins: Vec<PeerIdentity>,
     file_roots: Vec<yolo_hub_file_protocol::FileRootConfiguration>,
+    ssh_peers: SshPeerPolicy,
 }
 
 #[derive(Serialize)]
@@ -122,6 +127,7 @@ impl From<Configuration> for ConfigurationOut {
                 .collect(),
             trusted_origins: value.trusted_origins,
             file_roots: value.file_roots,
+            ssh_peers: value.ssh_peers,
         }
     }
 }

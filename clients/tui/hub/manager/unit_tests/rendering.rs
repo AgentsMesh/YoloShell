@@ -44,7 +44,7 @@ fn wrapped_fields_scroll_to_the_edit_cursor_and_pointer_events_are_generation_fe
     let mut manager = manager();
     manager.page(Page::Peers);
     activate(&mut manager, Action::AddPeer);
-    field(&mut manager, FieldId::Profile, &"x".repeat(100));
+    field(&mut manager, FieldId::Ssh, &"x".repeat(100));
     let mut terminal = Terminal::new(TestBackend::new(40, 16)).unwrap();
     let mut view = None;
     terminal

@@ -25,8 +25,8 @@ pub fn configuration_contains_link(
     )?;
     Ok(configuration.applied && peer.identity == enrollment.fields().peer && peer.consume
         && peer.dial.as_ref().is_some_and(|dial| {
-            dial.profile == profile.profile_id()
-                && dial.socket == enrollment.fields().peer_socket
+            dial.profile_id() == Some(profile.profile_id())
+                && dial.socket() == enrollment.fields().peer_socket.as_path()
         }))
 }
 
@@ -47,7 +47,7 @@ pub fn plan_link(
         anyhow::bail!(crate::constants::INVALID_REQUEST);
     };
     let remote = enrollment.fields().peer;
-    let dial = PeerAddress::ssh(
+    let dial = PeerAddress::profile(
         request.profile()?.profile_id().to_owned(),
         enrollment.fields().peer_socket.clone(),
     )?;

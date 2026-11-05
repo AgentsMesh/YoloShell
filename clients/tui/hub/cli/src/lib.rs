@@ -1,5 +1,6 @@
 mod configuration;
 mod constants;
+mod identity;
 mod output;
 mod peer;
 
@@ -10,21 +11,28 @@ use std::path::{Path, PathBuf};
 use tokio::time::Instant;
 use yolo_hub_identity::HubId;
 
-pub use configuration::add_change;
+pub use configuration::{add_change, join_change, remove_change};
 
 #[derive(Debug, Subcommand)]
 pub enum HubCommand {
-    /// Add or list federation peers on the local entry Hub.
+    /// Add, list or join federation peers on the local entry Hub.
     #[command(group(connection_group()))]
     Peer {
         #[command(subcommand)]
         command: PeerCommand,
     },
+    /// Print this Hub's public identity and peer socket.
+    #[command(group(connection_group()))]
+    Identity {
+        /// Print one JSON document.
+        #[arg(long)]
+        json: bool,
+    },
 }
 
 #[derive(Debug, Subcommand)]
 pub enum PeerCommand {
-    /// Add a peer Hub reached through a local SSH profile.
+    /// Add a peer explicitly with its Hub identity and SSH dial.
     Add(AddPeer),
     /// List configured peers.
     #[command(group(connection_group()))]
@@ -33,6 +41,33 @@ pub enum PeerCommand {
         #[arg(long)]
         json: bool,
     },
+    /// Join a provider Hub over the user's existing SSH access.
+    Join(JoinPeer),
+    /// Remove a configured peer.
+    #[command(group(connection_group()))]
+    Remove {
+        /// Peer Hub ID.
+        peer: HubId,
+        /// Print one JSON document.
+        #[arg(long)]
+        json: bool,
+    },
+}
+
+#[derive(Debug, Args)]
+#[command(group(connection_group()))]
+pub struct JoinPeer {
+    /// SSH destination of the provider Hub (user@host or an ssh_config alias).
+    target: String,
+    /// Do not import resources from the provider.
+    #[arg(long)]
+    no_import: bool,
+    /// Remote yolo executable used for discovery.
+    #[arg(long, hide = true, default_value = JOIN_REMOTE_YOLO)]
+    remote_yolo: String,
+    /// Print one JSON document.
+    #[arg(long)]
+    json: bool,
 }
 
 #[derive(Debug, Args)]
@@ -42,11 +77,11 @@ pub struct AddPeer {
     peer: HubId,
     /// Peer Ed25519 public key, 64 hexadecimal characters.
     key: String,
-    /// Local SSH profile used to reach the peer Hub.
+    /// SSH destination used to reach the peer Hub (user@host or an ssh_config alias).
     #[arg(long, requires = "remote_socket")]
-    ssh_profile: Option<String>,
+    ssh: Option<String>,
     /// Absolute Unix peer socket path on the remote Hub.
-    #[arg(long, requires = "ssh_profile")]
+    #[arg(long, requires = "ssh")]
     remote_socket: Option<PathBuf>,
     /// Do not import resources from this peer.
     #[arg(long)]
@@ -81,7 +116,12 @@ pub async fn run(
         HubCommand::Peer { command } => match command {
             PeerCommand::Add(args) => peer::add(socket, entry, args, deadline).await,
             PeerCommand::List { json } => peer::list(socket, entry, *json, deadline).await,
+            PeerCommand::Join(args) => peer::join(socket, entry, args, deadline).await,
+            PeerCommand::Remove { peer, json } => {
+                peer::remove(socket, entry, *peer, *json, deadline).await
+            }
         },
+        HubCommand::Identity { json } => identity::run(socket, entry, *json, deadline).await,
     }
 }
 

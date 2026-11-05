@@ -1,74 +1,95 @@
 # Hub peer links
 
-Hub federation uses the user's SSH access as its transport. A Hub never opens a
-public peer port and never runs its own SSH server. Each Hub publishes a private
-Unix socket at `<hub-state>/peer.sock`; a consuming Hub reaches it through a
-local SSH profile and the remote SSH account.
+Hub federation uses the user's existing SSH access as its transport. A Hub never
+opens a public peer port, runs its own SSH server, or asks the user to prepare a
+Yolo SSH profile. If `ssh <target>` already works and accepts the target's host
+key, `yolo` can join the peer. The login must be non-interactive: `join` runs
+`ssh` with `BatchMode=yes`, so a key or SSH agent is required and a password
+prompt fails instead of hanging.
 
-```text
-A (entry Hub)                                   B (provider Hub)
-SSH profile / broker  ── user SSH ────────────▶ system sshd
-                      ── direct-streamlocal ──▶ <hub-state>/peer.sock
-                                                 │
-                                    PeerHello (Hub identity)
-                                                 │
-                                    one Cap'n Proto RPC link
-                                                 │
-                                             Federation
-```
+## Joining a peer
 
-SSH authenticates the transport and the account. It does not say which Hub is on
-the other end and it grants no export rights. The peer identity and the peer
-policy remain Hub-owned.
-
-## Adding a peer
-
-A managed remote Hub is configured by remote setup, which writes the local dial
-and the remote export policy together. For an independent Hub, add the peer
-explicitly:
+On the consuming machine, one command:
 
 ```sh
-yolo hub peer add <hub-id> <public-key> \
-  --ssh-profile <local-profile-id> \
-  --remote-socket /home/alice/.local/state/yolo/hub/peer.sock
+yolo hub peer join user@host
 ```
 
-The provider side must pin the consumer's Hub identity and configure its export
-policy locally; the consumer's SSH login does not do that. `--no-import` pins a
-peer without consuming from it. `--export <hub-id>` and `--export-local` add
-Observe policy in the other direction.
+Both machines must run this release or later: the provider serves the hidden
+`peer-stdio` bridge and the public `hub identity` command, and the consumer
+implements the SSH dialer. The provider's `yolo` must be on the SSH session's
+`PATH` or at `~/.local/bin/yolo`.
 
-The remote socket path is the provider Hub's state-derived `peer.sock`. It is
-not a TCP port, and a peer entry with no dial cannot originate calls.
+The command:
+
+1. runs `yolo hub identity --json` on the provider over the same SSH connection;
+2. learns the provider's Hub ID, Ed25519 public key and absolute `peer.sock`
+   path over that authenticated channel, and pins the identity locally;
+3. writes one peer with the SSH destination and socket;
+4. opens the link as one SSH child:
+
+```text
+ssh -T user@host \
+  'yolo internal hub --peer-stdio --peer-socket /path/to/peer.sock'
+```
+
+The SSH child's stdin/stdout carry the `PeerHello` and Cap'n Proto RPC stream.
+`peer-stdio` is a hidden bridge that copies bytes to the provider's private peer
+socket; it is not a listener and does not parse SSH. `~/.ssh/config`, the SSH
+agent and `known_hosts` remain the user's own trust configuration. No key,
+profile, broker or port is copied or managed by Yolo.
+
+The provider does not run a command per join. Its Hub accepts the bridge
+connection on the same-user `peer.sock` and applies its local sharing policy. A
+provider setting can require explicit peer registration; the default trusts
+the SSH account boundary.
+
+The provider normally runs its Hub already. If it is stopped, the discovery
+command starts it as the SSH account; on Linux that requires the same delegated
+cgroup custody as any local start, so the SSH session must be able to launch the
+Host. Starting the provider with `yolo start` first avoids that requirement.
+
+Useful companions:
+
+```sh
+yolo hub identity --json     # Hub ID, public key, peer socket
+yolo hub peer list           # configured peers and their SSH dials
+yolo hub peer remove <hub-id>
+```
+
+`--no-import` joins without importing the provider's resources. For an explicit
+peer, `yolo hub peer add <hub-id> <key> --ssh user@host --remote-socket <path>`
+writes the same entry without the identity discovery step.
+
+## Trust model
+
+`peer.sock` lives in a private state directory. Only the provider's user can
+reach it, and anyone who can SSH as that user can already run Yolo there. The
+SSH account is therefore the admission boundary; a second key exchange or a
+per-join approval would add friction without adding authority.
+
+The `PeerHello` handshake still runs on every link. It binds the stream to the
+provider's Hub identity discovered during `join` (a changed identity fails
+closed) and labels the consumer for routing, audit and policy. It is automatic,
+not a user step.
+
+The provider decides what it shares. The default policy grants its own origin to
+SSH-authenticated peers with the same rights as local access; an explicit
+per-peer export policy overrides it. `ssh_peers.require_registration` in the
+Hub configuration restores the strict mode: only pinned peers may connect, and
+their individual export policies apply. This is useful for a shared SSH account
+or a multi-tenant host.
 
 ## Direction
 
-A link is directed: the dialing Hub is the RPC client and the accepting Hub
-serves that one connection. A Hub that both consumes from and serves a peer
-holds two links, one in each direction, each opened through its own SSH profile.
-Every forwarding hop must have an outbound link to the next hop; the accepted
-side never opens reverse traffic.
+A link is directed: the consumer dials and the provider serves. Two Hubs that
+consume from each other hold two links, each opened by its own `join`. Forwarding
+still requires an outbound link at every hop.
 
-## Identity handshake
+## Migration
 
-After SSH opens the stream, the client sends one bounded `PeerHello` with its
-Hub ID, public key, a random nonce and a signature. The server verifies the
-signature and requires the identity to be in its configured peer set before
-replying with its own identity, a fresh nonce and a signature over the client
-nonce. The client verifies the configured remote identity. This binds the link
-to Hub identities without a second account, password or bearer code.
-
-## Policy
-
-`consume` and `exports` remain explicit local configuration. A Hub exports only
-the origins its policy allows; receiving a connection never grants rights. An
-unknown Hub identity is never trusted on first use.
-
-## Upgrade note
-
-0.1.x configurations with a TCP `listen` field or TCP/loopback dial addresses
-are migrated by keeping peer pins, `consume` flags and export policy, but
-dropping the old dial because it cannot name a Hub socket. Re-run remote setup,
-or add the peer through an SSH profile, to restore the dial. Pairing codes,
-`peer invite`, `peer join`, `hub listen`, `MintInvite` and the enrollment server
-are removed in 0.2.0.
+0.2.x peer addresses named a local SSH broker profile. That transport remains
+only for managed remote setup; user peer links are SSH destinations. 0.1.x TCP
+dial addresses are retired and dropped from configuration. Peer pins, import
+flags and export policies survive. Re-add user peer links with
+`yolo hub peer join`.

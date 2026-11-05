@@ -32,18 +32,11 @@ async fn deadline_and_full_configured_identity_are_preserved_without_authenticat
 }
 
 #[tokio::test]
-async fn invalid_input_or_expired_budget_never_polls_factory() {
+async fn expired_budget_never_polls_factory() {
     let factory = Injected::new(None, Behavior::Reject);
     let peer = identity();
     assert!(
         dial_peer(&factory, peer, &address(), Instant::now())
-            .await
-            .is_err()
-    );
-    let mut invalid = address();
-    invalid.socket = "relative.sock".into();
-    assert!(
-        dial_peer(&factory, peer, &invalid, deadline())
             .await
             .is_err()
     );

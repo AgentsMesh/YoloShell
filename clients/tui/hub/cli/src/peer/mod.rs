@@ -1,4 +1,6 @@
 mod add;
+mod join;
+mod remove;
 
 use crate::constants::*;
 use anyhow::{Context, Result};
@@ -10,6 +12,8 @@ use yolo_hub_management_protocol::ConfigurationSnapshot;
 use yolo_hub_rpc_protocol::Command as HubRpcCommand;
 
 pub(crate) use add::{add, list};
+pub(crate) use join::run as join;
+pub(crate) use remove::run as remove;
 
 pub(super) async fn read(
     socket: &Path,

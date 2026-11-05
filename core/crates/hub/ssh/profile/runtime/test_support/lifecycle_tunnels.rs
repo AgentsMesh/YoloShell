@@ -12,7 +12,7 @@ use tokio::{
 };
 use yolo_hub_federation_settings::{PeerAddress, SshProfileRef};
 use yolo_hub_peer_dialer::dial_peer;
-use yolo_hub_peer_link::{accept, connect};
+use yolo_hub_peer_link::{Admission, accept, connect};
 use yolo_hub_peer_protocol::{FIRST_REVISION, PEER_PROTOCOL_VERSION, PeerReply, PeerRequest};
 use yolo_hub_peer_rpc::{Client, Handler, Response, RpcFuture};
 use yolo_hub_state::HubState;
@@ -92,7 +92,7 @@ impl Tunnels {
         let mut clients = Vec::new();
         let mut tasks = Vec::new();
         for (profile, (_, listener)) in profiles.into_iter().zip(&brokers) {
-            let address = PeerAddress::ssh(profile.profile.profile_id().to_owned(), SOCKET.into()).unwrap();
+            let address = PeerAddress::profile(profile.profile.profile_id().to_owned(), SOCKET.into()).unwrap();
             let remote = peer.peer_identity();
             let (opened, accepted) = tokio::join!(
                 dial_peer(fixture.runtime.as_ref(), remote, &address, deadline()),
@@ -103,7 +103,7 @@ impl Tunnels {
             let server_peer = peer.clone();
             let handler = Arc::new(Echo);
             tasks.push(tokio::spawn(async move {
-                let (_, stream) = accept(stream, remote, &*server_peer, &[local], deadline())
+                let (_, stream) = accept(stream, remote, &*server_peer, Admission::Only(&[local]), deadline())
                     .await
                     .unwrap();
                 let _ = yolo_hub_peer_rpc::serve(stream, handler).await;

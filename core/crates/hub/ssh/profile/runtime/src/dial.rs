@@ -17,7 +17,7 @@ impl PeerDialer for SshProfileRuntime {
         Box::pin(async move {
             self.state.verify().inspect_err(|_| self.close_all())?;
             address.validate()?;
-            let profile = address.profile.as_str();
+            let profile = address.profile_id().context(REGISTRY_CHANGED)?;
             let changed = self.changed.subscribe();
             let registration = self.registration(profile)?;
             let binding = {
@@ -30,7 +30,7 @@ impl PeerDialer for SshProfileRuntime {
             let client = BrokerClient::new(paths.management_socket());
             let request = BrokerHubOpenRequest {
                 binding,
-                socket: address.socket.clone(),
+                socket: address.socket().to_path_buf(),
                 peer,
             };
             let tunnel = client.open_hub_peer(request, deadline).await?;

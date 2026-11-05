@@ -26,7 +26,10 @@ pub(crate) fn labels(config: &Configuration) -> BTreeMap<HubId, String> {
             let dial = peer.dial.as_ref()?;
             Some((
                 peer.identity.hub(),
-                dial.profile.clone(),
+                dial.ssh_target()
+                    .or_else(|| dial.profile_id())
+                    .unwrap_or_default()
+                    .to_owned(),
             ))
         })
         .collect()

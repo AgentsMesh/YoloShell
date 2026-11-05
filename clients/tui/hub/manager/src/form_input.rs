@@ -5,7 +5,7 @@ use crate::{
 use crossterm::event::{Event, KeyCode, KeyEvent};
 use yolo_hub_delegation::MAX_DELEGATION_DEPTH;
 use yolo_hub_federation_settings::MAX_SOCKET_PATH_BYTES;
-use yolo_ssh_profile_protocol::MAX_PROFILE_ID_BYTES;
+use yolo_hub_federation_settings::MAX_SSH_TARGET_BYTES;
 
 const MAX_TEXT_BYTES: usize = 128;
 
@@ -63,7 +63,7 @@ impl Form {
 
 fn text_limit(id: FieldId) -> usize {
     match id {
-        FieldId::Profile => MAX_PROFILE_ID_BYTES,
+        FieldId::Ssh => MAX_SSH_TARGET_BYTES,
         FieldId::Socket => MAX_SOCKET_PATH_BYTES,
         FieldId::RootName => yolo_hub_file_protocol::MAX_FILE_ROOT_NAME_BYTES,
         FieldId::RootPath => yolo_hub_file_protocol::MAX_FILE_PATH_BYTES,

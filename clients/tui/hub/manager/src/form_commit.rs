@@ -22,7 +22,7 @@ impl Form {
                     previous.is_none_or(|previous| previous == identity),
                     INVALID
                 );
-                let profile = text(&self.fields, FieldId::Profile)?;
+                let profile = text(&self.fields, FieldId::Ssh)?;
                 let socket = text(&self.fields, FieldId::Socket)?;
                 ensure!(profile.is_empty() == socket.is_empty(), INVALID);
                 let dial = if profile.is_empty() {

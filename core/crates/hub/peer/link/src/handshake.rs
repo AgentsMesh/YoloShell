@@ -1,6 +1,7 @@
 use crate::LinkError;
 use crate::frame;
 use crate::message::{Hello, NONCE_BYTES, ROLE_CLIENT, ROLE_SERVER};
+use crate::Admission;
 use ring::rand::{SecureRandom, SystemRandom};
 use tokio::{
     io::{AsyncRead, AsyncWrite},
@@ -37,7 +38,7 @@ pub(crate) async fn server(
     stream: &mut (impl AsyncRead + AsyncWrite + Unpin),
     local: PeerIdentity,
     signer: &impl Signer,
-    allowed_clients: &[PeerIdentity],
+    admission: Admission<'_>,
     deadline: Instant,
 ) -> Result<PeerIdentity, LinkError> {
     if signer.identity() != local {
@@ -45,8 +46,10 @@ pub(crate) async fn server(
     }
     let hello: Hello = frame::read(stream, deadline).await?;
     let peer = hello.verify_signature(ROLE_CLIENT, None)?;
-    if !allowed_clients.contains(&peer) {
-        return Err(LinkError::Identity);
+    if let Admission::Only(allowed_clients) = admission {
+        if !allowed_clients.contains(&peer) {
+            return Err(LinkError::Identity);
+        }
     }
     let nonce = random_nonce()?;
     frame::write(

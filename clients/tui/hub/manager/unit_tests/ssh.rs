@@ -34,7 +34,7 @@ fn editing_imports_preserves_the_ssh_socket_dial_until_explicitly_changed() {
     assert!(!changed.peer(pin.hub()).unwrap().consume);
     form.fields
         .iter_mut()
-        .find(|field| field.id == FieldId::Profile)
+        .find(|field| field.id == FieldId::Ssh)
         .unwrap()
         .value = Value::Text {
         text: CHANGED_PROFILE.into(),
@@ -42,8 +42,14 @@ fn editing_imports_preserves_the_ssh_socket_dial_until_explicitly_changed() {
     };
     let changed = form.commit(&draft, local).unwrap();
     assert_eq!(
-        changed.peer(pin.hub()).unwrap().dial.as_ref().unwrap().profile,
-        CHANGED_PROFILE
+        changed
+            .peer(pin.hub())
+            .unwrap()
+            .dial
+            .as_ref()
+            .unwrap()
+            .ssh_target(),
+        Some(CHANGED_PROFILE)
     );
     form.fields
         .iter_mut()

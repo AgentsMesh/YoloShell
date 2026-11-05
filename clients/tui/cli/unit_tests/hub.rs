@@ -68,17 +68,17 @@ fn add_args(extra: &[&str]) -> AddPeer {
 }
 
 #[test]
-fn add_accepts_an_ssh_profile_and_remote_socket_together() {
+fn add_accepts_an_ssh_target_and_remote_socket_together() {
     let args = add_args(&[
-        SSH_PROFILE_ARGUMENT,
-        SSH_PROFILE,
+        SSH_ARGUMENT,
+        SSH_TARGET,
         REMOTE_SOCKET_ARGUMENT,
         REMOTE_SOCKET,
     ]);
     let change = add_change(&snapshot(), &args).unwrap();
     let dial = change.configuration.peers[0].dial.as_ref().unwrap();
-    assert_eq!(dial.profile, SSH_PROFILE);
-    assert_eq!(dial.socket.to_str(), Some(REMOTE_SOCKET));
+    assert_eq!(dial.ssh_target(), Some(SSH_TARGET));
+    assert_eq!(dial.socket().to_str(), Some(REMOTE_SOCKET));
     assert!(
         Arguments::try_parse_from([
             PROGRAM,
@@ -87,8 +87,8 @@ fn add_accepts_an_ssh_profile_and_remote_socket_together() {
             ADD_COMMAND,
             PEER_HUB,
             PEER_KEY,
-            SSH_PROFILE_ARGUMENT,
-            SSH_PROFILE,
+            SSH_ARGUMENT,
+            SSH_TARGET,
         ])
         .is_err()
     );
@@ -113,8 +113,8 @@ fn adds_a_pinned_peer_with_an_ssh_dial_and_no_exports_by_default() {
         &snapshot(),
 
         &add_args(&[
-            SSH_PROFILE_ARGUMENT,
-            SSH_PROFILE,
+            SSH_ARGUMENT,
+            SSH_TARGET,
             REMOTE_SOCKET_ARGUMENT,
             REMOTE_SOCKET,
         ]),
@@ -126,8 +126,8 @@ fn adds_a_pinned_peer_with_an_ssh_dial_and_no_exports_by_default() {
     assert_eq!(peer.identity, peer_identity());
     assert!(peer.consume);
     let dial = peer.dial.as_ref().unwrap();
-    assert_eq!(dial.profile, SSH_PROFILE);
-    assert_eq!(dial.socket.to_str(), Some(REMOTE_SOCKET));
+    assert_eq!(dial.ssh_target(), Some(SSH_TARGET));
+    assert_eq!(dial.socket().to_str(), Some(REMOTE_SOCKET));
     assert!(peer.exports.is_empty());
 }
 
@@ -138,8 +138,8 @@ fn no_import_and_local_export_are_applied() {
 
         &add_args(&[
             NO_IMPORT_ARGUMENT,
-            SSH_PROFILE_ARGUMENT,
-            SSH_PROFILE,
+            SSH_ARGUMENT,
+            SSH_TARGET,
             REMOTE_SOCKET_ARGUMENT,
             REMOTE_SOCKET,
             EXPORT_LOCAL_ARGUMENT,
@@ -193,3 +193,4 @@ fn rejects_duplicate_self_and_invalid_keys() {
 fn local_identity_at_peer_hub() -> PeerIdentity {
     PeerIdentity::new(PEER_HUB.parse().unwrap(), [3; 32]).unwrap()
 }
+

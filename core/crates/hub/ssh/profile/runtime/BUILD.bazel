@@ -6,10 +6,10 @@ package(default_visibility = ["//visibility:public"])
 _DEPS = [
     "//core/crates/hub/broker/launcher:yolo_hub_broker_launcher",
     "//core/crates/hub/delegation:yolo_hub_delegation",
+    "//core/crates/hub/peer/dialer:yolo_hub_peer_dialer",
     "//core/crates/hub/dispatch:yolo_hub_dispatch",
     "//core/crates/hub/federation/settings:yolo_hub_federation_settings",
     "//core/crates/hub/identity:yolo_hub_identity",
-    "//core/crates/hub/peer/dialer:yolo_hub_peer_dialer",
     "//core/crates/hub/rpc/protocol:yolo_hub_rpc_protocol",
     "//core/crates/hub/terminal/protocol:yolo_hub_terminal_protocol",
     "//core/crates/hub/ssh/profiles:yolo_hub_ssh_profiles",

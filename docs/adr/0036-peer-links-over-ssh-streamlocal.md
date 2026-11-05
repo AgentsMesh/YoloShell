@@ -100,6 +100,16 @@ explicit fields of the local peer configuration.
 - Unknown peers are never trusted on first use. A peer entry with an expected
   identity and policy is required before the handshake is accepted.
 
+### Amendment for 0.2.3 user peer onboarding
+
+`yolo hub peer join <ssh-target>` replaces profile-based onboarding for
+independent Hubs. The dial stores the SSH destination, the SSH child's stdio
+carries the peer stream through the hidden `peer-stdio` bridge, and the
+provider's SSH account is the admission boundary. `PeerHello` still binds Hub
+identities; the provider's local share policy replaces per-join approval
+(strict registration remains available). Managed remote setup keeps the
+profile-based broker transport.
+
 ## Consequences
 
 - Pairing codes, `MintInvite`, `yolo1_`/`yolo2_`, the enrollment server and the

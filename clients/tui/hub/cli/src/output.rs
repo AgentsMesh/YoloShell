@@ -1,4 +1,4 @@
-use crate::constants::PUBLIC_KEY_FIELD;
+use crate::constants::{HUB_ID_FIELD, PUBLIC_KEY_FIELD};
 use anyhow::Result;
 use yolo_hub_delegation::PeerIdentity;
 use yolo_hub_federation_settings::Peer;
@@ -21,13 +21,23 @@ pub(crate) fn list_json(snapshot: &ConfigurationSnapshot) -> Result<String> {
     }))?)
 }
 
+pub(crate) fn identity_json(identity: yolo_hub_delegation::PeerIdentity, peer_socket: &std::path::Path) -> String {
+    serde_json::json!({
+        (HUB_ID_FIELD): identity.hub().to_string(),
+        (PUBLIC_KEY_FIELD): key_text(identity),
+        "peer_socket": peer_socket,
+    })
+    .to_string()
+}
+
 fn peer_document(peer: &Peer) -> serde_json::Value {
     serde_json::json!({
         "hub": peer.identity.hub().to_string(),
         (PUBLIC_KEY_FIELD): key_text(peer.identity),
         "dial": peer.dial.as_ref().map(|dial| serde_json::json!({
-            "profile": dial.profile,
-            "socket": dial.socket,
+            "ssh": dial.ssh_target(),
+            "profile": dial.profile_id(),
+            "socket": dial.socket(),
         })),
         "consume": peer.consume,
         "exports": peer.exports.iter().map(|policy| serde_json::json!({
@@ -38,7 +48,7 @@ fn peer_document(peer: &Peer) -> serde_json::Value {
     })
 }
 
-fn key_text(identity: PeerIdentity) -> String {
+pub(crate) fn key_text(identity: PeerIdentity) -> String {
     identity
         .key()
         .iter()
