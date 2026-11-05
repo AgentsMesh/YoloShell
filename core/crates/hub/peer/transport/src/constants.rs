@@ -8,6 +8,7 @@ pub const MISSED_KEEPALIVES: usize = 3;
 pub(crate) const AUTH_REJECTION_DELAY: Duration = Duration::from_millis(250);
 pub(crate) const AUTH_EVENT_CAPACITY: usize = 1;
 pub(crate) const PEER_USER: &str = "yolo-peer";
+pub(crate) const ENROLL_USER: &str = "yolo-enroll";
 pub(crate) const CLOSED: &str = "Hub peer transport is closed";
 pub(crate) const AUTH_FAILED: &str = "Hub peer identity was not authenticated";
 pub(crate) const INVALID_PINS: &str = "Hub peer pins must have unique identities and keys";

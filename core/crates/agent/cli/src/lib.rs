@@ -6,6 +6,8 @@ mod control;
 mod control_commands;
 mod conversation_text;
 mod current;
+mod labels;
+mod lifecycle;
 mod observe;
 mod outcome;
 mod queries;
@@ -13,12 +15,12 @@ mod receipt;
 mod reject;
 mod render;
 mod runner;
-mod labels;
 mod runs;
-mod lifecycle;
 mod wait;
 mod wait_command;
 mod wait_pages;
+
+pub use arguments::{AgentCommand, Options};
 
 pub use constants::COMMAND;
 
@@ -36,6 +38,18 @@ pub fn selects(arguments: &[OsString]) -> bool {
 
 pub fn run_from(arguments: impl IntoIterator<Item = OsString>) -> anyhow::Result<()> {
     let arguments = arguments::Arguments::try_parse_from(arguments)?;
+    let arguments::Command::Agent(options) = arguments.command;
+    run_options(options)
+}
+
+/// Runs one already parsed agent command with its connection selection.
+pub fn run_options(options: arguments::Options) -> anyhow::Result<()> {
+    run_arguments(arguments::Arguments {
+        command: arguments::Command::Agent(options),
+    })
+}
+
+fn run_arguments(arguments: arguments::Arguments) -> anyhow::Result<()> {
     let outcome = tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build()?

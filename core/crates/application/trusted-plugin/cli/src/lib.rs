@@ -13,6 +13,7 @@ mod paths;
 use std::ffi::OsString;
 
 pub const COMMAND_INDEX: usize = 1;
+pub use arguments::PluginCommand;
 
 pub fn selects(arguments: &[OsString]) -> bool {
     arguments
@@ -25,6 +26,11 @@ pub fn run_from(arguments: impl IntoIterator<Item = OsString>) -> anyhow::Result
     use clap::Parser;
     let arguments = arguments::Arguments::try_parse_from(arguments)?;
     commands::run(arguments)
+}
+
+/// Runs one already parsed plugin command.
+pub fn run_plugin(command: arguments::PluginCommand) -> anyhow::Result<()> {
+    commands::run_command(command)
 }
 
 #[cfg(test)]

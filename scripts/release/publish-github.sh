@@ -28,12 +28,12 @@ Install:
 
 Update:
 
-    yolo update --check-release
-    yolo update --install-release
+    yolo update
+    yolo update --check
 
 Nightly channel:
 
-    yolo update --install-release --channel nightly
+    yolo update --channel nightly
 
 Commit: ${CI_COMMIT_SHA:-local}
 EOF2

@@ -8,6 +8,7 @@ pub(crate) enum PlatformCommand {
     /// Print hubs, terminals, agents, runs and workspaces in one document.
     #[command(group(crate::arguments::connection_group()))]
     Snapshot {
+        /// Print one JSON document.
         #[arg(long)]
         json: bool,
         /// Maximum entries per section (1-128).
@@ -29,6 +30,7 @@ pub(crate) enum PlatformCommand {
         /// Keep waiting for new events until interrupted.
         #[arg(long)]
         follow: bool,
+        /// Print one JSON document.
         #[arg(long)]
         json: bool,
     },

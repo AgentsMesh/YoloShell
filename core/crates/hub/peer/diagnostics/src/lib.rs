@@ -3,22 +3,22 @@ use std::sync::{Mutex, MutexGuard};
 use std::time::{Duration, Instant};
 use yolo_hub_identity::HubId;
 
-pub(crate) const PEER_ATTEMPT_FAILED: &str = "Hub peer connection attempt failed";
-pub(crate) const PEER_RECOVERED: &str = "Hub peer connection recovered";
-pub(crate) const INBOUND_PEER_REJECTED: &str = "Hub rejected an inbound peer connection";
-pub(crate) const INBOUND_REJECTION_INTERVAL: Duration = Duration::from_secs(30);
-pub(crate) const EXPORT_DEPTH_EXHAUSTED: &str =
+pub const PEER_ATTEMPT_FAILED: &str = "Hub peer connection attempt failed";
+pub const PEER_RECOVERED: &str = "Hub peer connection recovered";
+pub const INBOUND_PEER_REJECTED: &str = "Hub rejected an inbound peer connection";
+pub const INBOUND_REJECTION_INTERVAL: Duration = Duration::from_secs(30);
+pub const EXPORT_DEPTH_EXHAUSTED: &str =
     "Hub export depth exhausted; origin omitted from peer directory";
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(crate) enum PeerAttempt {
+pub enum PeerAttempt {
     Dial,
     Handshake,
     Admission,
 }
 
 impl PeerAttempt {
-    pub(crate) fn as_str(self) -> &'static str {
+    pub fn as_str(self) -> &'static str {
         match self {
             Self::Dial => "dial",
             Self::Handshake => "handshake",
@@ -32,14 +32,14 @@ const FAILURE_LOG_EVERY: u64 = 30;
 /// Counts consecutive outbound failures per configured peer. A repeated stage
 /// is reported only periodically, so a long outage cannot fill the journal.
 #[derive(Default)]
-pub(crate) struct OutboundFailures {
+pub struct OutboundFailures {
     stage: Option<PeerAttempt>,
     attempts: u64,
 }
 
 impl OutboundFailures {
     /// Returns the attempt count when this failure should be logged.
-    pub(crate) fn fail(&mut self, stage: PeerAttempt) -> Option<u64> {
+    pub fn fail(&mut self, stage: PeerAttempt) -> Option<u64> {
         self.attempts = self.attempts.saturating_add(1);
         let changed = self.stage != Some(stage);
         self.stage = Some(stage);
@@ -47,7 +47,7 @@ impl OutboundFailures {
     }
 
     /// Returns the consecutive failure count when this success ends a streak.
-    pub(crate) fn succeed(&mut self) -> Option<u64> {
+    pub fn succeed(&mut self) -> Option<u64> {
         let attempts = std::mem::take(&mut self.attempts);
         self.stage.take().map(|_| attempts)
     }
@@ -56,14 +56,14 @@ impl OutboundFailures {
 /// Bounds inbound rejection logging across all handshake tasks. The first
 /// rejection is logged immediately; later ones are counted for the next window.
 #[derive(Default)]
-pub(crate) struct InboundRejections {
+pub struct InboundRejections {
     window_start: Option<Instant>,
     suppressed: u64,
 }
 
 impl InboundRejections {
     /// Returns the suppressed count when a rejection should be logged.
-    pub(crate) fn reject(&mut self, now: Instant) -> Option<u64> {
+    pub fn reject(&mut self, now: Instant) -> Option<u64> {
         match self.window_start {
             Some(start) if now.duration_since(start) < INBOUND_REJECTION_INTERVAL => {
                 self.suppressed = self.suppressed.saturating_add(1);
@@ -83,17 +83,17 @@ type Denial = (HubId, HubId, u64);
 /// is removed when a refresh exports that origin again, so a recurrence is
 /// still visible.
 #[derive(Default)]
-pub(crate) struct ExportDepthDenials {
+pub struct ExportDepthDenials {
     reported: Mutex<BTreeSet<Denial>>,
 }
 
 impl ExportDepthDenials {
     /// Returns true when this denial has not already been reported.
-    pub(crate) fn denied(&self, peer: HubId, origin: HubId, policy_epoch: u64) -> bool {
+    pub fn denied(&self, peer: HubId, origin: HubId, policy_epoch: u64) -> bool {
         self.lock().insert((peer, origin, policy_epoch))
     }
 
-    pub(crate) fn exported(&self, peer: HubId, origin: HubId, policy_epoch: u64) {
+    pub fn exported(&self, peer: HubId, origin: HubId, policy_epoch: u64) {
         self.lock().remove(&(peer, origin, policy_epoch));
     }
 
@@ -104,6 +104,3 @@ impl ExportDepthDenials {
     }
 }
 
-#[cfg(all(test, feature = "yolo-unit-tests"))]
-#[path = "../unit_tests/peer_diagnostics.rs"]
-mod unit_tests;

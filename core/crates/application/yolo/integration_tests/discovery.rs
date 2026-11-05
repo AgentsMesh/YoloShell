@@ -28,12 +28,19 @@ async fn protocol_discovery_is_strict() {
 }
 
 #[tokio::test]
-async fn web_command_is_dispatched_without_entering_the_tui() {
-    let help = command::run(&[WEB_COMMAND, HELP], None).await;
-    assert_eq!(help.code, SUCCESS, "{}", help.stderr);
-    assert!(help.stdout.contains(WEB_CLIENT_KEY_OPTION));
-    assert!(help.stdout.contains(WEB_ORIGIN_OPTION));
-    let missing = command::run(&[WEB_COMMAND], None).await;
-    assert_eq!(missing.code, USAGE);
-    assert!(missing.stderr.contains(WEB_PROFILE_OPTION));
+async fn root_options_before_auxiliary_commands_still_dispatch() {
+    let agent = command::run(
+        &[LOCAL_PROFILE_OPTION, MISSING_PROFILE, AGENT_COMMAND, LIST],
+        None,
+    )
+    .await;
+    assert_eq!(agent.code, FAILURE, "{}", agent.stderr);
+    assert!(!agent.stderr.contains("unrecognized subcommand"));
+    let update = command::run(
+        &[LOCAL_PROFILE_OPTION, MISSING_PROFILE, UPDATE_ENTRY, HELP],
+        None,
+    )
+    .await;
+    assert_eq!(update.code, SUCCESS, "{}", update.stderr);
+    assert!(update.stdout.contains(UPDATE_USAGE));
 }

@@ -10,22 +10,29 @@ use yolo_tui_app::Options;
 #[command(about = ABOUT, after_help = CONTROLS)]
 #[command(group(connection_group()))]
 pub(crate) struct Arguments {
-    #[arg(long, global = true, conflicts_with = ENDPOINT_ARGUMENT)]
+    /// Existing local Hub entry socket; supply together with --hub.
+    #[arg(long, global = true, help_heading = "Connection", conflicts_with = ENDPOINT_ARGUMENT)]
     socket: Option<PathBuf>,
-    #[arg(long, global = true, conflicts_with = SOCKET_ARGUMENT)]
+    /// Hub entry endpoint (local:<socket>); supply together with --hub.
+    #[arg(long, global = true, help_heading = "Connection", conflicts_with = SOCKET_ARGUMENT)]
     endpoint: Option<HubEndpoint>,
-    #[arg(long, global = true, requires = CONNECTION_GROUP, conflicts_with = LOCAL_PROFILE_ARGUMENT)]
+    /// Identity of the Hub accepting this client connection.
+    #[arg(long, global = true, help_heading = "Connection", requires = CONNECTION_GROUP, conflicts_with = LOCAL_PROFILE_ARGUMENT)]
     hub: Option<HubId>,
-    #[arg(long, global = true, conflicts_with_all = [HUB_ARGUMENT, SOCKET_ARGUMENT, ENDPOINT_ARGUMENT])]
+    /// Local profile file; defaults to the current user profile.
+    #[arg(long, global = true, help_heading = "Connection", conflicts_with_all = [HUB_ARGUMENT, SOCKET_ARGUMENT, ENDPOINT_ARGUMENT])]
     local_profile: Option<PathBuf>,
-    #[arg(long, global = true, requires_all = [ACCOUNT_KEY_ARGUMENT, CLIENT_KEY_ARGUMENT], conflicts_with_all = [HUB_ARGUMENT, SOCKET_ARGUMENT, ENDPOINT_ARGUMENT, LOCAL_PROFILE_ARGUMENT])]
+    /// Remote profile file; requires --account-key and --client-key.
+    #[arg(long, global = true, help_heading = "Connection", requires_all = [ACCOUNT_KEY_ARGUMENT, CLIENT_KEY_ARGUMENT], conflicts_with_all = [HUB_ARGUMENT, SOCKET_ARGUMENT, ENDPOINT_ARGUMENT, LOCAL_PROFILE_ARGUMENT])]
     remote_profile: Option<PathBuf>,
-    #[arg(long, global = true, requires = REMOTE_PROFILE_ARGUMENT)]
+    /// Account key paired with --remote-profile.
+    #[arg(long, global = true, help_heading = "Connection", requires = REMOTE_PROFILE_ARGUMENT)]
     account_key: Option<PathBuf>,
-    #[arg(long, global = true, requires = REMOTE_PROFILE_ARGUMENT)]
+    /// Client key paired with --remote-profile.
+    #[arg(long, global = true, help_heading = "Connection", requires = REMOTE_PROFILE_ARGUMENT)]
     client_key: Option<PathBuf>,
     /// Attach a shared layout on the selected Hub; keyboard focus stays private.
-    #[arg(long, global = true)]
+    #[arg(long, global = true, help_heading = "Layout")]
     layout: Option<uuid::Uuid>,
     #[command(subcommand)]
     pub(crate) command: Option<crate::command::Command>,

@@ -71,7 +71,7 @@ fn operation_table_defines_every_method_once_and_keeps_the_wire_groups_explicit(
     );
     assert_eq!(
         MANAGEMENT_METHODS,
-        &[Method::GetConfiguration, Method::Configure]
+        &[Method::GetConfiguration, Method::Configure, Method::MintInvite]
     );
     assert_eq!(BUILD_METHODS, &[Method::GetBuild]);
     assert_eq!(
@@ -161,5 +161,7 @@ fn operation_table_derives_access_mutation_and_local_management() {
     );
     assert!(!Method::List.operation().requires_read_reply_admission());
     assert!(Command::GetConfiguration {}.local_only());
+    assert!(Method::MintInvite.operation().access == Access::LocalManagement);
+    assert!(!Method::MintInvite.mutates());
     assert!(!Command::Hello {}.local_only());
 }

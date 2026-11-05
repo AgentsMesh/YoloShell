@@ -36,6 +36,7 @@ pub const ALLOWED_DEPENDENCIES: &[&str] = &[
     "//core/crates/application/launch/contract:yolo_launch_contract",
     "//core/crates/application/host/cli:yolo_host_cli",
     "//core/crates/application/attach/cli:yolo_attach_cli",
+    "//core/crates/application/command:yolo_command_cli",
     "//core/crates/application/remote/cli:yolo_remote_cli",
     "//core/crates/application/upgrade/cli:yolo_upgrade_cli",
     "//core/crates/application/workspace/cli:yolo_workspace_cli",

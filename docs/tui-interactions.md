@@ -4,7 +4,9 @@ Yolo is a client for persistent Hub Terminals. The shell is the primary
 entry point: agents are ordinary programs started by the user inside its PTY.
 There is no user-visible workspace collection or workspace directory selector.
 Terminal, PTY, AgentRun, provider history and client lifetimes are defined in
-[the domain model](terminal-agent-model.md).
+[the domain model](terminal-agent-model.md). A client never binds the terminal
+named by its own Worker environment (`YOLO_TERMINAL_ID`): running YOLO inside a
+YOLO terminal shows a status hint instead of recursively rendering itself.
 
 The terminal area reserves one Tab strip and one contextual status line. The
 selected Tab has a dark background in addition to its `●` marker and bold cyan

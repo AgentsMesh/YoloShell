@@ -4,6 +4,7 @@ load("//build_system/bazel:version.bzl", "YOLO_MARKETING_VERSION")
 package(default_visibility = ["//visibility:public"])
 
 _DEPS = [
+    "//core/crates/application/local/lifecycle:yolo_local_lifecycle",
     "//core/crates/build_image:yolo_build_image",
     "//core/crates/hub/client:yolo_hub_client",
     "//core/crates/hub/identity:yolo_hub_identity",
@@ -14,7 +15,6 @@ _DEPS = [
     "@crates//:clap",
     "@crates//:serde",
     "@crates//:serde_json",
-    "@crates//:sha2",
     "@crates//:tokio",
 ]
 

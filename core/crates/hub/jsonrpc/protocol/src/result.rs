@@ -115,6 +115,7 @@ pub(crate) fn decode(value: Value, method: Method) -> Result<Reply, PublicError>
         SubscribeEvents => reply_tag::EVENT_SUBSCRIPTION,
         CleanupTerminate => reply_tag::CREATION_TERMINATED,
         GetConfiguration | Configure => reply_tag::CONFIGURATION,
+        MintInvite => reply_tag::MINTED,
         ListFileRoots => reply_tag::FILE_ROOTS,
         ReadFile => reply_tag::FILE,
         AgentControl => reply_tag::AGENT_CONTROL,

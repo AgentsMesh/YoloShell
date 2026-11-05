@@ -1,11 +1,11 @@
-load("@rules_rust//rust:defs.bzl", "rust_library")
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
 load("//build_system/bazel:version.bzl", "YOLO_MARKETING_VERSION")
 
 package(default_visibility = ["//visibility:public"])
 
 filegroup(
     name = "architecture_check_data",
-    srcs = glob(["src/**/*.rs"]) + ["BUILD.bazel"],
+    srcs = glob(["**/*.rs"]) + ["BUILD.bazel"],
 )
 
 rust_library(
@@ -15,4 +15,14 @@ rust_library(
     crate_root = "src/lib.rs",
     edition = "2024",
     version = YOLO_MARKETING_VERSION,
+    deps = ["@crates//:uuid"],
+)
+
+rust_test(
+    name = "unit_tests",
+    srcs = glob(["unit_tests/**/*.rs"]),
+    crate_name = "yolo_tui_app_constants_unit_tests",
+    crate_root = "unit_tests/lib.rs",
+    edition = "2024",
+    deps = [":yolo_tui_app_constants", "@crates//:uuid"],
 )

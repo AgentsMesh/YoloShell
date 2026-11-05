@@ -15,6 +15,9 @@ Mac, TUI, and independent clients can use the same public command contract:
   latest change receipt, configuration, activation status, and actual listener.
 - `Configure { change }` carries a non-nil request ID, expected revision, and the
   complete desired `federation_settings::Configuration`.
+- `MintInvite { request }` signs a compact, expiring `yolo1_` pairing code with
+  the local Hub identity. The request supplies the dial address, lifetime and
+  export/import directions; the Hub supplies the invite ID and time.
 
 These methods are advertised only by the managed dispatcher. They administer
 the current entry Hub; addressing another Hub is unauthorized. Signed peer calls
@@ -29,7 +32,15 @@ new revision, and desired configuration and must report `applied: true`.
 
 The public `get_configuration` and `configure` methods transport these commands.
 The [TUI](tui-hub-management.md) has a configuration editor using this
-entry-local administration boundary.
+entry-local administration boundary. `yolo hub peer invite` mints a code through
+`MintInvite`; `yolo hub peer join` consumes it through the enrollment handshake
+described in [Hub pairing](hub-pairing.md). The code names the issuing Hub
+identity, its dial address, a 1–60 minute lifetime, and whether the joining Hub
+may import this Hub's local resources and whether this Hub imports the joining
+Hub's resources. The code is compact base64url over a fixed payload and carries
+an Ed25519 signature over the canonical claims; it is a bearer secret and must be
+transferred privately. Admission applies exactly one peer with the minted policy;
+`Configure` remains the only general configuration mutation.
 
 ## Persistence And Concurrency
 
@@ -49,10 +60,10 @@ the same request ID conflict. Older receipts are not a general operation journal
 configuration, an explicitly supplied conflicting file fails startup rather than
 silently replacing durable policy, and the error points at this boundary. Normal
 subsequent starts can omit the seed. Change peers or the listening endpoint on a
-persisted Hub through `Configure` (the JSON-RPC method behind the TUI and Mac
-configuration editors); a restart seed cannot update them. This protects a
-running owner from replacement, not against an authorized user rewriting valid
-historical state while the service is stopped.
+persisted Hub through `Configure` (the JSON-RPC method behind `yolo hub peer
+add`, the TUI and the Mac configuration editors); a restart seed cannot update
+them. This protects a running owner from replacement, not against an authorized
+user rewriting valid historical state while the service is stopped.
 
 ## Activation And Failure
 

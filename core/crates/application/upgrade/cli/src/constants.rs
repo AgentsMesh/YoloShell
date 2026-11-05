@@ -25,15 +25,13 @@ pub(crate) const EMPTY_EXEC_START: &str = "service unit ExecStart is empty";
 pub(crate) const ABSOLUTE_EXEC_START: &str = "service ExecStart must be absolute";
 pub(crate) const WRONG_EXECUTABLE: &str = "service ExecStart must point to yolo";
 pub(crate) const MUTABLE_EXECUTABLE: &str = "service ExecStart must point to an immutable image";
-pub(crate) const INVALID_EXECUTABLE: &str = "service executable is not a regular file";
-pub(crate) const INVALID_EXECUTABLE_SIZE: &str = "service executable size is invalid";
-pub(crate) const EXECUTABLE_CHANGED: &str = "service executable changed while hashing";
+pub(crate) const UPGRADE_REFUSED: &str =
+    "upgrade admission refused; run `yolo restart` to activate the installed image";
 pub(crate) const DIGEST_MISMATCH: &str = "service image digest does not match executable";
 pub(crate) const SIZE_MISMATCH: &str = "service image size does not match executable";
 pub(crate) const CONTRACT_MATCH: &str = "runtime contract matches current image";
 pub(crate) const NO_SERVICE_UNITS: &str = "no managed systemd service units were discovered";
 pub(crate) const CHECK_RELEASE_ARGUMENT: &str = "check-release";
-pub(crate) const INSTALL_RELEASE_ARGUMENT: &str = "install-release";
 pub(crate) const NIGHTLY_VALUE: &str = "nightly";
 pub(crate) const CURL_HEADER: &str = "--header";
 pub(crate) const CURL_OUTPUT: &str = "--output";
@@ -48,6 +46,12 @@ pub(crate) const TARGET_MACOS_ARM64: &str = "aarch64-apple-darwin";
 pub(crate) const TARGET_LINUX_X86_64: &str = "x86_64-unknown-linux-gnu";
 pub(crate) const TARGET_LINUX_ARM64: &str = "aarch64-unknown-linux-gnu";
 pub(crate) const CHECK_RELEASE_SWITCH: &str = "--check-release";
+pub(crate) const CHECK_SWITCH: &str = "--check";
+pub(crate) const ADMIT_SWITCH: &str = "--admit";
+pub(crate) const NO_RESTART_SWITCH: &str = "--no-restart";
+pub(crate) const INSTALL_RELEASE_SWITCH: &str = "--install-release";
+pub(crate) const RESTART_SWITCH: &str = "--restart";
+pub(crate) const LOCAL_PROFILE_SWITCH: &str = "--local-profile";
 pub(crate) const CHANNEL_SWITCH: &str = "--channel";
 
 #[cfg(all(target_os = "macos", target_arch = "aarch64"))]

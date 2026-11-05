@@ -53,6 +53,7 @@ test_suite(
         "//clients/tui/input/line:unit_tests",
         "//clients/tui/input/line:integration_tests",
         "//clients/tui/hub/manager:unit_tests",
+        "//clients/tui/hub/cli:unit_tests",
         "//clients/tui/inventory:unit_tests",
         "//clients/tui/inventory:integration_tests",
         "//core/crates/presentation/layout:unit_tests",

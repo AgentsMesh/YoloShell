@@ -42,7 +42,7 @@ impl State {
             .filter(|entry| entry.id != self.tabs.active().id)
             .flat_map(|entry| entry.view.layout.panes())
             .chain(self.tab_layout().panes())
-            .filter_map(|pane| pane.terminal)
+            .filter_map(|pane| pane.terminal.filter(|address| !crate::constants::is_self_terminal(address.terminal_id.as_uuid())))
             .collect()
     }
 
