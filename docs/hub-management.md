@@ -30,12 +30,12 @@ activation/peer-socket state. A Configure success must match its exact request I
 new revision, and desired configuration and must report `applied: true`.
 
 The public `get_configuration` and `configure` methods transport these commands.
-The [TUI](tui-hub-management.md) has a configuration editor using this
-entry-local administration boundary. `yolo hub peer add` writes one peer with
-its SSH profile, remote socket and export policy; there is no pairing code or
+The [TUI](tui-machine-management.md) has a configuration editor using this
+entry-local administration boundary. `yolo machine pin` writes one machine with
+its SSH destination, remote socket and export policy; there is no pairing code or
 enrollment operation. The local Hub publishes `<hub-state>/peer.sock`; the
-provider side pins the consumer identity and configures its export policy
-locally or through remote setup. See [Hub peer links](hub-peer-links.md).
+remote side pins the importing machine identity and configures its export policy
+locally or through remote setup. See [Machines](machines.md).
 `Configure` remains the only general configuration mutation.
 
 ## Persistence And Concurrency
@@ -56,7 +56,7 @@ the same request ID conflict. Older receipts are not a general operation journal
 configuration, an explicitly supplied conflicting file fails startup rather than
 silently replacing durable policy, and the error points at this boundary. Normal
 subsequent starts can omit the seed. Change peers on a persisted Hub through
-`Configure` (the JSON-RPC method behind `yolo hub peer add`, the TUI and the Mac
+`Configure` (the JSON-RPC method behind `yolo machine pin`, the TUI and the Mac
 configuration editors); a restart seed cannot update them. This protects a running owner from replacement, not against an authorized
 user rewriting valid historical state while the service is stopped.
 

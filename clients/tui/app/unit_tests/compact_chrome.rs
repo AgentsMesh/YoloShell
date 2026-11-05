@@ -84,7 +84,7 @@ fn default_terminal_uses_full_width_with_tab_strip_and_one_status_row() {
     let content = text(&terminal);
     assert!(content.contains("~/work/yolo $ codex"));
     assert!(!content.contains("Agent runs"));
-    assert!(!content.contains("Hubs"));
+    assert!(!content.contains("Machines"));
     assert!(content.contains(&format!("{SHELL} | Control: this UI")));
     for absent in ["Connected", "Terminals:", "Ctrl-b", "Read Only", "┌", "└"] {
         assert!(!content.contains(absent), "{absent}");
@@ -103,7 +103,7 @@ fn healthy_inventory_omits_the_connection_header_and_keeps_exceptions_visible() 
     state.control_generation = Some(uuid::Uuid::new_v4());
     let (terminal, _) = render(&state);
     let content = text(&terminal);
-    assert!(content.contains("Agent runs | Hubs"), "{content}");
+    assert!(content.contains("Agent runs | Machines"), "{content}");
     assert!(!content.contains("Agent runs:"), "{content}");
     assert!(!content.contains("Connected"), "{content}");
     assert!(!content.contains("Disconnected"), "{content}");

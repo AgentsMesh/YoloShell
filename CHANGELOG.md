@@ -3,6 +3,13 @@
 All notable changes to Yolo are recorded here. The project follows semantic
 versioning once a stable release exists.
 
+## 0.3.0 — Alpha
+
+### Changed
+- The inventory lists machines, not Hubs: each machine runs one Yolo Hub; selecting a machine scopes its agents and returns to its last terminal.
+- `yolo machine add|pin|list|remove|consumers|identity` replaces `hub peer`/`hub source`; `machine consumers` lists importing machines; `--pin-only` replaces `--no-import`.
+- Both machines need 0.3.0: remote discovery uses `yolo machine identity`.
+
 ## 0.2.3 — Alpha
 
 ### Changed
@@ -52,30 +59,22 @@ versioning once a stable release exists.
 
 ### Changed
 
-- `yolo update` checks, installs, restarts and probes admission; `--check`,
-  `--admit` and `--no-restart` select modes; `--install-release` is hidden.
-- Top-level help lists the auxiliary commands; one clap tree accepts root
-  connection options before or after the command.
+- `yolo update` checks, installs, restarts and probes admission; `--check`/`--admit`/`--no-restart` select modes; `--install-release` is hidden.
+- Top-level help lists the auxiliary commands; one clap tree accepts root options before or after the command.
 - `yolo update` accepts `--local-profile`.
-- `yolo hub peer list` explains IMPORT/EXPORTS and prints a no-peer hint.
-- Help covers `update`, workspace, conversation, recipe and plugin commands,
-  including the plugin `--trust` review step.
+- Help covers update, workspace, conversation, recipe and plugin commands, including plugin `--trust`.
 - `yolo workspace update` uses the resolved revision unless `--expected-revision` conflicts.
 - `yolo worktree create` requires `--trust-repository`; its options are documented.
 - `yolo update --check` reports availability; `--no-restart` prints the restart step.
-- `agent send`, `ask` and `prompt` help states the wait and atomicity
-  difference; `hub peer add` is marked as the advanced pre-shared-key path.
+- `agent send`, `ask` and `prompt` help states the wait and atomicity difference; `hub peer add` is the advanced pre-shared-key path.
 
 ### Fixed
 
-- `yolo hub peer invite` now reports whether `--host`, `--port` or an applied
-  listener is missing instead of always asking for both.
+- `yolo hub peer invite` names the missing `--host`, `--port` or applied listener.
 - Invite expiry is printed as a remaining duration instead of epoch
   milliseconds.
-- Auto-starting local services prints a notice only when no local Hub socket
-  exists. Startup failures no longer append the internal child-exit chain.
-- Missing profile files and missing local Hub state produce actionable errors;
-  `yolo audit` no longer succeeds silently on a never-started profile.
+- Auto-start prints a notice only when no local Hub socket exists; startup failures drop the internal child-exit chain.
+- Missing profile files or local Hub state produce actionable errors; `yolo audit` no longer exits 0 silently.
 
 ## 0.1.6 — Alpha
 

@@ -7,7 +7,7 @@ use yolo_hub_terminal_protocol::TerminalSummary;
 pub enum InventorySelection {
     Terminal(TerminalAddress),
     Agent(AgentTarget),
-    Hub(HubId),
+    Machine(HubId),
 }
 
 impl Inventory {
@@ -27,10 +27,10 @@ impl Inventory {
                 .into_iter()
                 .map(InventorySelection::Agent)
                 .collect(),
-            View::Hubs => self
-                .visible_hubs(filter)
+            View::Machines => self
+                .visible_machines(filter)
                 .into_iter()
-                .map(InventorySelection::Hub)
+                .map(InventorySelection::Machine)
                 .collect(),
         }
     }
@@ -39,7 +39,7 @@ impl Inventory {
         match self.view {
             View::Terminals => session.map(InventorySelection::Terminal),
             View::Agents => self.selected_agent.map(InventorySelection::Agent),
-            View::Hubs => self.selected_hub.map(InventorySelection::Hub),
+            View::Machines => self.selected_machine.map(InventorySelection::Machine),
         }
     }
 
@@ -59,7 +59,7 @@ impl Inventory {
             (View::Agents, InventorySelection::Agent(address)) => {
                 self.selected_agent = Some(address)
             }
-            (View::Hubs, InventorySelection::Hub(hub)) => self.selected_hub = Some(hub),
+            (View::Machines, InventorySelection::Machine(hub)) => self.selected_machine = Some(hub),
             _ => return false,
         }
         true

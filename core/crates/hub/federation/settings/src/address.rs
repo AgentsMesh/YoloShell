@@ -10,7 +10,7 @@ use yolo_ssh_profile_protocol::validate_profile_id;
 /// `Ssh` is the user-facing peer link: the local OpenSSH client supplies
 /// connectivity, host trust and credentials. `Profile` remains the managed
 /// remote-setup binding owned by the Hub broker; it is not created by
-/// `yolo hub peer join`.
+/// `yolo machine add`.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum PeerAddress {

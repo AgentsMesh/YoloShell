@@ -1,5 +1,7 @@
-mod add;
-mod join;
+mod consumers;
+mod import;
+mod list;
+mod pin;
 mod remove;
 
 use crate::constants::*;
@@ -11,8 +13,10 @@ use yolo_hub_management_client::execute;
 use yolo_hub_management_protocol::ConfigurationSnapshot;
 use yolo_hub_rpc_protocol::Command as HubRpcCommand;
 
-pub(crate) use add::{add, list};
-pub(crate) use join::run as join;
+pub(crate) use consumers::consumers;
+pub(crate) use list::list;
+pub(crate) use pin::pin;
+pub(crate) use import::run as import;
 pub(crate) use remove::run as remove;
 
 pub(super) async fn read(

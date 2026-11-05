@@ -93,13 +93,13 @@ impl Inventory {
             .collect()
     }
 
-    /// Hubs is the scope selector itself, so the current scope never hides other hubs.
-    pub fn visible_hubs(&self, filter: &str) -> Vec<HubId> {
-        if !self.hubs_supported {
+    /// Machines is the scope selector itself, so the current scope never hides other machines.
+    pub fn visible_machines(&self, filter: &str) -> Vec<HubId> {
+        if !self.machines_supported {
             return Vec::new();
         }
         let filter = normalized(filter);
-        self.hubs
+        self.machines
             .iter()
             .filter(|(hub, summary)| {
                 matches(

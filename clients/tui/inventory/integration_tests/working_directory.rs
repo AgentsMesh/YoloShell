@@ -158,7 +158,7 @@ fn literal_directory_does_not_execute_escapes_or_write_outside_inventory() {
 fn narrow_selected_rows_in_every_inventory_view_never_overwrite_adjacent_content() {
     let fixture = Fixture::new();
     let mut inventory = fixture.inventory();
-    for view in [View::Terminals, View::Agents, View::Hubs] {
+    for view in [View::Terminals, View::Agents, View::Machines] {
         inventory.view = view;
         for width in [0, 1, 2] {
             let mut terminal = Terminal::new(TestBackend::new(WIDTH, HEIGHT)).unwrap();

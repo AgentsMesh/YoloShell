@@ -18,7 +18,7 @@ pub fn button(state: &State, header: Rect) -> Option<Rect> {
     let width = u16::try_from(OPEN_LABEL.len()).ok()?;
     if state.mode != Mode::Inventory
         || !state.client_capability_enabled(ClientCapability::HubManagement)
-        || state.inventory.view != View::Hubs
+        || state.inventory.view != View::Machines
         || header.width < width + MIN_HEADER_SPACE
         || header.height == 0
     {
@@ -32,7 +32,7 @@ pub fn button(state: &State, header: Rect) -> Option<Rect> {
     ))
 }
 
-/// The button shares the section row with `Agent runs | Hubs`, so Hub
+/// The button shares the section row with `Agent runs | Machines`, so machine
 /// configuration does not cost a separate header line.
 pub fn draw_button(frame: &mut Frame<'_>, state: &State, area: Rect) -> Option<Rect> {
     let button = button(state, area)?;
@@ -43,7 +43,7 @@ pub fn draw_button(frame: &mut Frame<'_>, state: &State, area: Rect) -> Option<R
     Some(button)
 }
 pub fn open_event(state: &State, event: &Event) -> bool {
-    if state.mode != Mode::Inventory || state.inventory.view != View::Hubs {
+    if state.mode != Mode::Inventory || state.inventory.view != View::Machines {
         return false;
     }
     match event {

@@ -91,11 +91,11 @@ pub(crate) enum Command {
         #[command(subcommand)]
         command: PlatformCommand,
     },
-    /// Manage federation peers.
+    /// Manage machines and import their agents; print this machine's Hub identity.
     #[command(group(crate::arguments::connection_group()))]
-    Hub {
+    Machine {
         #[command(subcommand)]
-        command: yolo_tui_hub_cli::HubCommand,
+        command: yolo_tui_hub_cli::MachineCommand,
     },
     /// Show installed and running local service status.
     #[command(group(crate::arguments::connection_group()))]

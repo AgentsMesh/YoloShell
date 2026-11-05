@@ -71,7 +71,7 @@ fn operation_table_defines_every_method_once_and_keeps_the_wire_groups_explicit(
     );
     assert_eq!(
         MANAGEMENT_METHODS,
-        &[Method::GetConfiguration, Method::Configure]
+        &[Method::GetConfiguration, Method::ListConsumers, Method::Configure]
     );
     assert_eq!(BUILD_METHODS, &[Method::GetBuild]);
     assert_eq!(

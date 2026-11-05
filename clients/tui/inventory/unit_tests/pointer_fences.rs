@@ -26,7 +26,7 @@ fn capability_changes_invalidate_clicks_even_when_the_visible_sessions_are_uncha
     let (mut inventory, terminals) = catalogue();
     let selected = terminals.keys().next().copied();
     let agents = inventory.agents.values().cloned().collect::<Vec<_>>();
-    let hubs = inventory.hubs.values().cloned().collect::<Vec<_>>();
+    let hubs = inventory.machines.values().cloned().collect::<Vec<_>>();
     for capabilities in [(None, Some(hubs.clone())), (Some(agents.clone()), None)] {
         let viewport = render(&inventory, &terminals, selected, "", area());
         let visible = inventory.visible_selections("", &terminals);

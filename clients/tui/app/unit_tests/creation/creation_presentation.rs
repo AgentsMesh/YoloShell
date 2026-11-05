@@ -13,7 +13,7 @@ fn later_user_selection_filter_scope_view_or_mode_is_never_reset_by_creation_rep
             f.state.inventory.scope = Some(yolo_hub_identity::HubId::new());
         },
         |f| {
-            f.state.inventory.view = yolo_tui_inventory::View::Hubs;
+            f.state.inventory.view = yolo_tui_inventory::View::Machines;
         },
         |f| {
             f.state.mode = Mode::Search;

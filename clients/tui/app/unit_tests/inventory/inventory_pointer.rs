@@ -38,10 +38,9 @@ fn position(state: &State, expected: InventoryHit) -> (u16, u16) {
         .find(|(x, y)| viewport.hit(*x, *y) == Some(expected))
         .unwrap()
 }
-
 #[test]
 fn one_inventory_click_selects_exact_displayed_resource_and_opens_agent_terminals() {
-    for view in [View::Terminals, View::Hubs] {
+    for view in [View::Terminals, View::Machines] {
         let mut state = state(view);
         let layout = state.tab_layout().clone();
         let target = *state
@@ -56,13 +55,15 @@ fn one_inventory_click_selects_exact_displayed_resource_and_opens_agent_terminal
             &jobs,
             panes::mouse(MouseEventKind::Down(MouseButton::Left), x, y),
         );
-        assert_eq!(state.inventory.selected(state.selected), Some(target));
+        if let InventorySelection::Machine(hub) = target {
+            assert_eq!((state.inventory.view, state.inventory.scope), (View::Agents, Some(hub)));
+        } else {
+            assert_eq!(state.inventory.selected(state.selected), Some(target));
+        }
         assert_eq!(state.mode, Mode::Inventory);
         assert_eq!(*state.tab_layout(), layout);
-        assert!(state.writers.is_empty());
-        assert!(pending.try_recv().is_err());
+        assert!(state.writers.is_empty() && pending.try_recv().is_err());
     }
-
     let mut state = state(View::Agents);
     let target = *state
         .inventory
@@ -92,7 +93,7 @@ fn one_inventory_click_selects_exact_displayed_resource_and_opens_agent_terminal
 fn inventory_header_changes_view_without_opening_a_terminal_or_grant() {
     let mut state = state(View::Agents);
     let (jobs, mut pending) = tokio::sync::mpsc::channel(crate::constants::QUEUE_CAPACITY);
-    for view in [View::Hubs, View::Agents] {
+    for view in [View::Machines, View::Agents] {
         let (x, y) = position(&state, InventoryHit::Tab(view));
         pointer::handle(
             &mut state,

@@ -36,11 +36,11 @@ fn agent_without_session_metadata_and_explicitly_unreachable_hub_remain_visible(
     assert!(content.contains(PROVIDER_KIND));
     assert!(content.contains(&fixture.hub.hub_id.to_string()));
     inventory
-        .hubs
+        .machines
         .get_mut(&fixture.hub.hub_id)
         .unwrap()
         .reachable = false;
-    inventory.view = View::Hubs;
+    inventory.view = View::Machines;
     terminal
         .draw(|frame| {
             render(
@@ -104,7 +104,7 @@ fn compact_tabs_and_lists_never_write_outside_the_allocated_inventory_area() {
     let mut terminal = Terminal::new(TestBackend::new(WIDTH, HEIGHT)).unwrap();
     for (width, height) in [(0, 0), (1, 1), (2, 2), (10, 6), (20, 15), (80, 24)] {
         let area = Rect::new(2, 2, width, height);
-        for view in [View::Terminals, View::Agents, View::Hubs] {
+        for view in [View::Terminals, View::Agents, View::Machines] {
             inventory.view = view;
             terminal
                 .draw(|frame| {

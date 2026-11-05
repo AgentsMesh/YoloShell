@@ -1,5 +1,5 @@
 use crate::{
-    constants::*, observation_cache::ObservationCache, registry::Link,
+    constants::*, status::ConsumerRegistry, observation_cache::ObservationCache, registry::Link,
 };
 use anyhow::{Result, ensure};
 use std::{
@@ -53,6 +53,7 @@ pub struct Federation {
     pub(crate) closing: AtomicBool,
     pub(crate) lifetime: Arc<crate::lifetime::Lifetime>,
     pub(crate) dialer: Arc<dyn PeerDialer>,
+    pub(crate) consumers: ConsumerRegistry,
 }
 impl Federation {
     pub async fn new(
@@ -118,6 +119,7 @@ impl Federation {
             closing: AtomicBool::new(false),
             lifetime: Arc::default(),
             dialer,
+            consumers: ConsumerRegistry::default(),
         }))
     }
     pub fn hub_id(&self) -> HubId {

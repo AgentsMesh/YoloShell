@@ -14,7 +14,7 @@ pub(crate) fn render(frame: &mut Frame<'_>, view: View, area: Rect) -> Vec<(Rect
             return Vec::new();
         }
         View::Agents => AGENTS_SECTION,
-        View::Hubs => HUBS_SECTION,
+        View::Machines => MACHINES_SECTION,
     };
     if area.width < COMPACT_SECTIONS_WIDTH {
         frame.render_widget(
@@ -51,7 +51,7 @@ pub(crate) fn render(frame: &mut Frame<'_>, view: View, area: Rect) -> Vec<(Rect
     );
     let mut x = area.x;
     let mut hits = Vec::new();
-    for (label, view) in labels.into_iter().zip([View::Agents, View::Hubs]) {
+    for (label, view) in labels.into_iter().zip([View::Agents, View::Machines]) {
         x = x.saturating_add(SECTION_PADDING.len() as u16);
         let width = (label.len() as u16).min(area.right().saturating_sub(x));
         if width > 0 && area.height > 0 {

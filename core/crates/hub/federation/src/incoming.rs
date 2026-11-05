@@ -19,6 +19,7 @@ impl Federation {
         stream: impl Duplex + 'static,
     ) -> Result<()> {
         self.require_open()?;
+        let _consumer = self.enter_consumer(peer);
         let handler = PeerHandler {
             peer,
             generation: OwnedGeneration::new(self)?,

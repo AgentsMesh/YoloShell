@@ -1,11 +1,11 @@
 # Managed Hub SSH profiles
 
-This registry belongs to managed remote setup, not to `yolo hub peer join`.
-User peer links carry an SSH destination and a peer socket directly; they never
+This registry belongs to managed remote setup, not to `yolo machine add`.
+User machine links carry an SSH destination and a peer socket directly; they never
 create or read a broker profile. The registry below records the broker state and
 config revision used by remote setup's managed links.
 
-Federation peer addresses that name a profile are managed-only. A broker profile
+Machine addresses that name a profile are managed-only. A broker profile
 contains a stable local profile ID and the remote Hub's absolute
 `<hub-state>/peer.sock` path. The profile ID is resolved against the current
 registry when the link opens; missing or changed profiles fail admission. The

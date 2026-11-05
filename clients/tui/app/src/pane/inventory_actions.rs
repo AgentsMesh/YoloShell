@@ -40,7 +40,7 @@ pub fn handle(state: &mut State, jobs: &mpsc::Sender<Job>, key: KeyCode) -> bool
                 return false;
             }
             state.inventory.view = if state.inventory.view == View::Agents {
-                View::Hubs
+                View::Machines
             } else {
                 View::Agents
             };
@@ -80,8 +80,8 @@ pub fn handle(state: &mut State, jobs: &mpsc::Sender<Job>, key: KeyCode) -> bool
             state.inventory.details = state.inventory.selected_agent;
         }
         KeyCode::Char('n') => {
-            if state.inventory.view == View::Hubs {
-                let Some(hub) = state.inventory.selected_hub else {
+            if state.inventory.view == View::Machines {
+                let Some(hub) = state.inventory.selected_machine else {
                     state.status = HUB_UNAVAILABLE_LABEL.into();
                     return false;
                 };
@@ -113,15 +113,18 @@ pub fn handle(state: &mut State, jobs: &mpsc::Sender<Job>, key: KeyCode) -> bool
     }
     false
 }
-
 pub(crate) fn open(state: &mut State, jobs: &mpsc::Sender<Job>) {
     let address = match state.inventory.view {
-        View::Hubs => {
-            if let Some(hub) = state.inventory.selected_hub {
+        View::Machines => {
+            if let Some(hub) = state.inventory.selected_machine {
                 state.inventory.scope = Some(hub);
                 state.inventory.view = View::Agents;
-                state.filter.clear();
-                state.reconcile_selection();
+                state.filter.clear(); state.reconcile_selection();
+                if let Some(address) = state.inventory.last_terminal_for(hub).filter(|address| {
+                    state.terminals.contains_key(address) && !crate::terminal_lifecycle::gone(state, *address)
+                }) {
+                    crate::tabs::open(state, jobs, address);
+                }
             }
             return;
         }

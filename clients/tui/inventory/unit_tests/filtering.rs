@@ -33,9 +33,9 @@ fn scoped_search_matches_origin_provider_and_associated_session_metadata() {
         inventory.visible_terminals("", &terminals),
         vec![first.session.fields().address]
     );
-    assert_eq!(inventory.visible_hubs("").len(), 2);
+    assert_eq!(inventory.visible_machines("").len(), 2);
     assert_eq!(
-        inventory.visible_hubs(&second.hub.hub_id.to_string()),
+        inventory.visible_machines(&second.hub.hub_id.to_string()),
         vec![second.hub.hub_id]
     );
     assert!(
@@ -48,7 +48,7 @@ fn scoped_search_matches_origin_provider_and_associated_session_metadata() {
             .visible_terminals(NONMATCHING_FILTER, &terminals)
             .is_empty()
     );
-    assert!(inventory.visible_hubs(NONMATCHING_FILTER).is_empty());
+    assert!(inventory.visible_machines(NONMATCHING_FILTER).is_empty());
     assert_eq!(
         inventory
             .visible_agents(
@@ -174,7 +174,7 @@ fn absent_associated_session_and_unknown_provider_metadata_are_searchable_by_ori
             .len(),
         1
     );
-    assert!(inventory.visible_hubs("").is_empty());
+    assert!(inventory.visible_machines("").is_empty());
     inventory.agents_supported = false;
     assert!(
         inventory

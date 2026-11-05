@@ -114,6 +114,10 @@ pub(crate) fn valid(reply: &Reply, method: Method, origin: HubId, version: u16) 
             (Reply::Configuration { snapshot }, Method::GetConfiguration | Method::Configure) => {
                 snapshot.validate().is_ok() && snapshot.state.identity.hub() == origin
             }
+            (Reply::Consumers { consumers }, Method::ListConsumers) => {
+                consumers.iter().all(|consumer| consumer.links > 0)
+                    && consumers.windows(2).all(|pair| pair[0].hub < pair[1].hub)
+            }
             (Reply::Error { .. }, _) => true,
             (Reply::Hubs { hubs, next }, Method::ListHubs) => {
                 hubs.len() <= MAX_CATALOG_PAGE_HUBS

@@ -132,3 +132,10 @@ profile-based broker transport.
   discovery.
 - No trust-on-first-use enrollment and no implicit export grants from SSH
   account access.
+
+## Amendment for 0.3.0 machine vocabulary
+
+The user-facing entity is a machine running one Yolo Hub. `yolo machine add`
+replaces `yolo hub peer join`, `yolo machine pin` replaces `yolo hub peer add`,
+and the TUI inventory is `Machines` rather than `Hubs`. The directed import
+model, the SSH admission boundary and the peer wire protocol are unchanged.

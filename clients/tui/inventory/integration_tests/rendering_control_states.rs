@@ -23,7 +23,7 @@ fn unsupported_empty_stale_and_provider_specific_states_are_distinct() {
     let mut terminal = Terminal::new(TestBackend::new(WIDTH, HEIGHT)).unwrap();
     for (view, text) in [
         (View::Agents, "Agent inventory unavailable"),
-        (View::Hubs, "Hub inventory unavailable"),
+        (View::Machines, "Machine inventory unavailable"),
     ] {
         inventory.view = view;
         terminal
@@ -35,7 +35,7 @@ fn unsupported_empty_stale_and_provider_specific_states_are_distinct() {
     for (view, text) in [
         (View::Terminals, "No terminals"),
         (View::Agents, "No agent runs"),
-        (View::Hubs, "No hubs"),
+        (View::Machines, "No machines"),
     ] {
         inventory.view = view;
         terminal

@@ -191,6 +191,7 @@ impl LocalBackend {
             Command::CleanupArchive { creation } => self.cleanup_archive(*creation).await,
             Command::ListFileRoots { after } => self.list_file_roots(*after),
             Command::ReadFile { request } => self.read_file(request.clone()).await,
+            Command::ListConsumers {} => Err(PublicError::Unsupported),
         }
     }
 }
