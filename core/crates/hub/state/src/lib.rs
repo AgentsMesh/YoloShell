@@ -69,7 +69,7 @@ impl HubState {
             record.verify(&binding, &host_home)?;
             record
         };
-        contract::open_or_validate(&namespace, &path, fresh)?;
+        contract::open_or_migrate(&namespace, &path, fresh)?;
         let key =
             Ed25519KeyPair::from_pkcs8(&record.key).map_err(|_| anyhow::anyhow!(KEY_FAILURE))?;
         let socket_namespace = yolo_paths::Paths::new(&path).retain_socket_namespace()?;

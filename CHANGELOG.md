@@ -3,32 +3,33 @@
 All notable changes to Yolo are recorded here. The project follows semantic
 versioning once a stable release exists.
 
+## 0.2.1 — Alpha
+
+### Fixed
+- Upgrading from 0.1.x no longer leaves the local Hub refusing its state: an
+  older Hub protocol contract is migrated; newer-protocol state is rejected.
+
 ## 0.2.0 — Alpha
 
 ### Changed
 
-- Hub peer links now use the user's SSH access instead of a Hub-owned TCP
-  listener and inner SSH server. Each Hub publishes a private
-  `<hub-state>/peer.sock`; the entry Hub's broker opens a streamlocal channel
-  through an SSH profile. Links are directed: the dialing Hub is the RPC client.
-- Each link begins with a signed `PeerHello` binding the connection to the
-  configured Hub identities. SSH authenticates the account and host; it never
-  grants export rights. `consume`, `exports` and peer pins remain local policy.
-- `yolo hub peer add` takes `--ssh-profile <profile-id>` and
-  `--remote-socket <absolute-path>` instead of `--host`/`--port`; `yolo hub
-  peer list` reports both.
-- Old configurations keep pins, import flags and export policy while dropping
-  retired TCP/loopback dials. Re-run remote setup, or add an SSH dial, to
-  restore a dial.
+- Hub peer links use SSH instead of a Hub TCP listener and inner SSH server:
+  each Hub publishes `<hub-state>/peer.sock`; the broker opens a streamlocal
+  channel through an SSH profile. The dialing Hub is the RPC client, and a
+  signed `PeerHello` binds the configured identities. SSH grants no export
+  rights; `consume`, `exports` and pins remain local policy.
+- `yolo hub peer add` takes `--ssh-profile` and `--remote-socket` instead of
+  `--host`/`--port`; `yolo hub peer list` reports both.
+- Old configurations keep pins, import flags and exports while dropping
+  retired TCP/loopback dials. Re-run remote setup or add an SSH dial.
 
 ### Removed
 
 - Pairing codes, `yolo hub peer invite`, `yolo hub peer join`, `yolo hub
-  listen`, `MintInvite`, the invite ledger, the enrollment server and the inner
-  peer SSH transport. 0.1.x TCP peers need an SSH/socket dial instead.
-- The persisted listener-binding record and the `listen` configuration field;
-  the peer socket is derived from Hub state and republished for the service
-  lifetime.
+  listen`, `MintInvite`, the invite ledger, the enrollment server and the
+  inner peer SSH transport. 0.1.x TCP peers need an SSH/socket dial.
+- The listener-binding record and the `listen` configuration field; the peer
+  socket is derived from Hub state and republished for the service lifetime.
 
 ## 0.1.7 — Alpha
 

@@ -16,35 +16,52 @@ struct Contract {
     state_schema: u16,
 }
 
-pub fn open_or_validate(namespace: &NamespaceLease, path: &Path, fresh: bool) -> Result<()> {
-    let file = path.join(STATE_CONTRACT_FILE);
+pub fn open_or_migrate(namespace: &NamespaceLease, path: &Path, fresh: bool) -> Result<()> {
     if fresh {
-        return namespace.write_json(
-            &file,
-            &Contract {
-                schema: CONTRACT_SCHEMA,
-                hub_protocol: PUBLIC_HUB_PROTOCOL_VERSION,
-                state_schema: STATE_SCHEMA_VERSION,
-            },
-        );
+        return write_contract(namespace, path);
     }
-    let contract: Contract = namespace
-        .read_json(&file)
-        .map_err(|_| anyhow::anyhow!(INCOMPATIBLE))?;
-    ensure!(contract.schema == CONTRACT_SCHEMA, INCOMPATIBLE);
-    ensure!(
-        contract.hub_protocol == PUBLIC_HUB_PROTOCOL_VERSION,
-        INCOMPATIBLE
-    );
-    ensure!(contract.state_schema == STATE_SCHEMA_VERSION, INCOMPATIBLE);
+    let contract = read(namespace, path)?;
+    validate(&contract)?;
+    if contract.hub_protocol < PUBLIC_HUB_PROTOCOL_VERSION {
+        write_contract(namespace, path)?;
+    }
     Ok(())
 }
 
 /// Validate a retained state contract without taking the Hub singleton lock.
 /// Upgrade admission uses this read-only probe before it considers replacing a
-/// service. It intentionally never creates, rewrites, or migrates state.
+/// service. It accepts older Hub protocol versions but never rewrites state.
 pub fn validate_path(path: &Path) -> Result<()> {
     let directory = yolo_paths::directory::PrivateDirectory::open(path)?;
     let namespace = NamespaceLease::from_directories(vec![(STATE_NAMESPACE, directory)])?;
-    open_or_validate(&namespace, path, false)
+    validate(&read(&namespace, path)?)
+}
+
+fn read(namespace: &NamespaceLease, path: &Path) -> Result<Contract> {
+    namespace
+        .read_json(&path.join(STATE_CONTRACT_FILE))
+        .map_err(|_| anyhow::anyhow!(INCOMPATIBLE))
+}
+
+fn write_contract(namespace: &NamespaceLease, path: &Path) -> Result<()> {
+    namespace.write_json(
+        &path.join(STATE_CONTRACT_FILE),
+        &Contract {
+            schema: CONTRACT_SCHEMA,
+            hub_protocol: PUBLIC_HUB_PROTOCOL_VERSION,
+            state_schema: STATE_SCHEMA_VERSION,
+        },
+    )
+}
+
+fn validate(contract: &Contract) -> Result<()> {
+    ensure!(contract.schema == CONTRACT_SCHEMA, INCOMPATIBLE);
+    ensure!(contract.state_schema == STATE_SCHEMA_VERSION, INCOMPATIBLE);
+    // An older protocol is an upgrade; a newer one means this image is older
+    // than the state and must not interpret it.
+    ensure!(
+        contract.hub_protocol <= PUBLIC_HUB_PROTOCOL_VERSION,
+        INCOMPATIBLE
+    );
+    Ok(())
 }
