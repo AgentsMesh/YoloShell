@@ -1,0 +1,23 @@
+use std::time::Duration;
+pub const STARTUP_TIMEOUT: Duration = Duration::from_secs(30);
+pub const BOOTSTRAP_RETIRE_TIMEOUT: Duration = Duration::from_secs(1);
+pub const PROBE_TIMEOUT: Duration = Duration::from_secs(2);
+pub const POLL_INTERVAL: Duration = Duration::from_millis(50);
+pub const MAX_READY_BYTES: usize = 16 * 1024;
+pub const CONFIG_SCHEMA_VERSION: u16 = 1;
+pub(crate) const BOOTSTRAP_SCHEMA_VERSION: u16 = 1;
+pub(crate) const START_LOCK_FILE: &str = "startup.lock";
+pub(crate) const MAX_LOCK_BYTES: u64 = 4_096;
+pub const HOST_SOCKET_ARGUMENT: &str = "--host-socket";
+pub const PEER_CONFIG_ARGUMENT: &str = "--peer-config";
+pub const FILE_HELPER_ARGUMENT: &str = "--file-helper";
+pub const READY_ARGUMENT: &str = "--ready-stdio";
+pub(crate) const HOST_SERVE_COMMAND: &str = "serve";
+pub(crate) const HOME_ARGUMENT: &str = "--home";
+pub(crate) const SOCKET_ARGUMENT: &str = "--socket";
+pub(crate) const DEADLINE_EXPIRED: &str = "local Hub startup deadline expired";
+pub(crate) const READY_INVALID: &str = "local Hub readiness did not match its launch";
+pub(crate) const READY_MISSING: &str = "local Hub readiness pipe was not available";
+pub(crate) const PIN_MISMATCH: &str = "persistent Hub identity does not match its enrollment pin";
+#[cfg(target_os = "linux")]
+pub(crate) const LINUX_CUSTODY_REQUIRED: &str = "Linux local Host startup requires delegated cgroup v2 custody; connect to an existing Hub or start Yolo under a delegated systemd service";

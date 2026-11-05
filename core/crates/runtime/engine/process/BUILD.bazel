@@ -1,0 +1,198 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+load("//build_system/bazel:version.bzl", "YOLO_MARKETING_VERSION")
+load("//build_system/bazel/rust:component_test_graph.bzl", "COMPONENT_TEST_FEATURES", "component_test_aliases", "component_test_dependencies")
+load("//build_system/bazel/rust:isolated_test.bzl", "isolated_rust_test")
+load(
+    "//build_system/bazel/rust:process_test_deps.bzl",
+    "PROCESS_COMPONENT_DEPS",
+    "PROCESS_TEST_ALIASES",
+    "process_test_deps",
+)
+load(
+    "//build_system/bazel/rust:test_features.bzl",
+    "INTEGRATION_TEST_FEATURES",
+    "SERIAL_TEST_ENVIRONMENT",
+    "UNIT_TEST_FEATURES",
+)
+
+package(default_visibility = ["//visibility:public"])
+
+_CGROUP_ENVIRONMENT = "YOLO_CGROUP_DELEGATED_ROOT"
+
+_CGROUP_FEATURE = "linux-cgroup-kernel-test"
+
+_CGROUP_FILTER = "linux_containment::kernel_tests"
+
+_LINUX_CONSTRAINT = "@platforms//os:linux"
+
+_SINGLE_TEST_THREAD_ARGUMENT = "--test-threads=1"
+
+_COMMON_DEPS = [
+    "//core/crates/crypto:yolo_crypto",
+    "//core/crates/terminal/model:yolo_terminal_model",
+    "//core/crates/transport/session:yolo_session_timing",
+    "@crates//:anyhow",
+    "@crates//:getrandom",
+    "@crates//:libc",
+    "@crates//:portable-pty",
+    "@crates//:serde",
+    "@crates//:thiserror",
+    "@crates//:tokio",
+    "@crates//:tracing",
+    "@crates//:uuid",
+]
+
+_DEPS = _COMMON_DEPS + PROCESS_COMPONENT_DEPS
+
+_TEST_DEPS = process_test_deps(_COMMON_DEPS)
+
+rust_library(
+    name = "yolo_process",
+    srcs = glob(["src/**/*.rs"]),
+    crate_name = "yolo_process",
+    crate_root = "src/mod.rs",
+    edition = "2024",
+    version = YOLO_MARKETING_VERSION,
+    deps = _DEPS,
+)
+
+isolated_rust_test(
+    name = "yolo_process_integration_tests",
+    timeout = "eternal",
+    srcs = [
+        ":integration_test_sources",
+        ":runtime_sources",
+        ":test_support_sources",
+    ],
+    aliases = PROCESS_TEST_ALIASES,
+    crate_features = INTEGRATION_TEST_FEATURES,
+    crate_name = "yolo_process_integration_tests",
+    crate_root = "src/mod.rs",
+    edition = "2024",
+    env = SERIAL_TEST_ENVIRONMENT,
+    tags = [
+        "exclusive",
+        "no-sandbox",
+    ],
+    deps = _TEST_DEPS + [
+        "//core/crates/application/support:yolo_application_test_fixtures",
+        "@crates//:tempfile",
+    ],
+)
+
+isolated_rust_test(
+    name = "yolo_process_unit_tests",
+    timeout = "eternal",
+    srcs = [
+        ":runtime_sources",
+        ":test_support_sources",
+    ] + glob(["unit_tests/**/*.rs"]),
+    aliases = PROCESS_TEST_ALIASES,
+    crate_features = UNIT_TEST_FEATURES,
+    crate_name = "yolo_process_unit_tests",
+    crate_root = "src/mod.rs",
+    edition = "2024",
+    env = SERIAL_TEST_ENVIRONMENT,
+    tags = [
+        "exclusive",
+        "no-sandbox",
+    ],
+    deps = _TEST_DEPS + [
+        "//core/crates/application/support:yolo_application_test_fixtures",
+        "@crates//:tempfile",
+    ],
+)
+
+rust_test(
+    name = "linux_cgroup_kernel_adversarial_test",
+    timeout = "long",
+    testonly = True,
+    srcs = [
+        ":integration_test_sources",
+        ":runtime_sources",
+        ":test_support_sources",
+    ],
+    aliases = PROCESS_TEST_ALIASES,
+    args = [
+        _CGROUP_FILTER,
+        _SINGLE_TEST_THREAD_ARGUMENT,
+    ],
+    crate_features = [_CGROUP_FEATURE] + INTEGRATION_TEST_FEATURES,
+    crate_name = "yolo_linux_cgroup_kernel_test",
+    crate_root = "src/mod.rs",
+    edition = "2024",
+    env_inherit = [
+        _CGROUP_ENVIRONMENT,
+        "HOME",
+        "PATH",
+        "TMPDIR",
+    ],
+    tags = [
+        "exclusive",
+        "no-sandbox",
+    ],
+    target_compatible_with = [_LINUX_CONSTRAINT],
+    deps = _TEST_DEPS + [
+        "//core/crates/application/support:yolo_application_test_fixtures",
+        "@crates//:tempfile",
+    ],
+)
+
+rust_library(
+    name = "yolo_process_adversarial",
+    testonly = True,
+    srcs = glob(["src/**/*.rs"]) + [
+        ":test_support_sources",
+    ],
+    crate_features = ["adversarial-test-hooks"],
+    crate_name = "yolo_process",
+    crate_root = "src/mod.rs",
+    edition = "2024",
+    deps = _DEPS,
+)
+
+filegroup(
+    name = "runtime_sources",
+    srcs = glob(["src/**/*.rs"]),
+)
+
+filegroup(
+    name = "integration_test_sources",
+    testonly = True,
+    srcs = glob(
+        ["integration_tests/**/*.rs"],
+        allow_empty = True,
+    ),
+)
+
+filegroup(
+    name = "test_support_sources",
+    testonly = True,
+    srcs = glob(["test_support/**/*.rs"]),
+)
+
+rust_library(
+    name = "yolo_process_component_test_support",
+    testonly = True,
+    srcs = [":runtime_sources", ":test_support_sources"],
+    aliases = component_test_aliases(_DEPS),
+    crate_features = COMPONENT_TEST_FEATURES,
+    crate_name = "yolo_process",
+    crate_root = "src/mod.rs",
+    edition = "2024",
+    deps = component_test_dependencies(_DEPS) + [
+        "//core/crates/application/support:yolo_application_test_fixtures",
+        "@crates//:tempfile",
+    ],
+)
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = glob(
+        ["**/*"],
+        allow_empty = True,
+        exclude = ["BUILD.bazel"],
+    ) + [
+        "BUILD.bazel",
+    ],
+)

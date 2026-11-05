@@ -1,0 +1,9 @@
+pub const ROOT: &str = "/local/runtime";
+pub const INSTALL: &str = "/remote/runtime";
+pub const STATE: &str = "/remote/hub";
+pub const HOME: &str = "/remote/home";
+pub const PROFILE: &str = "machine";
+pub const SCHEMA_FIELD: &str = "schema_version";
+pub const ROOT_FIELD: &str = "root";
+pub const SOURCE_FIELD: &str = "source";
+pub const PRIVATE_FIELD: &str = "private_key";

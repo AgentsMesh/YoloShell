@@ -1,0 +1,128 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+
+package(default_visibility = ["//visibility:public"])
+
+SOURCES = glob(["src/**/*.rs"])
+
+COMMON_TEST_SOURCES = [
+    "test_support/fixture.rs",
+    "test_support/process_signal_test_support.rs",
+]
+
+GENERAL_TEST_SOURCES = COMMON_TEST_SOURCES + [
+    "test_support/process_signal_child_flow_test_fixtures.rs",
+    "unit_tests/general.rs",
+] + glob(
+    ["unit_tests/process_signal_*.rs"],
+    exclude = [
+        "unit_tests/process_signal_retained_*.rs",
+    ],
+)
+
+RETAINED_VISIBILITY_TEST_PATTERNS = [
+    "unit_tests/retained/process_signal_retained_*rooted*.rs",
+    "unit_tests/retained/process_signal_retained_*visibility*.rs",
+    "unit_tests/retained/process_signal_retained_surface_regression_tests.rs",
+]
+
+RETAINED_VISIBILITY_TEST_SOURCES = glob(RETAINED_VISIBILITY_TEST_PATTERNS)
+
+RETAINED_TEST_SOURCES = COMMON_TEST_SOURCES + ["unit_tests/retained.rs"] + glob(
+    ["unit_tests/retained/process_signal_retained_*.rs"],
+    exclude = RETAINED_VISIBILITY_TEST_PATTERNS,
+)
+
+RETAINED_VISIBILITY_TEST_TARGET_SOURCES = COMMON_TEST_SOURCES + [
+    "unit_tests/retained_visibility.rs",
+] + RETAINED_VISIBILITY_TEST_SOURCES
+
+ALL_TEST_SOURCES = glob([
+    "test_support/*.rs",
+    "unit_tests/**/*.rs",
+])
+
+DEPS = [
+    "//build_system/architecture/checks/cargo:library",
+    "//build_system/architecture/foundation:library",
+    "//build_system/architecture/contracts:library",
+    "//build_system/architecture/checks/process/signal/foundation:library",
+    "//build_system/architecture/checks/process/signal/child:library",
+    "//build_system/architecture/graph:library",
+    "//build_system/architecture/checks/process/signal/path:library",
+    "//build_system/architecture/checks/process/signal/retained:library",
+    "//build_system/architecture/checks/source:library",
+    "//build_system/architecture/syntax:library",
+]
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = SOURCES + ALL_TEST_SOURCES + ["BUILD.bazel"],
+)
+
+rust_library(
+    name = "library",
+    srcs = SOURCES,
+    crate_name = "yolo_architecture_process_signal_policy",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    deps = DEPS,
+)
+
+rust_test(
+    name = "general_unit_tests",
+    srcs = GENERAL_TEST_SOURCES,
+    crate_name = "yolo_architecture_process_signal_general_tests",
+    crate_root = "unit_tests/general.rs",
+    data = ["//:architecture_check_data"],
+    edition = "2024",
+    deps = DEPS + [":library"],
+)
+
+rust_test(
+    name = "retained_visibility_unit_tests",
+    srcs = RETAINED_VISIBILITY_TEST_TARGET_SOURCES,
+    crate_name = "yolo_architecture_process_signal_retained_visibility_tests",
+    crate_root = "unit_tests/retained_visibility.rs",
+    edition = "2024",
+    deps = DEPS + [":library"],
+)
+
+rust_test(
+    name = "retained_unit_tests",
+    srcs = RETAINED_TEST_SOURCES,
+    crate_name = "yolo_architecture_process_signal_retained_tests",
+    crate_root = "unit_tests/retained.rs",
+    edition = "2024",
+    deps = DEPS + [":library"],
+)
+
+test_suite(
+    name = "unit_tests",
+    tests = [
+        ":audit_internal_unit_tests",
+        ":general_unit_tests",
+        ":retained_unit_tests",
+        ":retained_visibility_unit_tests",
+    ],
+)
+
+rust_test(
+    name = "audit_internal_unit_tests",
+    srcs = SOURCES + [
+        "unit_tests/audit_internal.rs",
+        "unit_tests/audit/audit_provenance_tests.rs",
+        "unit_tests/audit/audit_call_tests.rs",
+        "unit_tests/audit/audit_token_provenance_tests.rs",
+        "unit_tests/audit/audit_wrapper_token_tests.rs",
+        "unit_tests/audit/audit_unsafe_boundary_tests.rs",
+        "unit_tests/shell_command_boundary_tests.rs",
+        "unit_tests/test_module_boundary_tests.rs",
+        "unit_tests/direct_custody_shape_tests.rs",
+        "unit_tests/primitive_authority_boundaries.rs",
+        "test_support/audit_fixture.rs",
+    ],
+    crate_name = "yolo_architecture_process_signal_audit_tests",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    deps = DEPS,
+)

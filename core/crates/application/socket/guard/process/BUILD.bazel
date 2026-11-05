@@ -1,0 +1,73 @@
+load("@rules_rust//rust:defs.bzl", "rust_test")
+load(
+    "//build_system/bazel/rust:socket_root_guard_process.bzl",
+    "socket_root_guard_process_test",
+)
+load("//build_system/bazel/rust:test_features.bzl", "SERIAL_TEST_ENVIRONMENT")
+
+package(default_visibility = ["//visibility:public"])
+
+_BINARY_NAME = "socket_root_guard_process_tests_binary"
+
+filegroup(
+    name = "test_support_sources",
+    testonly = True,
+    srcs = glob(
+        ["test_support/**/*.rs"],
+        allow_empty = False,
+    ),
+)
+
+filegroup(
+    name = "integration_test_sources",
+    testonly = True,
+    srcs = glob(
+        ["integration_tests/**/*.rs"],
+        allow_empty = True,
+    ),
+)
+
+rust_test(
+    name = _BINARY_NAME,
+    timeout = "long",
+    testonly = True,
+    srcs = [
+        ":integration_test_sources",
+        ":test_support_sources",
+    ],
+    aliases = {
+        "//core/crates/runtime/engine/process:yolo_process_adversarial": "yolo_process_test_support",
+    },
+    crate_features = ["adversarial-test-hooks"],
+    crate_name = "socket_root_guard_process_test",
+    crate_root = "integration_tests/socket_root_guard_process_tests.rs",
+    edition = "2024",
+    env = SERIAL_TEST_ENVIRONMENT,
+    tags = ["manual"],
+    deps = [
+        "//core:yolo_runtime_adversarial",
+        "//core/crates/application/socket/guard:yolo_socket_guard_fault_contract",
+        "//core/crates/runtime/engine/process:yolo_process_adversarial",
+        "@crates//:anyhow",
+        "@crates//:libc",
+        "@crates//:tempfile",
+    ],
+)
+
+socket_root_guard_process_test(
+    name = "socket_root_guard_process_tests",
+    timeout = "long",
+    binary = ":" + _BINARY_NAME,
+    tags = ["exclusive"],
+)
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = glob(
+        ["**/*"],
+        allow_empty = True,
+        exclude = ["BUILD.bazel"],
+    ) + [
+        "BUILD.bazel",
+    ],
+)
