@@ -43,6 +43,7 @@ rust_test(
     edition = "2024",
     deps = _DEPS + [
         ":yolo_local_lifecycle",
+        "@crates//:serde_json",
         "@crates//:tempfile",
     ],
 )

@@ -1,4 +1,4 @@
-use crate::{constants::*, github, probe};
+use crate::{candidate, constants::*, github, probe};
 use anyhow::{Context, Result};
 use clap::Args;
 use std::path::PathBuf;
@@ -23,20 +23,23 @@ pub struct Options {
     #[arg(long, value_enum, default_value = "stable")]
     pub channel: crate::github_release::Channel,
     /// Check the latest release without installing or restarting.
-    #[arg(long, alias = CHECK_RELEASE_ARGUMENT, conflicts_with_all = ["install_release", "restart", "admit", "no_restart"])]
+    #[arg(long, alias = CHECK_RELEASE_ARGUMENT, conflicts_with_all = ["install_release", "restart", "admit", "no_restart", "validate_state"])]
     pub check: bool,
     /// Admit the already installed image without checking releases.
-    #[arg(long, conflicts_with_all = ["install_release", "restart", "check", "no_restart"])]
+    #[arg(long, conflicts_with_all = ["install_release", "restart", "check", "no_restart", "validate_state"])]
     pub admit: bool,
     /// Restart the local Host and Hub, then admit the installed image.
-    #[arg(long, conflicts_with_all = ["install_release", "check", "admit", "no_restart"])]
+    #[arg(long, conflicts_with_all = ["install_release", "check", "admit", "no_restart", "validate_state"])]
     pub restart: bool,
     /// Install a newer release without restarting; only with the default update.
-    #[arg(long, conflicts_with_all = ["install_release", "check", "admit", "restart"])]
+    #[arg(long, conflicts_with_all = ["install_release", "check", "admit", "restart", "validate_state"])]
     pub no_restart: bool,
     /// Legacy install-only mode.
-    #[arg(long, hide = true, conflicts_with_all = ["check", "admit", "restart", "no_restart"])]
+    #[arg(long, hide = true, conflicts_with_all = ["check", "admit", "restart", "no_restart", "validate_state"])]
     pub install_release: bool,
+    /// Validate the local Hub state contract with this image without changing it.
+    #[arg(long, hide = true, conflicts_with_all = ["install_release", "restart", "check", "admit", "no_restart"])]
+    pub validate_state: bool,
     /// Local profile file; defaults to the current user profile.
     #[arg(long, value_name = "PATH", conflicts_with_all = [STATE_ARGUMENT, SOCKET_ARGUMENT, HUB_ARGUMENT])]
     pub local_profile: Option<PathBuf>,
@@ -57,12 +60,16 @@ pub fn run(options: Options) -> Result<()> {
         Some(path) => LocalProfile::load(path)?,
         None => yolo_local_profile::current()?,
     };
+    if options.validate_state {
+        return yolo_local_lifecycle::validate_state(&profile);
+    }
     let runtime = tokio::runtime::Runtime::new()?;
     if options.admit {
         return admit(&options, &profile, &runtime, None);
     }
     if options.restart {
         let executable = std::env::current_exe()?;
+        yolo_local_lifecycle::validate_state(&profile)?;
         runtime.block_on(yolo_local_lifecycle::restart(&profile, &executable))?;
         println!("restarted local Host and Hub");
         return admit(&options, &profile, &runtime, None);
@@ -83,6 +90,10 @@ pub fn run(options: Options) -> Result<()> {
     }
     if restart_needed {
         let executable = installed.clone().unwrap_or(std::env::current_exe()?);
+        match &installed {
+            Some(installed) => candidate::validate_state(&options, installed)?,
+            None => yolo_local_lifecycle::validate_state(&profile)?,
+        }
         runtime.block_on(yolo_local_lifecycle::restart(&profile, &executable))?;
         println!("restarted local Host and Hub");
     }
@@ -96,7 +107,7 @@ fn admit(
     installed: Option<PathBuf>,
 ) -> Result<()> {
     if let Some(installed) = installed {
-        return admit_installed(options, installed);
+        return candidate::admit(options, &installed);
     }
     let options = local_options(options.clone(), profile)?;
     let candidate_path = match installed {
@@ -111,36 +122,6 @@ fn admit(
         report.print();
     }
     anyhow::ensure!(report.ready(), "{}", UPGRADE_REFUSED);
-    Ok(())
-}
-
-/// Admission after an install must run with the candidate image. The invoking
-/// CLI may be an older protocol and would otherwise reject the Hub it just
-/// started. The installed binary re-runs the same read-only checks with its own
-/// protocol and state-contract constants.
-fn admit_installed(options: &Options, installed: PathBuf) -> Result<()> {
-    let mut command = std::process::Command::new(installed.canonicalize()?);
-    command.arg(COMMAND).arg(ADMIT_FLAG);
-    if options.json {
-        command.arg(JSON_FLAG);
-    }
-    if let Some(profile) = &options.local_profile {
-        command.arg(LOCAL_PROFILE_FLAG).arg(profile);
-    }
-    if let Some(socket) = &options.socket {
-        command.arg(SOCKET_FLAG).arg(socket);
-    }
-    if let Some(hub) = options.hub {
-        command.arg(HUB_FLAG).arg(hub.to_string());
-    }
-    if let Some(state) = &options.state {
-        command.arg(STATE_FLAG).arg(state);
-    }
-    for unit in &options.service_units {
-        command.arg(SERVICE_UNIT_FLAG).arg(unit);
-    }
-    let status = command.status().context(INSTALLED_ADMISSION_FAILED)?;
-    anyhow::ensure!(status.success(), "{}", UPGRADE_REFUSED);
     Ok(())
 }
 

@@ -63,6 +63,7 @@ pub(crate) fn run(connection: ConnectionOptions, command: Command) -> Result<()>
                 restart: args.restart,
                 no_restart: args.no_restart,
                 install_release: args.install_release,
+                validate_state: args.validate_state,
                 local_profile: connection.local_profile,
                 repository: args.repository,
             })
