@@ -30,15 +30,15 @@ Authenticated remote entry uses the remote home directory by default.
 `yolo attach [TERMINAL]` only attaches an existing Terminal; a missing or ambiguous
 selection opens the terminal picker with an explanation and never creates one.
 
-`yolo list [--json] [--all]` prints the Hub terminal catalog; `--all` includes
+`yolo terminal list [--json] [--all]` prints the Hub terminal catalog; `--all` includes
 archived terminals from history and labels them `Archived`. `yolo terminals`
-opens the interactive picker. `yolo archive TERMINAL` archives an exited
-terminal, and `yolo terminate TERMINAL [--force]` ends a terminal and every
+opens the interactive picker. `yolo terminal archive TERMINAL` archives an exited
+terminal, and `yolo terminal terminate TERMINAL [--force]` ends a terminal and every
 program in it; both take an id, `yolo://...` address, `HUB/TERMINAL` address or
-unique label, and `--json` prints the resulting summary. `yolo clients
+unique label, and `--json` prints the resulting summary. `yolo client list
 [--json]` lists attached local terminal clients with their kind: the Hub-bound
 client is `primary` and addressed by the Hub id, every additional client has
-its own id. `yolo detach [CLIENT_ID]` disconnects one without stopping its
+its own id. `yolo client detach [CLIENT_ID]` disconnects one without stopping its
 terminals. If more than one client is attached, the command requires an exact
 client ID.
 Terminal names are labels: `yolo new --name` does not reserve a unique name,

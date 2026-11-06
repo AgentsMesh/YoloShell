@@ -16,7 +16,7 @@ The operational upgrade order is:
 2. Probe the running Host/Hub image, protocol and state contract.
 3. Keep the persistent custody domain and live Workers running while the result
    is compatible.
-4. Restart only the independently replaceable Host runner and Hub (`yolo restart`
+4. Restart only the independently replaceable Host runner and Hub (`yolo server restart`
    preserves the custody domain and live Workers).
 5. Recheck Hub identity, TerminalAddress, RuntimeEpoch, Worker identity and Agent
    execution identity before accepting the deployment.
@@ -33,8 +33,8 @@ for interactive CLI selection only.
 
 If the probe reports incompatibility, `yolo update` exits nonzero with
 `upgrade admission refused` plus the failed checks. When the installed image is
-newer than the running services, activate it with `yolo restart` or
-`yolo update --restart`; `yolo stop` leaves the profile stopped for inspection.
+newer than the running services, activate it with `yolo server restart` or
+`yolo update --restart`; `yolo server stop` leaves the profile stopped for inspection.
 Restarting preserves PTY custody: the Host closes ingress but Workers remain
 attached to their PTYs. A restart is refused before stopping anything when
 `runtime-contract.json` is incompatible with the installed image, or when the

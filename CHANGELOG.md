@@ -3,6 +3,22 @@
 All notable changes to Yolo are recorded here. The project follows semantic
 versioning once a stable release exists.
 
+## 0.5.0 — Alpha
+
+### Changed
+- One root command tree: `yolo --help` lists every command. The shell entry
+  stays `yolo`, `yolo new`, `yolo attach` and `yolo terminals`; other commands
+  are grouped by the noun they operate on: `terminal`, `client`, `layout`,
+  `machine`, `agent`, `server`, `platform`, `conversation`, `workspace`,
+  `worktree`, `protocol`, `plugin`, `update`, `audit` and `recipe`.
+
+### Migration
+- `yolo list|screen|archive|terminate` become `yolo terminal ...`.
+- `yolo clients|detach` become `yolo client list|detach`.
+- `yolo layouts` becomes `yolo layout list`.
+- `yolo start|stop|restart|status|version` become `yolo server ...`.
+- Old root forms are removed; no aliases are kept.
+
 ## 0.4.0 — Alpha
 
 ### Changed
@@ -86,35 +102,21 @@ versioning once a stable release exists.
 ### Added
 
 - `yolo status`, `yolo version`, `yolo start`, `yolo stop` and `yolo restart`
-  expose the local Host/Hub lifecycle; status distinguishes the installed image
-  from the running services. `yolo update --restart` activates and admits the
+  expose the local Host/Hub lifecycle; `yolo update --restart` activates the
   installed image.
 
 ### Changed
 
-- Upgrade refusal now names `yolo restart` as the activation step.
-- `yolo stop` and `yolo restart` resolve exact PIDs from private socket
-  credentials; Host shutdown leaves Workers attached to their PTYs.
-- `yolo restart` preflights state and Linux Host custody before stopping.
-
-### Fixed
-
-- Removed the stale `yolo web` dispatch integration test left by the gateway
-  extraction (ADR 0035).
+- `yolo stop`/`restart` resolve exact PIDs; upgrade refusal names `yolo restart`.
+- Removed the stale `yolo web` dispatch test (ADR 0035).
 
 ## 0.1.5 — Alpha
 
 ### Added
 
-- Hubs pair with a single-use, expiring `yolo1_` code. `yolo hub peer invite`
-  mints a signed code; `yolo hub peer join` verifies the inviting Hub's SSH
-  host key, admits the joining identity and configures both directions without
-  copying Hub IDs, keys or ports. Codes expire in 1–60 minutes, are consumed
-  durably, and grant only the minted export and import directions.
-
-### Changed
-
-- Peer-connection diagnostics moved to their own package to keep federation within budget.
+- Hubs pair with a single-use, expiring `yolo1_` code over SSH; the provider's
+  account and export policy remain the authority. Peer diagnostics moved to
+  their own package to keep federation within budget.
 
 ## 0.1.4 — Alpha
 
@@ -127,18 +129,13 @@ versioning once a stable release exists.
 
 ### Added
 
-- `yolo hub peer add` and `yolo hub peer list` manage federation peers through
-  the local entry Hub, with explicit dial addresses, import control and export
-  policies.
+- `yolo hub peer add` and `yolo hub peer list` manage federation peers with
+  explicit dial addresses, imports and export policies.
 
 ### Fixed
 
-- A YOLO client running inside a YOLO terminal no longer attaches to its own
-  terminal; it shows a status hint and keeps the pane read-only instead of
-  recursively rendering itself.
-- A terminal snapshot taken on the alternate screen carries the screen mode, so
-  reattaching to a full-screen program no longer leaves its content smeared on
-  the primary screen.
+- A YOLO client inside a YOLO terminal stays read-only instead of recursively
+  rendering itself, and alternate-screen snapshots keep the screen mode.
 
 ## 0.1.2 — Alpha
 

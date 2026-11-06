@@ -1,6 +1,20 @@
+use clap::Subcommand;
 use std::io::{self, Write};
 use yolo_hub_rpc_protocol::{Command, Reply};
 use yolo_tui_app::Options;
+
+/// Shared-layout inspection. Opening a layout stays the root `--layout`
+/// switch because keyboard focus is always private to the client.
+#[derive(Debug, Subcommand)]
+pub(crate) enum LayoutCommand {
+    /// List shared layout IDs; use --layout to open one in an independent client.
+    #[command(group(crate::arguments::connection_group()))]
+    List {
+        /// Print one JSON document.
+        #[arg(long)]
+        json: bool,
+    },
+}
 
 const HEADER: &str = "LAYOUT_ID\tREVISION\tTABS\tPANES";
 const INVALID_REPLY: &str = "Hub returned an unexpected layout listing";

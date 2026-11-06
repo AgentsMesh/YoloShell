@@ -44,10 +44,11 @@ client detach. `Ctrl-B d` detaches from Yolo. An agent started with `exec` repla
 the shell, so its exit can also end the PTY; the PTY outcome determines the
 Terminal's state.
 
-The public picker command is `yolo terminals`. `yolo list` lists Terminals,
-`yolo new` creates a Terminal with a shell, and `yolo attach [TERMINAL]` selects an
-existing Terminal by ID, address or unique name. `yolo clients` and
-`yolo detach [CLIENT_ID]` address client views, not AgentRuns or provider history.
+The public picker command is `yolo terminals`. `yolo terminal list` lists
+Terminals, `yolo new` creates a Terminal with a shell, and `yolo attach
+[TERMINAL]` selects an existing Terminal by ID, address or unique name.
+`yolo client list` and `yolo client detach [CLIENT_ID]` address client views,
+not AgentRuns or provider history.
 The retired `sessions` picker command is rejected; it is not retained as an alias.
 
 The default Terminal and AgentRun lists contain active or unconfirmed resources.
@@ -72,8 +73,8 @@ exit observation does not add history entries or change its observation cursor.
 The current Hub contract uses `TerminalId`, `TerminalAddress`, and
 `TerminalSummary`. A terminal address contains `hub_id` and `terminal_id`; Hub
 catalogues expose a `terminals` collection. Its URI is
-`yolo://<hub-id>/terminals/<terminal-id>`, and `yolo list --json` uses this same
-contract. There are no alternate address fields or resource-name aliases.
+`yolo://<hub-id>/terminals/<terminal-id>`, and `yolo terminal list --json`
+uses this same contract. There are no alternate address fields or resource-name aliases.
 
 `runtime_epoch` identifies one PTY execution. Provider-owned hook `session_id`
 fields and provider history directories retain their provider-defined meaning;

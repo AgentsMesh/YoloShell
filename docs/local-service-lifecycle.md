@@ -1,49 +1,49 @@
 # Local Service Lifecycle
 
-Yolo runs one local Host and Hub for the current profile. The lifecycle commands
-inspect and control them without entering the TUI. See
+Yolo runs one local Host and Hub for the current profile. The `yolo server`
+commands inspect and control them without entering the TUI. See
 [upgrade admission](upgrade-admission.md) for the compatibility boundary that
-`yolo update` and `yolo restart` enforce.
+`yolo update` and `yolo server restart` enforce.
 
 ## Status and Version
 
 ```bash
-yolo status          # Hub/Host PIDs, images, protocol and admission state
-yolo version         # installed image and the image each service is running
-yolo start           # start the local Host and Hub
-yolo stop            # stop the local Hub, then the Host
-yolo restart         # stop and start the same profile
+yolo server status          # Hub/Host PIDs, images, protocol and admission state
+yolo server version         # installed image and the image each service is running
+yolo server start           # start the local Host and Hub
+yolo server stop            # stop the local Hub, then the Host
+yolo server restart         # stop and start the same profile
 ```
 
 All five commands address the profile selected by `--local-profile` or the
 platform default, and accept `--json`. They are local-only: `--hub`, `--socket`
 and `--endpoint` describe a remote entry and are rejected. `yolo --version`
 remains the single-line binary version contract that remote deployment probes
-compare byte for byte, so it never reports service state; use `yolo version`
+compare byte for byte, so it never reports service state; use `yolo server version`
 when the question is which image is installed versus which image the running
 Host and Hub actually mapped.
 
 ## Stop and Restart
 
-`yolo stop` resolves each service PID from its private Unix socket's peer
+`yolo server stop` resolves each service PID from its private Unix socket's peer
 credentials and sends SIGTERM to that exact PID; it never matches process names.
 It stops the Hub first and then the Host. Host shutdown closes ingress but leaves
 session Workers attached to their PTYs, so stopping services does not terminate
-running shells; a later `yolo start` reconnects the Hub to the existing Host and
+running shells; a later `yolo server start` reconnects the Hub to the existing Host and
 Workers. If a service does not exit within the bound, the command fails with the
 exact PID instead of escalating to SIGKILL.
 
-`yolo restart` validates the runtime contract and, on Linux, delegated Host
+`yolo server restart` validates the runtime contract and, on Linux, delegated Host
 custody before stopping anything, so an incompatible state or an un-delegated
 shell leaves the running services untouched.
 
-On Linux a new Host requires delegated cgroup v2 custody. `yolo start` reports
+On Linux a new Host requires delegated cgroup v2 custody. `yolo server start` reports
 that requirement before launching anything; start the profile under a delegated
 systemd service, or attach to an existing Hub instead.
 
-If a Host from another image is already running, `yolo start` leaves it intact
+If a Host from another image is already running, `yolo server start` leaves it intact
 and reports the new Hub's exit, its error and the running Host image; restart
-the profile with `yolo restart` to replace both services.
+the profile with `yolo server restart` to replace both services.
 
 ## GitHub Releases and Updates
 
@@ -84,7 +84,7 @@ yolo update --channel nightly    # select the nightly channel
 `--check` ends with `update available: <version>` or `yolo <version> is already
 current`, so callers do not compare the two printed versions themselves.
 `--no-restart` leaves the running services untouched and prints
-`run yolo restart to activate it` when an installed image is not yet running.
+`run yolo server restart to activate it` when an installed image is not yet running.
 
 For a non-default profile, pass `--local-profile <file>` to `yolo update`.
 

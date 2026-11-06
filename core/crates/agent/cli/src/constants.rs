@@ -5,7 +5,7 @@ pub const PROGRAM: &str = "yolo";
 pub const SOCKET_ARGUMENT: &str = "socket";
 pub const HUB_ARGUMENT: &str = "hub";
 
-pub const NO_LOCAL_HUB: &str = "No local Hub has been started; run `yolo start` first";
+pub const NO_LOCAL_HUB: &str = "No local Hub has been started; run `yolo server start` first";
 pub const SOCKET_PAIR: &str = "--socket and --hub must be supplied together";
 pub const AGENT_START_UNSUPPORTED: &str = "the selected Hub cannot start this provider";
 pub const INVALID_RUN_ID: &str = "the run id is not a valid non-nil UUID";

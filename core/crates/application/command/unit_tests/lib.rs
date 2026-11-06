@@ -1,31 +1,27 @@
-use super::{Cli, Command, selects};
-use clap::Parser;
+use super::{Command, ConnectionOptions};
 use constants::*;
-use std::ffi::OsString;
+use yolo_agent_cli::{AgentCommand, ListArgs, OutputArgs};
+use yolo_hub_client::HubEndpoint;
+use yolo_hub_identity::HubId;
 
 #[path = "constants.rs"]
 mod constants;
 
-#[test]
-fn root_options_before_and_after_a_command_reach_the_same_tree() {
-    let before = Cli::try_parse_from(["yolo", LOCAL_PROFILE, PROFILE, AGENT, LIST]).unwrap();
-    assert!(matches!(before.command, Command::Agent { .. }));
-    let after = Cli::try_parse_from(["yolo", AGENT, LIST, LOCAL_PROFILE, PROFILE]).unwrap();
-    assert!(matches!(after.command, Command::Agent { .. }));
-}
-
-#[test]
-fn selects_recognizes_auxiliary_commands_after_root_options() {
-    let arguments = [PROGRAM, LOCAL_PROFILE, PROFILE, AGENT, LIST].map(OsString::from);
-    assert!(selects(&arguments));
-    let values = [PROGRAM, LOCAL_PROFILE, AGENT, LIST].map(OsString::from);
-    assert!(!selects(&values));
+fn connection() -> ConnectionOptions {
+    ConnectionOptions {
+        socket: Some(SOCKET_PATH.into()),
+        hub: Some(HubId::new()),
+        ..ConnectionOptions::default()
+    }
 }
 
 #[test]
 fn commands_reject_connection_options_they_do_not_use() {
-    let error = super::run_from(
-        ["yolo", PLUGIN, LIST, SOCKET, SOCKET_PATH, HUB, HUB_ID].map(OsString::from),
+    let error = super::run(
+        connection(),
+        Command::Plugin {
+            command: yolo_trusted_plugin_cli::PluginCommand::List { json: true },
+        },
     )
     .unwrap_err()
     .to_string();
@@ -34,19 +30,17 @@ fn commands_reject_connection_options_they_do_not_use() {
 
 #[test]
 fn local_commands_reject_remote_connection_options() {
-    let error = super::run_from(
-        [
-            "yolo",
-            ENDPOINT,
-            "local:/tmp/yolo.sock",
-            HUB,
-            HUB_ID,
-            AGENT,
-            LIST,
-        ]
-        .map(OsString::from),
-    )
-    .unwrap_err()
-    .to_string();
+    let connection = ConnectionOptions {
+        endpoint: Some(HubEndpoint::local(SOCKET_PATH)),
+        hub: Some(HubId::new()),
+        ..ConnectionOptions::default()
+    };
+    let command = Command::Agent {
+        command: AgentCommand::List(ListArgs {
+            all: false,
+            output: OutputArgs { json: true },
+        }),
+    };
+    let error = super::run(connection, command).unwrap_err().to_string();
     assert!(error.contains(LOCAL_ONLY), "{error}");
 }

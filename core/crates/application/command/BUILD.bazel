@@ -5,7 +5,6 @@ package(default_visibility = ["//visibility:public"])
 
 _DEPS = [
     "//core/crates/agent/cli:yolo_agent_cli",
-    "//core/crates/application/launch/contract:yolo_launch_contract",
     "//core/crates/application/protocol/cli:yolo_protocol_cli",
     "//core/crates/application/trusted-plugin/cli:yolo_trusted_plugin_cli",
     "//core/crates/application/upgrade/cli:yolo_upgrade_cli",

@@ -73,7 +73,7 @@ pub(crate) fn status_lines(report: &StatusReport) -> Vec<String> {
     if report.restart_needed {
         lines.push("restart    needed; run `yolo restart`".into());
     } else if !report.hub.running || !report.host.running {
-        lines.push("start      run `yolo start`".into());
+        lines.push("start      run `yolo server start`".into());
     } else {
         lines.push("restart    not needed".into());
     }

@@ -1,18 +1,5 @@
-use crate::connection::ConnectionOptions;
-use clap::{Args, Parser, Subcommand};
+use clap::{Args, Subcommand};
 use std::path::PathBuf;
-
-#[derive(Debug, Parser)]
-#[command(
-    name = "yolo",
-    about = "Drive agents, conversations, workspaces, plugins and releases"
-)]
-pub struct Cli {
-    #[command(flatten)]
-    pub connection: ConnectionOptions,
-    #[command(subcommand)]
-    pub command: Command,
-}
 
 #[derive(Debug, Subcommand)]
 pub enum Command {
