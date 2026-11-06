@@ -1,4 +1,3 @@
-pub const PROGRAM: &str = "yolo";
 pub const AGENT: &str = "agent";
 pub const LIST: &str = "list";
 pub const PLUGIN: &str = "plugin";

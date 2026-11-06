@@ -15,27 +15,35 @@ impl yolo_builtin_client_host::BuiltinClientEntrypoint for TuiBuiltinClient {
 
 mod arguments;
 mod audit;
+mod aux;
+mod client;
 mod command;
 mod constants;
 mod detach;
 mod layouts;
 mod lifecycle;
 mod listing;
-mod platform;
-mod platform_events;
-mod platform_label;
-mod platform_snapshot;
 mod recipe;
 mod remote;
 mod screen;
 mod selection;
+mod server;
+mod terminal;
 #[cfg(test)]
 #[path = "../unit_tests/lib.rs"]
 mod unit_tests;
 
 pub fn run_from(arguments: impl IntoIterator<Item = OsString>) -> anyhow::Result<()> {
     let mut arguments = Arguments::try_parse_from(arguments)?;
-    let command = arguments.command.take();
+    let command = match arguments.command.take() {
+        Some(command) => match aux::split(command) {
+            aux::RootCommand::Aux(command) => {
+                return aux::run(arguments.connection_options(), command);
+            }
+            aux::RootCommand::Tui(command) => Some(command),
+        },
+        None => None,
+    };
     let selection = arguments.selection()?;
     tokio::runtime::Runtime::new()?.block_on(selection.run(command))
 }

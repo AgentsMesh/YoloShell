@@ -78,7 +78,7 @@ pub fn run(options: Options) -> Result<()> {
     let status = runtime.block_on(yolo_local_lifecycle::status(&profile))?;
     let running = status.hub.running || status.host.running;
     if !running {
-        println!("no local services are running; run `yolo start` to start them");
+        println!("no local services are running; run `yolo server start` to start them");
         return Ok(());
     }
     let restart_needed = installed.is_some() || status.restart_needed;
@@ -138,7 +138,7 @@ fn local_options(mut options: Options, profile: &LocalProfile) -> Result<Options
         .hub
         .or_else(|| HubState::hub_id_for(&state, &profile.host_home).ok())
         .context(
-            "local Hub identity is unavailable; run `yolo start` to initialize the profile, or pass --local-profile",
+            "local Hub identity is unavailable; run `yolo server start` to initialize the profile, or pass --local-profile",
         )?;
     let service_units = if options.service_units.is_empty() {
         probe::default_units()

@@ -3,35 +3,17 @@ mod constants;
 mod dispatch;
 mod tree;
 
-use clap::Parser;
-use constants::{COMMANDS, TERMINAL_OPTIONS, VALUE_OPTIONS};
-use std::ffi::OsString;
-use yolo_launch_contract::{Routing, command_index};
+pub use connection::ConnectionOptions;
+pub use constants::{CONNECTION_REQUIRES_HUB, HUB_REQUIRES_CONNECTION};
+pub use tree::{Command, UpdateArgs};
+pub use yolo_agent_cli::AgentCommand;
+pub use yolo_conversation_cli::Action as ConversationAction;
+pub use yolo_protocol_cli::ProtocolCommand;
+pub use yolo_trusted_plugin_cli::PluginCommand;
+pub use yolo_workspace_cli::{WorktreeCommand, WorkspaceCommand};
 
-pub use tree::{Cli, Command};
-
-pub fn selects(arguments: &[OsString]) -> bool {
-    if arguments
-        .get(1)
-        .and_then(|argument| argument.to_str())
-        .is_some_and(|argument| COMMANDS.contains(&argument))
-    {
-        return true;
-    }
-    command_index(
-        arguments,
-        &Routing {
-            commands: COMMANDS,
-            value_options: VALUE_OPTIONS,
-            terminal_options: TERMINAL_OPTIONS,
-        },
-    )
-    .is_some()
-}
-
-pub fn run_from(arguments: impl IntoIterator<Item = OsString>) -> anyhow::Result<()> {
-    let cli = Cli::try_parse_from(arguments)?;
-    dispatch::run(cli.connection, cli.command)
+pub fn run(connection: ConnectionOptions, command: Command) -> anyhow::Result<()> {
+    dispatch::run(connection, command)
 }
 
 #[cfg(test)]

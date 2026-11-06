@@ -15,10 +15,11 @@ existing public connection-configuration schema. The single executable uses its
 own image for the background Host and Hub roles. No provider launch wrapper or
 new hook-ingress endpoint is involved.
 
-`yolo start`, `yolo stop` and `yolo restart` are the supported operator entries
-to this boundary. `yolo status` and `yolo version` resolve the same profile
-sockets and report the installed image separately from the images the running
-Hub and Host reported; status never starts services.
+`yolo server start`, `yolo server stop` and `yolo server restart` are the
+supported operator entries to this boundary. `yolo server status` and
+`yolo server version` resolve the same profile sockets and report the installed
+image separately from the images the running Hub and Host reported; status
+never starts services.
 
 The bootstrap operation uses a private state-directory coordination lock. It
 validates a persisted Hub identity without acquiring the running service's

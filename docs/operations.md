@@ -32,11 +32,12 @@ requires verified durable identity.
 
 ## Local Services and Updates
 
-Use `yolo status` and `yolo version` to distinguish the installed image from the
-images the running Host and Hub mapped. `yolo start`, `yolo stop` and
-`yolo restart` control the current profile; stopping services preserves live
-Workers and PTYs. `yolo update` checks for a newer release, installs it, and
-activates it through the same restart path; `--check` is the read-only mode.
+Use `yolo server status` and `yolo server version` to distinguish the installed
+image from the images the running Host and Hub mapped. `yolo server start`,
+`yolo server stop` and `yolo server restart` control the current profile;
+stopping services preserves live Workers and PTYs. `yolo update` checks for a
+newer release, installs it, and activates it through the same restart path;
+`--check` is the read-only mode.
 
 See [local service lifecycle](local-service-lifecycle.md) for the command
 contract and [upgrade admission](upgrade-admission.md) for the compatibility
@@ -62,8 +63,8 @@ detaches its views and leaves live PTYs and processes running.
   the machine tree sidebar.
 - `Ctrl-B w` opens the tab manager; `Ctrl-B c` creates a tab with a shell;
   `Ctrl-B ?` shows help.
-- `yolo clients` lists attached clients; `yolo detach [CLIENT_ID]` disconnects
-  one from another shell.
+- `yolo client list` lists attached clients; `yolo client detach [CLIENT_ID]`
+  disconnects one from another shell.
 
 One holder controls terminal input at a time. A second pane or client that
 opens the same terminal is read-only. Explicit takeover fences the previous

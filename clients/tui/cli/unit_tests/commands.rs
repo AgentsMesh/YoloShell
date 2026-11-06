@@ -5,6 +5,7 @@ use crate::{
     command::{self, Command},
 };
 use clap::{CommandFactory, Parser};
+use std::ffi::OsString;
 use yolo_tui_app::StartupAction;
 
 #[test]
@@ -12,19 +13,22 @@ fn public_help_explains_tabs_and_detaching_without_workspaces() {
     let help = Arguments::command().render_long_help().to_string();
     for command in [
         ATTACH_COMMAND,
-        DETACH_COMMAND,
         NEW_COMMAND,
-        LIST_COMMAND,
-        CLIENTS_COMMAND,
         TERMINALS_COMMAND,
+        "terminal",
+        "client",
+        "layout",
+        "server",
+        MACHINE_COMMAND,
+        AGENT_COMMAND,
         DETACH_SHORTCUT,
     ] {
         assert!(help.contains(command), "missing {command}");
     }
     assert!(
-        !Arguments::command()
+        Arguments::command()
             .get_subcommands()
-            .any(|command| { command.get_name() == WORKSPACE_ENTRY })
+            .any(|command| command.get_name() == WORKSPACE_ENTRY)
     );
     assert!(!Arguments::command().get_subcommands().any(|command| {
         command.get_name() == RETIRED_TABS_COMMAND
@@ -73,18 +77,18 @@ fn commands_accept_connection_options_before_or_after_the_command() {
         );
         assert!(args.selection().is_ok());
     }
-    for name in [
-        ATTACH_COMMAND,
-        DETACH_COMMAND,
-        LIST_COMMAND,
-        CLIENTS_COMMAND,
-        NEW_COMMAND,
-        TERMINALS_COMMAND,
+    for path in [
+        vec![ATTACH_COMMAND],
+        vec![NEW_COMMAND],
+        vec![TERMINALS_COMMAND],
+        vec!["terminal", LIST_COMMAND],
+        vec!["client", LIST_COMMAND],
+        vec!["client", DETACH_COMMAND],
     ] {
-        assert!(
-            Arguments::try_parse_from([PROGRAM, name, HUB_ARGUMENT, HUB, SOCKET_ARGUMENT, SOCKET])
-                .is_ok()
-        );
+        let mut arguments = vec![PROGRAM];
+        arguments.extend(path);
+        arguments.extend([HUB_ARGUMENT, HUB, SOCKET_ARGUMENT, SOCKET]);
+        assert!(Arguments::try_parse_from(arguments).is_ok());
     }
 }
 
@@ -132,14 +136,14 @@ fn attach_is_not_automatic_and_new_preserves_explicit_directory_and_name() {
         CWD_ARGUMENT,
         "/tmp",
         NAME_ARGUMENT,
-        "agent",
+        "demo",
     ])
     .unwrap();
     assert_eq!(
         command::startup(args.command, true).unwrap(),
         StartupAction::NewShell {
             cwd: "/tmp".into(),
-            name: Some("agent".into())
+            name: Some("demo".into())
         }
     );
 }

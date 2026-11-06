@@ -2,7 +2,7 @@ use std::time::Duration;
 
 pub const DEFAULT_AUDIT_LIMIT: u16 = 128;
 pub const MAX_AUDIT_LIMIT: u16 = 256;
-pub const NO_LOCAL_HUB: &str = "No local Hub has been started; run `yolo start` first";
+pub const NO_LOCAL_HUB: &str = "No local Hub has been started; run `yolo server start` first";
 pub const AUDIT_MERGE_MAX_SOURCES: usize = 16;
 pub const AUDIT_MERGE_MAX_BYTES: u64 = 8 * 1024 * 1024;
 pub const AUDIT_AFTER_WITH_MERGE: &str = "audit --after cannot be combined with --merge";

@@ -78,12 +78,12 @@ inside it just as you would in any terminal:
 Ctrl-B c   new shell tab
 Ctrl-B v   split right
 Ctrl-B n   next tab
-Ctrl-B s   Agent runs / Hubs sidebar
+Ctrl-B s   machine tree sidebar
 Ctrl-B m   switch an agent pane between Terminal and Chat
 Ctrl-B d   detach; shells and agents keep running
 ```
 
-Reconnect with `yolo attach`, list terminals with `yolo list`, or open the
+Reconnect with `yolo attach`, list terminals with `yolo terminal list`, or open the
 terminal picker with `yolo terminals`.
 
 ## Install

@@ -1,5 +1,6 @@
 use crate::command::Command;
 use crate::constants::{LIFECYCLE_LOCAL_ONLY, MANAGEMENT_LOCAL_ONLY, MANAGEMENT_TIMEOUT};
+use crate::layouts::LayoutCommand;
 use crate::recipe::RecipeCommand;
 use std::path::{Path, PathBuf};
 use yolo_hub_client::HubEndpoint;
@@ -17,73 +18,23 @@ pub(crate) enum Selection {
 
 impl Selection {
     pub async fn run(self, command: Option<Command>) -> anyhow::Result<()> {
-        if let Some(
-            command @ (Command::Status(_)
-            | Command::Version(_)
-            | Command::Start(_)
-            | Command::Stop(_)
-            | Command::Restart(_)),
-        ) = &command
-        {
-            let profile = self.local_profile()?;
-            return match command {
-                Command::Status(options) => {
-                    yolo_tui_service::status_command(&profile, *options).await
-                }
-                Command::Version(options) => {
-                    yolo_tui_service::version_command(&profile, *options).await
-                }
-                Command::Start(options) => {
-                    yolo_tui_service::start_command(&profile, *options).await
-                }
-                Command::Stop(options) => yolo_tui_service::stop_command(&profile, *options).await,
-                Command::Restart(options) => {
-                    yolo_tui_service::restart_command(&profile, *options).await
-                }
-                _ => unreachable!(),
-            };
-        }
-        if let Some(Command::Machine { command }) = &command {
-            let (socket, entry) = self.local_hub_endpoint().await?;
-            let deadline = tokio::time::Instant::now() + MANAGEMENT_TIMEOUT;
-            return yolo_tui_hub_cli::run(&socket, entry, command, deadline).await;
-        }
-        if let Some(Command::Audit {
-            after,
-            limit,
-            merge,
-            trust,
-            identity,
-            pull,
-            output,
-            json,
-        }) = &command
-        {
-            return crate::audit::run(
-                &self,
-                *after,
-                *limit,
-                *json,
-                merge,
-                trust,
-                *identity,
-                *pull,
-                output.clone(),
-            )
-            .await;
-        }
-        if let Some(Command::Recipe {
-            command: RecipeCommand::Show(args),
-        }) = &command
-        {
-            return crate::recipe::show(args);
-        }
-        if matches!(
-            command,
-            Some(Command::Detach { .. } | Command::Clients { .. })
-        ) {
-            return crate::detach::run(self, command.expect("matched command")).await;
-        }
+        let command = match command {
+            Some(Command::Server { command }) => {
+                let profile = self.local_profile()?;
+                return command.run(&profile).await;
+            }
+            Some(Command::Machine { command }) => {
+                let (socket, entry) = self.local_hub_endpoint().await?;
+                let deadline = tokio::time::Instant::now() + MANAGEMENT_TIMEOUT;
+                return yolo_tui_hub_cli::run(&socket, entry, &command, deadline).await;
+            }
+            Some(Command::Audit(args)) => return crate::audit::run(&self, args).await,
+            Some(Command::Recipe {
+                command: RecipeCommand::Show(args),
+            }) => return crate::recipe::show(&args),
+            Some(Command::Client { command }) => return crate::detach::run(self, command).await,
+            other => other,
+        };
         match self {
             Self::Explicit(options) => run(options, std::future::pending(), command).await,
             Self::Local { profile, layout } => {
@@ -151,21 +102,14 @@ async fn run(
     command: Option<Command>,
 ) -> anyhow::Result<()> {
     match command {
-        Some(Command::List { json, all }) => crate::listing::run(&options, json, all).await,
-        Some(Command::Layouts { json }) => crate::layouts::run(&options, json).await,
-        Some(Command::Platform { command }) => crate::platform::run(&options, command).await,
-        Some(Command::Screen { terminal, json }) => {
-            crate::screen::run(&options, terminal, json).await
-        }
+        Some(Command::Terminal { command }) => command.run(&options).await,
+        Some(Command::Layout {
+            command: LayoutCommand::List { json },
+        }) => crate::layouts::run(&options, json).await,
+        Some(Command::Platform { command }) => yolo_tui_cli_platform::run(&options, command).await,
         Some(Command::Recipe {
             command: RecipeCommand::Start(args),
         }) => crate::recipe::start(&options, &args).await,
-        Some(Command::Recipe {
-            command: RecipeCommand::Show(_),
-        }) => unreachable!("recipe show is dispatched before connection setup"),
-        Some(command @ (Command::Archive { .. } | Command::Terminate { .. })) => {
-            crate::lifecycle::run(&options, command).await
-        }
         command => {
             let action =
                 crate::command::startup(command, options.endpoint.local_socket().is_none())?;

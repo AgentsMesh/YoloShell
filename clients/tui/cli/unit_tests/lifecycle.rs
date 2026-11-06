@@ -1,6 +1,7 @@
 use super::constants::*;
 use crate::arguments::Arguments;
 use crate::lifecycle::{select, settled};
+use crate::terminal::TerminalCommand;
 use clap::Parser;
 use yolo_hub_identity::{HubId, RuntimeEpoch, RuntimeTarget, TerminalAddress, TerminalId};
 use yolo_hub_terminal_protocol::{
@@ -45,25 +46,38 @@ fn with_status(status: RuntimeStatus) -> TerminalSummary {
 
 #[test]
 fn archive_and_terminate_parse_with_their_flags() {
-    let arguments = Arguments::try_parse_from([PROGRAM, ARCHIVE_COMMAND, NAME]).unwrap();
-    assert!(matches!(
-        arguments.command,
-        Some(crate::command::Command::Archive {
-            terminal,
-            json: false
-        }) if terminal == NAME
-    ));
     let arguments =
-        Arguments::try_parse_from([PROGRAM, TERMINATE_COMMAND, NAME, FORCE_ARGUMENT]).unwrap();
+        Arguments::try_parse_from([PROGRAM, "terminal", ARCHIVE_COMMAND, NAME]).unwrap();
     assert!(matches!(
         arguments.command,
-        Some(crate::command::Command::Terminate {
-            terminal,
-            force: true,
-            json: false
+        Some(crate::command::Command::Terminal {
+            command: TerminalCommand::Archive {
+                terminal,
+                json: false
+            }
         }) if terminal == NAME
     ));
-    assert!(Arguments::try_parse_from([PROGRAM, ARCHIVE_COMMAND]).is_err());
+    let arguments = Arguments::try_parse_from([
+        PROGRAM,
+        "terminal",
+        TERMINATE_COMMAND,
+        NAME,
+        FORCE_ARGUMENT,
+    ])
+    .unwrap();
+    assert!(matches!(
+        arguments.command,
+        Some(crate::command::Command::Terminal {
+            command: TerminalCommand::Terminate {
+                terminal,
+                force: true,
+                json: false
+            }
+        }) if terminal == NAME
+    ));
+    assert!(
+        Arguments::try_parse_from([PROGRAM, "terminal", ARCHIVE_COMMAND]).is_err()
+    );
 }
 
 #[test]

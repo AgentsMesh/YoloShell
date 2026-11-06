@@ -55,7 +55,7 @@ the SSH account boundary.
 The remote machine normally runs its Hub already. If it is stopped, the
 discovery command starts it as the SSH account; on Linux that requires the same
 delegated cgroup custody as any local start, so the SSH session must be able to
-launch the Host. Starting the remote machine with `yolo start` first avoids
+launch the Host. Starting the remote machine with `yolo server start` first avoids
 that requirement.
 
 Useful companions:

@@ -3,7 +3,6 @@ use yolo_launch_contract::{Invocation, ProcessRole};
 pub fn run(invocation: Invocation) -> anyhow::Result<()> {
     let Invocation { role, arguments } = invocation;
     match role {
-        None if yolo_command_cli::selects(&arguments) => yolo_command_cli::run_from(arguments),
         None => {
             let host = yolo_builtin_client_host::BuiltinClientHost::builtin(vec![
                 yolo_tui_descriptor::tui_descriptor(),

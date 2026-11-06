@@ -20,7 +20,7 @@ zoom, pending input and writer leases are client state. Updating or closing a vi
 does not terminate a Terminal. Shared documents do not restore control authority.
 
 The TUI stores its chosen LayoutAddress and last acknowledged shared projection
-alongside private presentation state. `yolo layouts [--json]` lists layout
+alongside private presentation state. `yolo layout list [--json]` lists layout
 summaries; `yolo --layout <UUID>` selects an existing document at the entry Hub.
 Default client instances retain independent document identities. Explicitly
 selecting a missing layout fails instead of creating a substitute.

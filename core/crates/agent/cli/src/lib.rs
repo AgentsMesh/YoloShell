@@ -20,7 +20,7 @@ mod wait;
 mod wait_command;
 mod wait_pages;
 
-pub use arguments::{AgentCommand, Options};
+pub use arguments::{AgentCommand, ListArgs, Options, OutputArgs};
 
 pub use constants::COMMAND;
 

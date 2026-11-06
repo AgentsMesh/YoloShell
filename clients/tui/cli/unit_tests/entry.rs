@@ -19,10 +19,11 @@ fn help_and_version_return_clap_outcomes_to_the_dispatcher() {
 
 #[test]
 fn incomplete_connection_returns_usage_error_before_starting_a_runtime() {
-    let error = crate::run_from([PROGRAM, HUB_ARGUMENT, HUB].map(OsString::from))
-        .unwrap_err()
-        .downcast::<clap::Error>()
-        .unwrap();
-    assert_eq!(error.kind(), ErrorKind::MissingRequiredArgument);
-    assert!(error.use_stderr());
+    let error = crate::run_from([PROGRAM, HUB_ARGUMENT, HUB].map(OsString::from)).unwrap_err();
+    assert!(
+        error
+            .to_string()
+            .contains(yolo_command_cli::CONNECTION_REQUIRES_HUB),
+        "{error}"
+    );
 }

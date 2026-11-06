@@ -6,6 +6,7 @@ package(default_visibility = ["//visibility:public"])
 
 _DEPS = [
     "//core/crates/agent/catalog:yolo_agent_catalog",
+    "//core/crates/application/command:yolo_command_cli",
     "//core/crates/application/launch/contract:yolo_launch_contract",
     "//core/crates/application/local/profile:yolo_local_profile",
     "//clients/tui/audit:yolo_tui_audit",
@@ -17,10 +18,10 @@ _DEPS = [
     "//core/crates/hub/client:yolo_hub_client",
     "//core/crates/hub/identity:yolo_hub_identity",
     "//core/crates/hub/rpc/protocol:yolo_hub_rpc_protocol",
-    "//core/crates/hub/events/protocol:yolo_hub_events_protocol",
     "//core/crates/hub/terminal/protocol:yolo_hub_terminal_protocol",
     "//core/crates/hub/workspace/protocol:yolo_hub_workspace_protocol",
     "//clients/tui/app:yolo_tui_app",
+    "//clients/tui/cli/platform:yolo_tui_cli_platform",
     "//clients/tui/hub/cli:yolo_tui_hub_cli",
     "//clients/tui/service:yolo_tui_service",
     "//clients/tui/local/startup:yolo_tui_local_startup",

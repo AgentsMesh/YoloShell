@@ -101,9 +101,9 @@ The TUI owner can also be detached from another shell without touching the
 Terminal or process tree:
 
 ```text
-yolo clients
-yolo detach
-yolo detach <CLIENT_ID>
+yolo client list
+yolo client detach
+yolo client detach <CLIENT_ID>
 ```
 
 The command authenticates through a private, same-user Unix socket and a

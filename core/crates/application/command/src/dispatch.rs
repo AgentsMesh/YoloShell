@@ -1,6 +1,6 @@
 use crate::connection::ConnectionOptions;
 use crate::constants::*;
-use crate::tree::{Command, UpdateArgs};
+use crate::tree::Command;
 use anyhow::{Result, ensure};
 
 pub(crate) fn run(connection: ConnectionOptions, command: Command) -> Result<()> {
