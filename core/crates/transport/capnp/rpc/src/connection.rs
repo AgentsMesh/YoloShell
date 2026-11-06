@@ -124,6 +124,9 @@ impl Connection {
     pub fn close(&self) {
         self.0.stop.send_replace(true);
     }
+    pub fn is_closed(&self) -> bool {
+        *self.0.stop.borrow()
+    }
 }
 
 impl RemoteReply {

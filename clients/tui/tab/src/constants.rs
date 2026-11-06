@@ -1,8 +1,10 @@
 pub const TAB_FILE: &str = "tabs.json";
-pub const TAB_SCHEMA_VERSION: u16 = 5;
+pub const TAB_SCHEMA_VERSION: u16 = 6;
+pub(crate) const SCHEMA_VERSION_FIELD: &str = "schema_version";
 pub const MAX_TABS: usize = yolo_presentation_protocol::MAX_TABS;
 pub const MAX_TAB_NAME_BYTES: usize = yolo_presentation_protocol::MAX_TITLE_BYTES;
 pub const DEFAULT_TAB_NAME: &str = "Tab 1";
+pub const TAB_NAME_PREFIX: &str = "Tab";
 pub(crate) const COUNT_ERROR: &str = "saved terminal layout count is outside supported bounds";
 pub(crate) const ID_ERROR: &str = "saved terminal layout identities must be nonempty and unique";
 pub(crate) const ACTIVE_ERROR: &str = "selected terminal layout does not exist";
@@ -10,6 +12,8 @@ pub(crate) const NAME_ERROR: &str =
     "saved tab title is empty, untrimmed, contains controls or exceeds its byte limit";
 pub(crate) const NAME_CONFLICT: &str = "saved terminal layout name is already in use";
 pub(crate) const LAST_TAB: &str = "cannot remove the last terminal layout";
+pub(crate) const SHARED_TABS_EMPTY: &str =
+    "the entry machine has no terminal layout to publish";
 pub const FIRST_TAB_REVISION: u64 = 1;
 pub(crate) const LOCK_FILE: &str = "tabs.lock";
 pub(crate) const LOCK_BYTES: u64 = 4096;

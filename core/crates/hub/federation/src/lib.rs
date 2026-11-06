@@ -13,13 +13,13 @@ mod observation_cache;
 mod observation_mailbox;
 mod observation_worker;
 mod origin_stream;
-mod peer_diagnostics;
 mod read_reply_admission;
 mod registry;
 mod relay;
 mod remote_source;
 mod retirement;
 mod run;
+mod status;
 mod streams;
 
 pub use constants::{CONNECT_TIMEOUT, OPERATION_TIMEOUT, POLL_INTERVAL, STOP_TIMEOUT};

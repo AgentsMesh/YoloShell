@@ -1,26 +1,46 @@
 mod address;
 mod constants;
 mod file_roots;
-pub use address::{DialTransport, PeerAddress, SshProfileRef};
+mod migration;
+pub use address::{PeerAddress, SshProfileRef, validate_socket, validate_ssh_target};
 use anyhow::{Result, ensure};
 pub use constants::*;
 use serde::{Deserialize, Serialize};
-use std::{
-    collections::{BTreeMap, BTreeSet},
-    net::SocketAddr,
-    num::NonZeroUsize,
-};
+use std::{collections::{BTreeMap, BTreeSet}, num::NonZeroUsize};
 use yolo_hub_delegation::{MAX_DELEGATION_DEPTH, PeerIdentity};
 use yolo_hub_identity::HubId;
 use yolo_hub_routing::{Right, Rights, RoutingLimits};
 
 #[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(
+    try_from = "migration::ConfigurationWire",
+    into = "migration::ConfigurationOut"
+)]
 pub struct Configuration {
-    pub listen: Option<SocketAddr>,
     pub peers: Vec<Peer>,
     pub trusted_origins: Vec<PeerIdentity>,
     pub file_roots: Vec<yolo_hub_file_protocol::FileRootConfiguration>,
+    /// How peers that arrive through the local SSH-trusted peer socket are
+    /// admitted and what the local origin shares with them.
+    pub ssh_peers: SshPeerPolicy,
+}
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SshPeerPolicy {
+    /// Require an explicit peer pin before accepting an inbound link.
+    pub require_registration: bool,
+    /// Share this Hub's own origin with SSH-authenticated peers.
+    pub share_local: bool,
+    pub rights: Rights,
+}
+impl Default for SshPeerPolicy {
+    fn default() -> Self {
+        Self {
+            require_registration: false,
+            share_local: true,
+            rights: Rights::all(),
+        }
+    }
 }
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -41,6 +61,10 @@ pub struct ExportPolicy {
 impl Configuration {
     pub fn validate(&self, local: PeerIdentity) -> Result<()> {
         file_roots::validate(&self.file_roots)?;
+        ensure!(
+            !self.ssh_peers.share_local || !self.ssh_peers.rights.is_empty(),
+            INVALID
+        );
         ensure!(
             self.peers.len() <= MAX_PEERS && self.trusted_origins.len() <= MAX_ORIGINS,
             INVALID
@@ -68,6 +92,7 @@ impl Configuration {
             if let Some(address) = &peer.dial {
                 address.validate()?;
             }
+            ensure!(!peer.consume || peer.dial.is_some(), INVALID);
             ensure!(peer.exports.len() <= MAX_ORIGINS, INVALID);
             let mut origins = BTreeSet::new();
             for export in &peer.exports {
@@ -105,6 +130,15 @@ impl Configuration {
             .exports
             .iter()
             .find(|policy| policy.origin == origin)
+    }
+    /// The default policy for SSH-authenticated peers. Explicit per-peer
+    /// exports still take precedence; this only covers the local origin.
+    pub fn shared_export(&self, origin: HubId, local: HubId) -> Option<ExportPolicy> {
+        (self.ssh_peers.share_local && origin == local).then(|| ExportPolicy {
+            origin,
+            rights: self.ssh_peers.rights.clone(),
+            remaining_reexports: 0,
+        })
     }
 }
 pub fn routing_limits() -> RoutingLimits {

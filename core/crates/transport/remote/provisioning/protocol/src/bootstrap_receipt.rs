@@ -1,6 +1,8 @@
 use crate::{BootstrapError, RemoteBootstrapRequest, bootstrap_constants::*, bootstrap_validation as validation};
+
+const MAX_SOCKET_PATH_BYTES: usize = 100;
 use serde::{Deserialize, Serialize};
-use std::net::SocketAddr;
+use std::path::{Component, PathBuf};
 use uuid::Uuid;
 use yolo_hub_build_protocol::ServiceBuild;
 use yolo_hub_delegation::PeerIdentity;
@@ -19,13 +21,27 @@ pub struct RemoteBootstrapReceiptFields {
     pub schema_version: u16,
     pub request_id: Uuid,
     pub peer: PeerIdentity,
-    pub endpoint: SocketAddr,
+    pub peer_socket: PathBuf,
     pub configuration_revision: u64,
     pub bundle_id: String,
     pub build: ServiceBuild,
     pub consumer: PeerIdentity,
     pub rights: Rights,
     pub remaining_reexports: u8,
+}
+
+fn valid_socket(path: &std::path::Path) -> bool {
+    let encoded = path.as_os_str().as_encoded_bytes();
+    path.is_absolute()
+        && path.to_str().is_some_and(|raw| {
+            !raw.split('/').any(|part| part == "." || part == "..")
+        })
+        && !encoded.is_empty()
+        && encoded.len() <= MAX_SOCKET_PATH_BYTES
+        && !encoded.iter().any(|byte| byte.is_ascii_control())
+        && path
+            .components()
+            .all(|component| matches!(component, Component::RootDir | Component::Normal(_)))
 }
 
 impl RemoteBootstrapReceipt {
@@ -38,10 +54,7 @@ impl RemoteBootstrapReceipt {
         }
         validation::distinct(fields.peer, fields.consumer)?;
         validation::authorization(&fields.rights, fields.remaining_reexports)?;
-        if !fields.endpoint.ip().is_loopback()
-            || fields.endpoint.port() == 0
-            || matches!(fields.endpoint, SocketAddr::V6(address) if address.scope_id() != 0 || address.flowinfo() != 0)
-        {
+        if !valid_socket(&fields.peer_socket) {
             return Err(BootstrapError::Endpoint);
         }
         if fields.configuration_revision < FIRST_CONFIGURATION_REVISION {

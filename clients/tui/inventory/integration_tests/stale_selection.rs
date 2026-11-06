@@ -15,7 +15,7 @@ fn lost_entry_keeps_observation_data_but_cannot_open_its_cached_agent() {
     inventory.current = false;
     assert!(inventory.terminal_for_selected(&terminals).is_none());
     let mut terminal = Terminal::new(TestBackend::new(WIDTH, HEIGHT)).unwrap();
-    for view in [View::Terminals, View::Agents, View::Hubs] {
+    for view in [View::Terminals, View::Tree] {
         inventory.view = view;
         terminal
             .draw(|frame| render(frame, &inventory, &terminals, None, "", frame.area()))
@@ -29,7 +29,7 @@ fn lost_entry_keeps_observation_data_but_cannot_open_its_cached_agent() {
             .collect::<String>();
         assert!(content.contains("Stale"));
         match view {
-            View::Agents => {
+            View::Tree => {
                 // The compact row marks stale evidence without repeating healthy
                 // metadata; details retain the full observation.
                 assert!(content.contains(HEALTH_WARNING_GLYPH));
@@ -37,12 +37,12 @@ fn lost_entry_keeps_observation_data_but_cannot_open_its_cached_agent() {
                 assert!(!content.contains("Working"));
                 assert!(!content.contains(AGENT_WORKING_DIRECTORY));
             }
-            View::Hubs => assert!(content.contains(HUB_UNKNOWN_GLYPH)),
+            View::Tree => assert!(content.contains(HUB_UNKNOWN_GLYPH)),
             View::Terminals => {}
         }
         assert!(!content.contains("Unreachable"));
     }
-    inventory.view = View::Agents;
+    inventory.view = View::Tree;
     inventory.details = Some(fixture.agent.cursor().target());
     terminal
         .draw(|frame| {
@@ -71,8 +71,8 @@ fn lost_entry_keeps_observation_data_but_cannot_open_its_cached_agent() {
         assert!(details.contains(expected), "missing {expected}: {details}");
     }
     assert_eq!(inventory.agents, before);
-    assert!(inventory.hubs[&fixture.hub.hub_id].reachable);
-    assert_eq!(inventory.visible_hubs("unknown"), vec![fixture.hub.hub_id]);
+    assert!(inventory.machines[&fixture.hub.hub_id].reachable);
+    assert_eq!(inventory.visible_machines("unknown"), vec![fixture.hub.hub_id]);
 }
 
 #[test]
@@ -95,7 +95,7 @@ fn refreshed_catalogue_cannot_retarget_agent_selection_to_a_reused_terminal() {
 }
 
 #[test]
-fn scope_only_limits_resources_and_does_not_hide_other_hub_choices() {
+fn scope_no_longer_hides_other_hub_resources() {
     let first = Fixture::new();
     let second = Fixture::new();
     let mut terminals = first.terminals();
@@ -106,11 +106,11 @@ fn scope_only_limits_resources_and_does_not_hide_other_hub_choices() {
         Some(vec![first.hub.clone(), second.hub.clone()]),
     );
     inventory.scope = Some(first.hub.hub_id);
-    inventory.view = View::Hubs;
+    inventory.view = View::Tree;
     inventory.reconcile("", &terminals);
-    assert_eq!(inventory.visible_hubs("").len(), 2);
-    assert_eq!(inventory.visible_agents("", &terminals).len(), 1);
-    assert_eq!(inventory.visible_terminals("", &terminals).len(), 1);
+    assert_eq!(inventory.visible_machines("").len(), 2);
+    assert_eq!(inventory.visible_agents("", &terminals).len(), 2);
+    assert_eq!(inventory.visible_terminals("", &terminals).len(), 2);
     let mut terminal = Terminal::new(TestBackend::new(WIDTH, HEIGHT)).unwrap();
     terminal
         .draw(|frame| render(frame, &inventory, &terminals, None, "", frame.area()))

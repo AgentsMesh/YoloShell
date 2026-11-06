@@ -55,6 +55,8 @@ async fn create_running_session(
         cwd: sshd.remote_home().to_path_buf(),
         cols: Some(yolo_runtime::model::DEFAULT_COLS),
         rows: Some(yolo_runtime::model::DEFAULT_ROWS),
+        initial_input: None,
+        context: None,
     };
     let created = create_idempotently(control, &creation).await;
     let _: () = request(

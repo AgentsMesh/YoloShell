@@ -2,6 +2,8 @@ use crate::{arguments::Arguments, selection::Selection};
 mod clients;
 mod commands;
 mod entry;
+mod machine;
+mod machine_commands;
 mod layouts;
 mod lifecycle;
 use clap::{Parser, error::ErrorKind};
@@ -15,6 +17,7 @@ mod recipe_edges;
 mod remote_arguments;
 mod remote_credentials;
 mod remote_files;
+mod service;
 #[path = "../test_support/remote_fixture.rs"]
 mod remote_fixture;
 

@@ -1,8 +1,9 @@
 use super::constants::*;
 use std::sync::{
     Arc,
-    atomic::{AtomicBool, AtomicU64, Ordering},
+    atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering},
 };
+use tokio::sync::{Notify, Semaphore};
 use yolo_hub_delegation::{
     DelegationChain, FIRST_POLICY_EPOCH, GrantClaims, PeerIdentity, SignedGrant,
 };
@@ -17,6 +18,9 @@ use yolo_hub_state::HubState;
 pub struct DirectoryPeer {
     pub export: ExportedOrigin,
     pub invalid: AtomicBool,
+    pub gate: Arc<Semaphore>,
+    active: AtomicUsize,
+    admitted: Notify,
     state: Arc<HubState>,
     revision: AtomicU64,
 }
@@ -64,8 +68,25 @@ impl DirectoryPeer {
                 reachable: true,
             },
             invalid: AtomicBool::new(false),
+            gate: Arc::new(Semaphore::new(yolo_capnp_rpc::MAX_IN_FLIGHT)),
+            active: AtomicUsize::new(0),
+            admitted: Notify::new(),
             state,
             revision: AtomicU64::new(FIRST_REVISION + REVISION_STEP),
+        }
+    }
+}
+
+impl DirectoryPeer {
+    /// Waits until `count` handlers are blocked on the gate. Each one holds a
+    /// client-side in-flight slot, so capacity pressure is deterministic.
+    pub async fn wait_admitted(&self, count: usize) {
+        loop {
+            let admitted = self.admitted.notified();
+            if self.active.load(Ordering::Acquire) >= count {
+                return;
+            }
+            admitted.await;
         }
     }
 }
@@ -76,6 +97,9 @@ impl Handler for DirectoryPeer {
             let PeerRequest::Discover { request_id, .. } = request else {
                 return Err(RpcError::Invalid);
             };
+            self.active.fetch_add(1, Ordering::AcqRel);
+            self.admitted.notify_waiters();
+            let _permit = self.gate.acquire().await.map_err(|_| RpcError::Closed)?;
             let revision = self.revision.fetch_add(REVISION_STEP, Ordering::AcqRel);
             let mut export = self.export.clone();
             let mut catalogue = export.catalogue.payload;

@@ -32,19 +32,14 @@ impl Manager {
                     Action::Page(Page::Peers),
                     format!("{CONNECTIONS} ({})", draft.peers.len()),
                 ));
+                let consumers = self.consumers.as_ref().map_or_else(
+                    || CONSUMERS.into(),
+                    |list| format!("{CONSUMERS} ({})", list.len()),
+                );
+                items.push(Item::new(Action::Page(Page::Consumers), consumers));
                 items.push(Item::new(
                     Action::Page(Page::Origins),
                     format!("{ORIGINS} ({})", draft.trusted_origins.len()),
-                ));
-                items.push(Item::new(
-                    Action::Listener,
-                    format!(
-                        "{LISTENER}: {}",
-                        draft
-                            .listen
-                            .map(|address| address.to_string())
-                            .unwrap_or_default()
-                    ),
                 ));
                 items.push(Item {
                     action: Action::Page(Page::FileRoots),
@@ -70,11 +65,14 @@ impl Manager {
             }
             Page::Peers => {
                 for peer in &draft.peers {
-                    let dial = peer
-                        .dial
-                        .as_ref()
-                        .map(|dial| format!("{}:{}", dial.host, dial.port))
-                        .unwrap_or_else(|| INBOUND.into());
+                    let dial = peer.dial.as_ref().map_or_else(
+                        || INBOUND.into(),
+                        |dial| format!(
+                            "{}:{}",
+                            dial.ssh_target().or_else(|| dial.profile_id()).unwrap_or_default(),
+                            dial.socket().display()
+                        ),
+                    );
                     items.push(Item::new(
                         Action::Page(Page::Peer(peer.identity.hub())),
                         format!(
@@ -85,6 +83,32 @@ impl Manager {
                     ));
                 }
                 items.push(Item::new(Action::AddPeer, ADD_PEER));
+                items.push(Item::new(Action::Page(Page::Root), BACK));
+            }
+            Page::Consumers => {
+                match &self.consumers {
+                    Some(consumers) if consumers.is_empty() => items.push(Item {
+                        action: Action::None,
+                        label: CONSUMERS_EMPTY.into(),
+                        enabled: false,
+                    }),
+                    Some(consumers) => {
+                        for consumer in consumers {
+                            items.push(Item {
+                                action: Action::None,
+                                label: format!(
+                                    "{}  {} {LINKS}  {CONNECTED} {}",
+                                    consumer.hub,
+                                    consumer.links,
+                                    age(consumer.connected_since_ms)
+                                ),
+                                enabled: false,
+                            });
+                        }
+                    }
+                    None => {}
+                }
+                items.push(Item::new(Action::RefreshConsumers, REFRESH_CONSUMERS));
                 items.push(Item::new(Action::Page(Page::Root), BACK));
             }
             Page::Peer(hub) => {
@@ -134,5 +158,18 @@ impl Manager {
             }
         }
         items
+    }
+}
+
+fn age(since_ms: u64) -> String {
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|elapsed| elapsed.as_millis() as u64)
+        .unwrap_or(since_ms);
+    let seconds = now.saturating_sub(since_ms) / 1_000;
+    match seconds {
+        0..=59 => format!("{seconds}s"),
+        60..=3_599 => format!("{}m", seconds / 60),
+        _ => format!("{}h", seconds / 3_600),
     }
 }

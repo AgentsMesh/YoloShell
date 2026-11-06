@@ -1,4 +1,5 @@
-use crate::{bootstrap, options::Options, remote, serve};
+use crate::{bootstrap, constants::PEER_SOCKET_MISSING, options::Options, peer_stdio, remote, serve};
+use anyhow::Context;
 use clap::Parser;
 use std::ffi::OsString;
 
@@ -17,6 +18,9 @@ pub fn run_from(argv: impl IntoIterator<Item = OsString>) -> anyhow::Result<()> 
 }
 
 async fn run(options: Options) -> anyhow::Result<()> {
+    if options.peer_stdio {
+        return peer_stdio::run(options.peer_socket.context(PEER_SOCKET_MISSING)?).await;
+    }
     if options.install_bundle
         || options.inspect_install
         || options.remote_bootstrap

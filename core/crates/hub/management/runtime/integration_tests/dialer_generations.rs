@@ -4,10 +4,14 @@ mod constants;
 mod support;
 use crate::*;
 use constants::*;
-use std::{num::NonZeroU16, sync::atomic::Ordering};
+use std::sync::atomic::Ordering;
 use support::{Event, PendingDialer};
 use tokio::time::{Instant, timeout};
 use yolo_hub_federation_settings::{Peer, PeerAddress};
+
+fn peer_address(profile: &str, socket: &str) -> PeerAddress {
+    PeerAddress::ssh(profile, socket.into()).unwrap()
+}
 
 #[tokio::test]
 async fn configuration_generation_changes_reuse_the_injected_factory_and_cancel_old_dials() {
@@ -21,12 +25,12 @@ async fn configuration_generation_changes_reuse_the_injected_factory_and_cancel_
     )
     .unwrap();
     let identity = remote.peer_identity();
-    let first_address = PeerAddress::tcp(DIALER_HOST, NonZeroU16::new(DIALER_PORT).unwrap());
+    let first_address = peer_address(FIRST_PROFILE, FIRST_SOCKET);
     let mut config = Configuration::default();
     config.peers.push(Peer {
         identity,
         dial: Some(first_address.clone()),
-        consume: false,
+        consume: true,
         exports: vec![],
     });
     let backend = LocalBackend::new(state.hub_id(), &home, &root.join(ABSENT_SOCKET)).unwrap();
@@ -55,7 +59,7 @@ async fn configuration_generation_changes_reuse_the_injected_factory_and_cancel_
     assert!(deadline <= Instant::now() + yolo_hub_federation::CONNECT_TIMEOUT);
     let previous = service.snapshot().unwrap();
     let mut change = super::fixture::change(&previous);
-    let next_address = PeerAddress::tcp(REPLACEMENT_HOST, NonZeroU16::new(DIALER_PORT).unwrap());
+    let next_address = peer_address(SECOND_PROFILE, SECOND_SOCKET);
     change.configuration.peers[0].dial = Some(next_address.clone());
     let applied = timeout(DIALER_TEST_TIMEOUT, service.change(change))
         .await

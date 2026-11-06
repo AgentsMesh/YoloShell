@@ -60,7 +60,7 @@ pub(crate) fn start(state: &mut State, jobs: &mpsc::Sender<Job>) {
 
 fn eligible(state: &State) -> Result<(AgentSnapshot, LeaseGrant, Uuid), &'static str> {
     if state.mode != Mode::Inventory
-        || state.inventory.view != View::Agents
+        || state.inventory.view != View::Tree
         || state.inventory.details.is_some()
     {
         return Err(SELECT_AGENT);
@@ -93,7 +93,7 @@ fn eligible(state: &State) -> Result<(AgentSnapshot, LeaseGrant, Uuid), &'static
 }
 
 pub(crate) fn status(state: &State) -> String {
-    if state.mode != Mode::Inventory || state.inventory.view != View::Agents {
+    if state.mode != Mode::Inventory || state.inventory.view != View::Tree {
         return state.status.clone();
     }
     if let Some(entry) = state

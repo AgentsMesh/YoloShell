@@ -15,7 +15,7 @@ fn semantic_control_export_is_explicit_and_old_terminal_exports_do_not_expand() 
             peers: vec![Peer {
                 identity: remote.identity,
                 dial: None,
-                consume: true,
+                consume: false,
                 exports: vec![ExportPolicy {
                     origin: local.identity.hub(),
                     rights,
@@ -62,7 +62,7 @@ fn semantic_only_export_does_not_implicitly_allow_terminal_writes() {
         peers: vec![Peer {
             identity: remote.identity,
             dial: None,
-            consume: true,
+            consume: false,
             exports: vec![ExportPolicy {
                 origin: local.identity.hub(),
                 rights: [Right::Observe, Right::AgentControl].into_iter().collect(),

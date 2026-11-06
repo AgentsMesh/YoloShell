@@ -78,7 +78,7 @@ fn concurrent_remote_change_loads_authoritative_revision_without_terminating_she
         .split(Axis::Horizontal, None)
         .unwrap();
     response(&mut state, read, other.clone());
-    assert_eq!(state.tab_snapshot().shared_tabs().unwrap(), other.tabs);
+    assert_eq!(state.tab_snapshot().shared_tabs(state.entry_hub).unwrap(), other.tabs);
     assert!(state.status.contains("Terminals remain running"));
     pump(&mut state, &jobs);
     assert!(incoming.try_recv().is_err());

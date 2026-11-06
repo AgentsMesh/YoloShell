@@ -27,7 +27,7 @@ async fn client_eof_during_open_cleans_the_late_channel_without_retiring_the_ssh
     timeout_at(deadline(), fixture.ssh.wait_accepted_channel())
         .await
         .unwrap();
-    let (mut remote, _) = timeout_at(deadline(), fixture.target.accept())
+    let (mut remote, _) = timeout_at(deadline(), fixture.target.listener.accept())
         .await
         .unwrap()
         .unwrap();
@@ -70,7 +70,7 @@ async fn local_abort_after_upgrade_does_not_interrupt_sibling_command() {
         .open_hub_peer(request, deadline())
         .await
         .unwrap();
-    let (mut remote, _) = fixture.target.accept().await.unwrap();
+    let (mut remote, _) = fixture.target.listener.accept().await.unwrap();
     // Inner authentication failure has the same close ownership as this immediate drop.
     drop(tunnel);
     assert!(
@@ -96,7 +96,7 @@ async fn absolute_deadline_expiry_before_open_does_not_create_a_channel() {
         Err(BrokerClientError::Deadline)
     ));
     assert!(
-        tokio::time::timeout(POLL, fixture.target.accept())
+        tokio::time::timeout(POLL, fixture.target.listener.accept())
             .await
             .is_err()
     );

@@ -10,4 +10,4 @@ pub(crate) const ACTIVATION_RETRY_INTERVAL: std::time::Duration = std::time::Dur
 pub(crate) const CONFIGURATION_VERIFY_INTERVAL: std::time::Duration =
     std::time::Duration::from_secs(1);
 pub(crate) const CONFIGURATION_LOST: &str = "Hub configuration custody was lost";
-pub(crate) const LISTENER_MISSING: &str = "Hub listener differs from its durable binding";
+pub(crate) const NO_DIALER: &str = "this Hub has no SSH peer dialer";

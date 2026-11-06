@@ -56,10 +56,7 @@ pub enum Update {
     },
     Management {
         operation: yolo_tui_hub_manager::Operation,
-        result: Result<
-            yolo_hub_management_protocol::ConfigurationSnapshot,
-            yolo_hub_management_client::ManagementError,
-        >,
+        result: Result<Reply, yolo_hub_management_client::ManagementError>,
     },
     ManagementNotSent {
         token: uuid::Uuid,

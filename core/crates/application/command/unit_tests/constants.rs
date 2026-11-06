@@ -1,0 +1,13 @@
+pub const PROGRAM: &str = "yolo";
+pub const AGENT: &str = "agent";
+pub const LIST: &str = "list";
+pub const PLUGIN: &str = "plugin";
+pub const LOCAL_PROFILE: &str = "--local-profile";
+pub const ENDPOINT: &str = "--endpoint";
+pub const HUB: &str = "--hub";
+pub const PROFILE: &str = "/tmp/yolo-profile.json";
+pub const HUB_ID: &str = "11111111-1111-4111-8111-111111111111";
+pub const SOCKET: &str = "--socket";
+pub const SOCKET_PATH: &str = "/tmp/yolo.sock";
+pub const NO_CONNECTION: &str = "does not use Hub connection options";
+pub const LOCAL_ONLY: &str = "supports only --socket, --hub and --local-profile";

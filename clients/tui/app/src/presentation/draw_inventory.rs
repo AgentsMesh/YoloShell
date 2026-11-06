@@ -16,6 +16,7 @@ fn inventory(
         &state.filter,
         &control_status,
         animation_phase(),
+        Some(state.tabs.machine()),
         area,
     )
 }

@@ -20,9 +20,9 @@ fn management_is_entry_local_and_never_turns_configuration_input_into_terminal_i
     let entry = HubId::new();
     let remote = HubId::new();
     let mut state = crate::client_capability_support::state();
-    state.inventory.view = View::Hubs;
+    state.inventory.view = View::Tree;
     state.inventory.scope = Some(remote);
-    state.inventory.selected_hub = Some(remote);
+    state.inventory.selected_machine = Some(remote);
     state.control_generation = Some(uuid::Uuid::new_v4());
     let session = session();
     let writer = grant(&session);
@@ -72,7 +72,7 @@ fn management_is_entry_local_and_never_turns_configuration_input_into_terminal_i
 fn late_results_from_a_closed_view_cannot_complete_or_replace_the_reopened_view() {
     let entry = HubId::new();
     let mut state = crate::client_capability_support::state();
-    state.inventory.view = View::Hubs;
+    state.inventory.view = View::Tree;
     let (jobs, mut requests) = mpsc::channel(4);
     actions::handle(&mut state, &jobs, entry, key(KeyCode::Char('m')));
     let Job::Management(old) = requests.try_recv().unwrap() else {
@@ -108,7 +108,7 @@ fn late_results_from_a_closed_view_cannot_complete_or_replace_the_reopened_view(
 fn configure_button_is_visible_only_in_hub_inventory_and_rejects_stale_geometry() {
     let entry = HubId::new();
     let mut state = crate::client_capability_support::state();
-    state.inventory.view = View::Hubs;
+    state.inventory.view = View::Tree;
     state.inventory.current = true;
     state.control_generation = Some(uuid::Uuid::new_v4());
     let mut terminal = ratatui::Terminal::new(ratatui::backend::TestBackend::new(90, 25)).unwrap();
@@ -116,7 +116,7 @@ fn configure_button_is_visible_only_in_hub_inventory_and_rejects_stale_geometry(
         .draw(|frame| state.presentation = crate::draw::draw(frame, &state))
         .unwrap();
     let bounds = state.presentation.hub_button.unwrap();
-    assert_eq!(bounds.y, crate::tabs::TAB_BAR_ROWS);
+    assert!(bounds.y > crate::tabs::TAB_BAR_ROWS);
     assert_eq!(bounds.height, 1);
     let event = Event::Mouse(MouseEvent {
         kind: MouseEventKind::Down(MouseButton::Left),

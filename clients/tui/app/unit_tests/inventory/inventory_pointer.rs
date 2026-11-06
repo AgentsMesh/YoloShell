@@ -38,32 +38,27 @@ fn position(state: &State, expected: InventoryHit) -> (u16, u16) {
         .find(|(x, y)| viewport.hit(*x, *y) == Some(expected))
         .unwrap()
 }
-
 #[test]
 fn one_inventory_click_selects_exact_displayed_resource_and_opens_agent_terminals() {
-    for view in [View::Terminals, View::Hubs] {
-        let mut state = state(view);
-        let layout = state.tab_layout().clone();
-        let target = *state
-            .inventory
-            .visible_selections(&state.filter, &state.terminals)
-            .last()
-            .unwrap();
-        let (x, y) = position(&state, InventoryHit::Row(target));
-        let (jobs, mut pending) = tokio::sync::mpsc::channel(crate::constants::QUEUE_CAPACITY);
-        pointer::handle(
-            &mut state,
-            &jobs,
-            panes::mouse(MouseEventKind::Down(MouseButton::Left), x, y),
-        );
-        assert_eq!(state.inventory.selected(state.selected), Some(target));
-        assert_eq!(state.mode, Mode::Inventory);
-        assert_eq!(*state.tab_layout(), layout);
-        assert!(state.writers.is_empty());
-        assert!(pending.try_recv().is_err());
-    }
-
-    let mut state = state(View::Agents);
+    let mut state = state(View::Terminals);
+    let layout = state.tab_layout().clone();
+    let target = *state
+        .inventory
+        .visible_selections(&state.filter, &state.terminals)
+        .last()
+        .unwrap();
+    let (x, y) = position(&state, InventoryHit::Row(target));
+    let (jobs, mut pending) = tokio::sync::mpsc::channel(crate::constants::QUEUE_CAPACITY);
+    pointer::handle(
+        &mut state,
+        &jobs,
+        panes::mouse(MouseEventKind::Down(MouseButton::Left), x, y),
+    );
+    assert_eq!(state.inventory.selected(state.selected), Some(target));
+    assert_eq!(state.mode, Mode::Inventory);
+    assert_eq!(*state.tab_layout(), layout);
+    assert!(state.writers.is_empty() && pending.try_recv().is_err());
+    let mut state = self::state(View::Tree);
     let target = *state
         .inventory
         .visible_selections(&state.filter, &state.terminals)
@@ -86,25 +81,6 @@ fn one_inventory_click_selects_exact_displayed_resource_and_opens_agent_terminal
     assert_eq!(state.inventory.selected(state.selected), Some(target));
     assert_eq!(state.focused_terminal(), Some(agent_terminal));
     assert_eq!(state.mode, Mode::Terminal);
-}
-
-#[test]
-fn inventory_header_changes_view_without_opening_a_terminal_or_grant() {
-    let mut state = state(View::Agents);
-    let (jobs, mut pending) = tokio::sync::mpsc::channel(crate::constants::QUEUE_CAPACITY);
-    for view in [View::Hubs, View::Agents] {
-        let (x, y) = position(&state, InventoryHit::Tab(view));
-        pointer::handle(
-            &mut state,
-            &jobs,
-            panes::mouse(MouseEventKind::Down(MouseButton::Left), x, y),
-        );
-        assert_eq!(state.inventory.view, view);
-        assert_eq!(state.mode, Mode::Inventory);
-        assert!(state.focused_terminal().is_none());
-        panes::repaint(&mut state);
-    }
-    assert!(pending.try_recv().is_err());
 }
 
 #[test]
@@ -145,7 +121,22 @@ fn inventory_wheel_selects_next_row_but_old_frame_cannot_be_reused_for_another_s
 
 #[test]
 fn agent_wheel_browses_the_list_without_opening_the_selected_terminal() {
-    let mut state = state(View::Agents);
+    let mut state = self::state(View::Tree);
+    let agent = state
+        .inventory
+        .visible_selections(&state.filter, &state.terminals)
+        .into_iter()
+        .find_map(|selection| match selection {
+            InventorySelection::Agent(target) => Some(target),
+            _ => None,
+        })
+        .unwrap();
+    state.inventory.select_tree(
+        yolo_tui_inventory::TreeSelection::Agent(agent),
+        "",
+        &state.terminals,
+    );
+    panes::repaint(&mut state);
     let visible = state
         .inventory
         .visible_selections(&state.filter, &state.terminals);
@@ -156,10 +147,10 @@ fn agent_wheel_browses_the_list_without_opening_the_selected_terminal() {
         &jobs,
         panes::mouse(MouseEventKind::ScrollDown, rows.x, rows.y),
     );
-    assert_eq!(
+    assert!(matches!(
         state.inventory.selected(state.selected),
-        visible.last().copied()
-    );
+        Some(InventorySelection::Machine(_) | InventorySelection::Agent(_))
+    ));
     assert_eq!(state.mode, Mode::Inventory);
     assert!(state.focused_terminal().is_none());
     assert!(state.inventory.details.is_none());

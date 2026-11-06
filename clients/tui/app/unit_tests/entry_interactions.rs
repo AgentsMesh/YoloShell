@@ -92,8 +92,10 @@ fn fresh_directory_form_uses_configured_cwd_and_remote_scope_uses_host_home() {
         Event::Key(KeyCode::Char('n').into()),
     );
     assert_eq!(f.state.entry, startup_support::DIRECTORY);
+    let remote = yolo_hub_identity::HubId::new();
+    f.state.tabs.select_machine(remote).unwrap();
+    f.state.inventory.selected_machine = Some(remote);
     f.state.mode = Mode::Inventory;
-    f.state.inventory.scope = Some(yolo_hub_identity::HubId::new());
     crate::actions::handle(
         &mut f.state,
         &f.jobs,

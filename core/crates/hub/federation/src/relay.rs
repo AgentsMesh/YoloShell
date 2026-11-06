@@ -5,7 +5,7 @@ use yolo_hub_delegation::PeerIdentity;
 use yolo_hub_peer_protocol::{
     Call, ExecutionReply, PeerReply, PeerRequest, Signed, required_rights,
 };
-use yolo_hub_peer_rpc::{Client, RemoteUpdates};
+use yolo_hub_peer_rpc::RemoteUpdates;
 use yolo_hub_terminal_protocol::PublicError;
 
 impl Federation {
@@ -30,6 +30,8 @@ impl Federation {
         let policy = self
             .config
             .export(peer.hub(), origin.hub())
+            .cloned()
+            .or_else(|| self.config.shared_export(origin.hub(), self.hub_id()))
             .ok_or(PublicError::Unauthorized)?;
         let Some(required) = required_rights(&call.payload.request.fields().command) else {
             // Local management never crosses a peer boundary.
@@ -81,14 +83,6 @@ impl Federation {
                 .fields()
                 .command
                 .operation_timeout(OPERATION_TIMEOUT);
-        let stream = connection
-            .connection
-            .open_channel(deadline)
-            .await
-            .map_err(|_| failed(ForwardStage::ChannelOpen, PublicError::Unreachable))?;
-        let channel = Client::connect(stream, deadline)
-            .await
-            .map_err(|_| failed(ForwardStage::ChannelOpen, PublicError::Unreachable))?;
         self.require_open()
             .map_err(|_| failed(ForwardStage::BeforeSend, PublicError::Unreachable))?;
         let mutation = call.payload.request.fields().command.mutates();
@@ -99,7 +93,8 @@ impl Federation {
                 PublicError::Unreachable
             }
         };
-        let response = channel
+        let response = connection
+            .client
             .request(PeerRequest::Execute { call: call.clone() }, deadline)
             .await
             .map_err(|_| failed(ForwardStage::Receive, uncertain()))?;

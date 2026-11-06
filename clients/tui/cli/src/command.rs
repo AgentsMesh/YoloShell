@@ -9,6 +9,7 @@ pub(crate) enum Command {
     /// Open a new tab with a normal shell. Run agents directly in that shell.
     #[command(group(crate::arguments::connection_group()))]
     New {
+        /// Working directory for the new shell; defaults to the current directory.
         #[arg(long)]
         cwd: Option<String>,
         /// Label for the terminal; selectors need the label to be unambiguous.
@@ -17,13 +18,20 @@ pub(crate) enum Command {
     },
     /// Attach an existing terminal by ID, address, or unique name; never creates a shell.
     #[command(group(crate::arguments::connection_group()))]
-    Attach { terminal: Option<String> },
+    Attach {
+        /// Terminal id, address, or unique name.
+        terminal: Option<String>,
+    },
     /// Disconnect a local terminal client; keep its shells and agents running.
     #[command(group(crate::arguments::connection_group()))]
-    Detach { client: Option<uuid::Uuid> },
+    Detach {
+        /// Local client id; omit to choose from the attached clients.
+        client: Option<uuid::Uuid>,
+    },
     /// List terminals visible from the selected Hub.
     #[command(group(crate::arguments::connection_group()))]
     List {
+        /// Print one JSON document.
         #[arg(long)]
         json: bool,
         /// Include archived terminals from history.
@@ -33,6 +41,7 @@ pub(crate) enum Command {
     /// List local terminal clients connected to the selected Hub.
     #[command(group(crate::arguments::connection_group()))]
     Clients {
+        /// Print one JSON document.
         #[arg(long)]
         json: bool,
     },
@@ -41,6 +50,7 @@ pub(crate) enum Command {
     Archive {
         /// Terminal id, address, or unique name.
         terminal: String,
+        /// Print one JSON document.
         #[arg(long)]
         json: bool,
     },
@@ -52,12 +62,14 @@ pub(crate) enum Command {
         /// Kill programs that do not exit after a graceful request.
         #[arg(long)]
         force: bool,
+        /// Print one JSON document.
         #[arg(long)]
         json: bool,
     },
     /// List shared layout IDs; use --layout to open one in an independent client.
     #[command(group(crate::arguments::connection_group()))]
     Layouts {
+        /// Print one JSON document.
         #[arg(long)]
         json: bool,
     },
@@ -69,6 +81,7 @@ pub(crate) enum Command {
     Screen {
         /// Terminal id, address, or unique name.
         terminal: String,
+        /// Print one JSON document.
         #[arg(long)]
         json: bool,
     },
@@ -78,6 +91,27 @@ pub(crate) enum Command {
         #[command(subcommand)]
         command: PlatformCommand,
     },
+    /// Manage machines and import their agents; print this machine's Hub identity.
+    #[command(group(crate::arguments::connection_group()))]
+    Machine {
+        #[command(subcommand)]
+        command: yolo_tui_hub_cli::MachineCommand,
+    },
+    /// Show installed and running local service status.
+    #[command(group(crate::arguments::connection_group()))]
+    Status(yolo_tui_service::FormatOptions),
+    /// Print installed and running local service versions.
+    #[command(group(crate::arguments::connection_group()))]
+    Version(yolo_tui_service::FormatOptions),
+    /// Start the local Host and Hub.
+    #[command(group(crate::arguments::connection_group()))]
+    Start(yolo_tui_service::FormatOptions),
+    /// Stop the local Host and Hub; terminals and PTYs keep running.
+    #[command(group(crate::arguments::connection_group()))]
+    Stop(yolo_tui_service::FormatOptions),
+    /// Restart the local Host and Hub.
+    #[command(group(crate::arguments::connection_group()))]
+    Restart(yolo_tui_service::FormatOptions),
     /// Read the local Hub's durable authority audit log, or merge exported logs.
     #[command(group(crate::arguments::connection_group()))]
     Audit {
@@ -102,6 +136,7 @@ pub(crate) enum Command {
         /// Write pulled lines to this file instead of stdout.
         #[arg(long, value_name = "FILE", requires = "pull")]
         output: Option<std::path::PathBuf>,
+        /// Print one JSON document.
         #[arg(long)]
         json: bool,
     },

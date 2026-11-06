@@ -18,13 +18,19 @@ pub fn ready() -> State {
     let mut fields = agent.fields().clone();
     fields.capabilities.interrupt = Capability::Available {};
     let agent = AgentSnapshot::new(fields).unwrap();
+    let target = agent.cursor().target();
     let mut state = crate::client_capability_support::state();
     state.control_generation = Some(uuid::Uuid::new_v4());
     state.inventory.replace(Some(vec![agent]), Some(vec![]));
     state.inventory.current = true;
-    state.inventory.view = yolo_tui_inventory::View::Agents;
+    state.inventory.view = yolo_tui_inventory::View::Tree;
     state.replace_terminals(vec![session.clone()]);
     state.bind_focused(Some(session.fields().address)).unwrap();
+    state.inventory.select_tree(
+        yolo_tui_inventory::TreeSelection::Agent(target),
+        "",
+        &state.terminals,
+    );
     let grant = fixtures::grant(&session);
     state.principal = grant.fields().principal;
     state.record_grant(grant, Instant::now());

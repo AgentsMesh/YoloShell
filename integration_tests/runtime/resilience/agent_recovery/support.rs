@@ -25,9 +25,9 @@ pub(crate) fn spawn_agent_host(home: &Path, provider: ProviderFixture, bin: &Pat
 
 fn install_provider_hooks(home: &Path, provider: ProviderFixture) {
     let spec = if provider.kind == yolo_runtime::agent::codex::constants::KIND {
-        &yolo_hook_installation_catalog::CODEX
+        crate::support::codex_install_spec()
     } else {
-        &yolo_hook_installation_catalog::CLAUDE
+        crate::support::claude_install_spec()
     };
     let home = home.join(provider.data_home_directory);
     let preview = yolo_hook_installation::inspect(spec, &home).unwrap();

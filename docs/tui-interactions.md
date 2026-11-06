@@ -4,12 +4,14 @@ Yolo is a client for persistent Hub Terminals. The shell is the primary
 entry point: agents are ordinary programs started by the user inside its PTY.
 There is no user-visible workspace collection or workspace directory selector.
 Terminal, PTY, AgentRun, provider history and client lifetimes are defined in
-[the domain model](terminal-agent-model.md).
+[the domain model](terminal-agent-model.md). A client never binds the terminal
+named by its own Worker environment (`YOLO_TERMINAL_ID`): running YOLO inside a
+YOLO terminal shows a status hint instead of recursively rendering itself.
 
-The terminal area reserves one Tab strip and one contextual status line. The
-selected Tab has a dark background in addition to its `●` marker and bold cyan
-label. The Agent runs / Hubs sidebar can remain visible while the terminal has
-keyboard focus. See [Tab navigation](tui-tab-navigation.md) for the current interaction model. Healthy
+The content column reserves one Tab strip and one contextual status line. Tabs
+belong to the active machine; the selected Tab has a dark background in addition
+to its `●` marker and bold cyan label. The machine tree sidebar can remain
+visible while the terminal has keyboard focus. See [Tab navigation](tui-tab-navigation.md) for the current interaction model. Healthy
 input readiness appears in the Tab marker and contextual status; read-only,
 synchronization and offline states are shown only when applicable. Input paused
 means explicit confirmation is required, while Resuming input means a fresh grant
@@ -26,7 +28,7 @@ The existing Ctrl+B prefix scopes manager shortcuts:
 | Key | Action |
 | --- | --- |
 | d / q | Detach the client, preserving all shells and agents |
-| s | Focus the Agent runs / Hubs sidebar |
+| s | Focus the machine and agent tree |
 | b | Show or hide the sidebar |
 | g | Open the existing-terminal picker |
 | w | Open the tab manager |
@@ -47,35 +49,37 @@ See [local entry and lifecycle](tui-local-startup.md) and [split-pane geometry](
 
 ## Inventory Rows
 
-Agent runs are one line: the provider-preferred Agent title, an optional `!`
-health warning, the writer badge and a trailing activity glyph. A braille spinner
-animates while the Agent is working; `‖` and `!` mark waiting-for-input and
-waiting-for-approval states. Directory, lifecycle, health and the full control
-description remain available in Agent details.
+The sidebar is a tree. Machine roots use the local host name (`This machine`) or
+the peer's configured SSH label, with `▾`/`▸`, the number of agent runs and a
+reachability glyph (`●` reachable, `○` unreachable, `?` stale or unknown). The
+active machine is highlighted. Agent runs are indented one level and keep the
+one-line shape: provider-preferred title, optional `!` warning, writer badge and
+activity glyph. A braille spinner animates while the Agent is working; `‖` and
+`!` mark waiting-for-input and waiting-for-approval states. Directory, lifecycle,
+health and the full control description remain available in Agent details.
 
-Hubs use the machine host name when the selected Hub is reached through a local
-Unix endpoint, otherwise the compact Hub identity. The status glyph follows the
-name: `●` reachable, `○` unreachable and `?` stale or unknown. There is no second
-"Reachable" row.
-
-A healthy connection adds no title row above the sidebar: the section tabs name
-the view and the rows carry their own identity and status. A single compact
-`Disconnected` or `Refreshing` line appears only when that state needs
-attention. In Hubs view, `Configure Hub` shares the section row and `m` opens
-the same manager.
+A healthy connection adds no title row above the tree; the contextual line names
+the active machine and catalogue state. A single compact `Disconnected` or
+`Refreshing` line appears only when that state needs attention. `Manage machines`
+is a footer action under the tree and `m` opens the same manager.
 
 ## Inventory Mouse Navigation
 
-Click an Agent runs or Hubs sidebar tab to change catalogue. Clicking an Agent
-runs row selects it and opens its existing terminal; if no terminal is available
-it opens the Agent details instead. Clicking a Hubs or Terminals row selects it
-for the existing Enter flow. Wheel input over the list moves selection by one
-item. Clicking an Agent runs row opens its existing view exactly like Enter:
-view activation may acquire write control through the normal terminal path, but
-the click itself never injects terminal input. Hit regions use actual rendered
-list offsets and item heights. Unpainted trailing rows are not clickable.
+Clicking a machine root activates its workspace: the client focuses the
+machine's last live terminal (or the first live catalogue terminal for it), and
+starts a shell on that machine when none exists. Clicking an agent row activates
+its machine and opens the agent's terminal; if no live terminal is available it
+opens Agent details instead. Clicking a Terminals picker row selects it for the
+existing Enter flow. Wheel input over the tree moves selection by one row.
+Activation may acquire write control through the normal terminal path, but the
+click itself never injects terminal input. Hit regions use actual rendered list
+offsets and item heights. Unpainted trailing rows are not clickable.
 
-The saved viewport binds view, scope, filter, selection, catalogue freshness,
+`←`/`→` or Space collapse/expand a machine; `Enter` activates the selection;
+`n` starts a directory prompt on the selected machine; `/` filters machines and
+agents. Tabs, splits and `Ctrl-B n/p` are scoped to the active machine.
+
+The saved viewport binds view, filter, selection, catalogue freshness,
 ordered identities and displayed row evidence. A stale viewport consumes the
 gesture without selecting another record after sorting, filtering or execution
 replacement. Wheel selection dispatches no application command.

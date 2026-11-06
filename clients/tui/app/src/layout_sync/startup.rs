@@ -26,7 +26,7 @@ pub(crate) async fn open(options: &Options, store: &mut TabStore, state: &mut St
                 address,
                 request_id: Uuid::new_v4(),
                 expected_revision: 0,
-                tabs: state.tab_snapshot().shared_tabs()?,
+                tabs: state.tab_snapshot().shared_tabs(state.entry_hub)?,
             };
             let expected = change.apply(None)?;
             let reply = call(options, Command::UpdateLayout { change })
@@ -62,7 +62,7 @@ pub(crate) fn restore_draft(
     cached: Option<&yolo_tui_tab::LayoutCheckpoint>,
 ) -> Result<Vec<yolo_presentation_protocol::SharedTab>> {
     if let Some(cached) = cached {
-        let draft = state.tab_snapshot().shared_tabs()?;
+        let draft = state.tab_snapshot().shared_tabs(state.entry_hub)?;
         if draft != cached.projected {
             if *document == cached.document {
                 return Ok(cached.projected.clone());

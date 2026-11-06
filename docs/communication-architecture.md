@@ -121,7 +121,10 @@ Terminal snapshot contents and their journal barrier are one published value.
 Batch append/reconciliation and the complete terminal projection share the journal
 lock, following journal-to-terminal lock order. Output events and periodic
 checkpoints follow the complete projection. A snapshot cannot advertise a batch's
-tail sequence while its screen contains only a prefix. Healthy, definitely
+tail sequence while its screen contains only a prefix. A snapshot taken while
+the alternate screen is active carries the alternate-screen mode escape, so a
+fresh parser paints the alternate grid and a later exit restores the primary
+grid instead of retaining the snapshot's text. Healthy, definitely
 uncommitted append failures stay with the existing pending-output retry owner;
 only uncertain journal writes require reconciliation.
 

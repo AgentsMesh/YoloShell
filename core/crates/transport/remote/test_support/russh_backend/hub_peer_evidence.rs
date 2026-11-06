@@ -97,7 +97,7 @@ pub struct BurstClosed {
     pub read_error: Option<io::ErrorKind>,
 }
 
-pub async fn incoming_burst(mut socket: tokio::net::TcpStream) -> io::Result<BurstClosed> {
+pub async fn incoming_burst(mut socket: tokio::net::UnixStream) -> io::Result<BurstClosed> {
     let written = socket
         .write_all(&vec![PAYLOAD_FILL; LARGE_PAYLOAD_BYTES])
         .await;

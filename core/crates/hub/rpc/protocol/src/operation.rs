@@ -135,6 +135,7 @@ operations! {
     }
     MANAGEMENT_METHODS {
         GetConfiguration: LocalManagement, ReadOnly,
+        ListConsumers: LocalManagement, ReadOnly,
         Configure: LocalManagement, Mutating,
     }
     BUILD_METHODS {

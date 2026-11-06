@@ -21,7 +21,11 @@ fn public_help_explains_tabs_and_detaching_without_workspaces() {
     ] {
         assert!(help.contains(command), "missing {command}");
     }
-    assert!(!help.contains("workspace"));
+    assert!(
+        !Arguments::command()
+            .get_subcommands()
+            .any(|command| { command.get_name() == WORKSPACE_ENTRY })
+    );
     assert!(!Arguments::command().get_subcommands().any(|command| {
         command.get_name() == RETIRED_TABS_COMMAND
             || command.get_name() == RETIRED_PICKER_COMMAND

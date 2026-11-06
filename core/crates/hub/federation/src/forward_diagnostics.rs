@@ -51,7 +51,7 @@ impl Federation {
                 (
                     true,
                     link.map(|link| link.id),
-                    link.map(|link| link.connection.is_closed()),
+                    link.map(|link| link.is_closed()),
                 )
             }
             Err(_) => (false, None, None),

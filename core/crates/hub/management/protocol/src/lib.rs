@@ -7,10 +7,10 @@ pub use constants::*;
 use serde::{Deserialize, Serialize};
 use snapshot_wire::SnapshotWire;
 use state_wire::StateWire;
-use std::net::SocketAddr;
+use std::path::PathBuf;
 use uuid::Uuid;
 use yolo_hub_delegation::PeerIdentity;
-use yolo_hub_federation_settings::Configuration;
+use yolo_hub_federation_settings::{Configuration, validate_socket};
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -57,24 +57,15 @@ impl ConfigurationState {
 pub struct ConfigurationSnapshot {
     pub state: ConfigurationState,
     pub applied: bool,
-    pub listen_address: Option<SocketAddr>,
+    /// The published peer socket path when this generation is applied.
+    pub peer_socket: Option<PathBuf>,
 }
 impl ConfigurationSnapshot {
     pub fn validate(&self) -> Result<()> {
         self.state.validate()?;
-        match (
-            self.applied,
-            self.state.configuration.listen,
-            self.listen_address,
-        ) {
-            (false, _, None) | (true, None, None) => Ok(()),
-            (true, Some(expected), Some(actual))
-                if expected.ip() == actual.ip()
-                    && actual.port() != 0
-                    && (expected.port() == 0 || expected.port() == actual.port()) =>
-            {
-                Ok(())
-            }
+        match (self.applied, &self.peer_socket) {
+            (false, None) => Ok(()),
+            (true, Some(path)) => validate_socket(path),
             _ => anyhow::bail!(INVALID_CONFIGURATION_STATE),
         }
     }

@@ -1,69 +1,68 @@
 use super::{constants::*, fixture::LinkFixture};
 use tokio::{
-    io::DuplexStream,
-    time::{Instant, timeout_at},
+    sync::OwnedSemaphorePermit,
+    task::JoinHandle,
+    time::{Instant, timeout},
 };
-use yolo_hub_peer_rpc::{Client, RpcError};
-use yolo_hub_peer_transport::{ChannelAdmissionError, MAX_PEER_CHANNELS, PeerStream};
+use yolo_capnp_rpc::MAX_IN_FLIGHT;
+use uuid::Uuid;
+use yolo_hub_peer_protocol::{PEER_PROTOCOL_VERSION, PeerRequest};
+use yolo_hub_peer_rpc::RpcError;
 
-pub enum Pressure {
-    Ssh(Vec<(PeerStream, PeerStream)>),
-    Rpc(Vec<(Client, DuplexStream)>),
+pub struct Pressure {
+    _permits: OwnedSemaphorePermit,
+    tasks: Vec<JoinHandle<()>>,
 }
 
 impl Pressure {
-    pub async fn ssh(fixture: &mut LinkFixture) -> Self {
-        let mut channels = Vec::new();
-        loop {
-            assert!(channels.len() <= MAX_PEER_CHANNELS);
-            match fixture
+    /// Occupies every local in-flight slot with requests whose server handlers
+    /// wait on the gate, so the next request observes typed local capacity.
+    pub async fn rpc(fixture: &LinkFixture) -> Self {
+        let gate = fixture.responder.gate.clone();
+        let permits = gate
+            .clone()
+            .acquire_many_owned(MAX_IN_FLIGHT as u32)
+            .await
+            .unwrap();
+        let mut tasks = Vec::new();
+        for _ in 0..MAX_IN_FLIGHT {
+            let client = fixture.link.client.clone();
+            tasks.push(tokio::spawn(async move {
+                let request = PeerRequest::Discover {
+                    request_id: Uuid::new_v4(),
+                    version: PEER_PROTOCOL_VERSION,
+                    allowed_origins: Vec::new(),
+                };
+                let _ = client.request(request, Instant::now() + TEST_TIMEOUT).await;
+            }));
+        }
+        timeout(TEST_TIMEOUT, fixture.responder.wait_admitted(MAX_IN_FLIGHT))
+            .await
+            .unwrap();
+        let probe = PeerRequest::Discover {
+            request_id: Uuid::new_v4(),
+            version: PEER_PROTOCOL_VERSION,
+            allowed_origins: Vec::new(),
+        };
+        assert!(matches!(
+            fixture
                 .link
-                .connection
-                .open_channel(Instant::now() + TEST_TIMEOUT)
-                .await
-            {
-                Ok(outgoing) => {
-                    let incoming = timeout_at(
-                        Instant::now() + TEST_TIMEOUT,
-                        fixture.peer_incoming.as_mut().unwrap().recv(),
-                    )
-                    .await
-                    .unwrap()
-                    .unwrap();
-                    channels.push((outgoing, incoming));
-                }
-                Err(error) => {
-                    assert_eq!(
-                        error.downcast_ref::<ChannelAdmissionError>(),
-                        Some(&ChannelAdmissionError::AtCapacity),
-                    );
-                    assert!(!channels.is_empty());
-                    return Self::Ssh(channels);
-                }
-            }
+                .client
+                .request(probe, Instant::now() + TEST_TIMEOUT)
+                .await,
+            Err(RpcError::Capacity)
+        ));
+        Self {
+            _permits: permits,
+            tasks,
         }
     }
+}
 
-    pub async fn rpc() -> Self {
-        let mut connections = Vec::new();
-        loop {
-            assert!(connections.len() <= yolo_capnp_rpc::MAX_CONNECTIONS);
-            let (local, remote) = tokio::io::duplex(DUPLEX_BYTES);
-            match Client::connect(local, Instant::now() + TEST_TIMEOUT).await {
-                Ok(client) => connections.push((client, remote)),
-                Err(error) => {
-                    assert_eq!(error, RpcError::Capacity);
-                    assert!(!connections.is_empty());
-                    return Self::Rpc(connections);
-                }
-            }
-        }
-    }
-
-    pub fn retained(&self) -> usize {
-        match self {
-            Self::Ssh(channels) => channels.len(),
-            Self::Rpc(connections) => connections.len(),
+impl Drop for Pressure {
+    fn drop(&mut self) {
+        for task in &self.tasks {
+            task.abort();
         }
     }
 }

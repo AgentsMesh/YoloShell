@@ -1,4 +1,4 @@
-pub const HUB_PROTOCOL_VERSION: u16 = 18;
+pub const HUB_PROTOCOL_VERSION: u16 = 20;
 pub const MAX_CATALOG_PAGE_TERMINALS: usize = 128;
 pub const MAX_CATALOG_PAGE_AGENTS: usize = 128;
 pub const MAX_CATALOG_PAGE_HUBS: usize = 128;

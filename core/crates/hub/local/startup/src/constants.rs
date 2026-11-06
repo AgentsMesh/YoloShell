@@ -16,6 +16,14 @@ pub(crate) const HOST_SERVE_COMMAND: &str = "serve";
 pub(crate) const HOME_ARGUMENT: &str = "--home";
 pub(crate) const SOCKET_ARGUMENT: &str = "--socket";
 pub(crate) const DEADLINE_EXPIRED: &str = "local Hub startup deadline expired";
+pub(crate) const HUB_STARTUP_STDERR: &str = "hub-startup.stderr";
+pub(crate) const MAX_STARTUP_STDERR_BYTES: usize = 4_096;
+pub(crate) const EXISTING_HUB_GRACE: Duration = Duration::from_secs(2);
+pub(crate) const HUB_EXITED_BEFORE_READY: &str = "local Hub exited before it became ready";
+pub(crate) const HOST_IMAGE_PREFIX: &str = "running Host image ";
+pub(crate) const HOST_IMAGE_SUFFIX: &str =
+    "; if it belongs to a different Yolo release, run `yolo restart` to replace both services";
+pub(crate) const STARTUP_STDERR_OPEN_FAILED: &str = "open the Hub startup error log";
 pub(crate) const READY_INVALID: &str = "local Hub readiness did not match its launch";
 pub(crate) const READY_MISSING: &str = "local Hub readiness pipe was not available";
 pub(crate) const PIN_MISMATCH: &str = "persistent Hub identity does not match its enrollment pin";

@@ -8,8 +8,9 @@ use crossterm::event::{Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 #[test]
 fn unicode_text_editing_and_paste_limits_preserve_utf8_and_reject_terminal_controls() {
     let mut manager = manager();
-    activate(&mut manager, Action::Listener);
-    field(&mut manager, FieldId::Listen, "a\u{e9}z");
+    manager.page(Page::Peers);
+    activate(&mut manager, Action::AddPeer);
+    field(&mut manager, FieldId::Ssh, "a\u{e9}z");
     for code in [
         KeyCode::Left,
         KeyCode::Backspace,
@@ -20,19 +21,26 @@ fn unicode_text_editing_and_paste_limits_preserve_utf8_and_reject_terminal_contr
     ] {
         key(&mut manager, code);
     }
-    let form = manager.form.as_ref().unwrap();
-    assert_eq!(form.fields[0].display(), "zx");
+    let profile = manager
+        .form
+        .as_ref()
+        .unwrap()
+        .fields
+        .iter()
+        .position(|field| field.id == FieldId::Ssh)
+        .unwrap();
+    assert_eq!(manager.form.as_ref().unwrap().fields[profile].display(), "zx");
     manager.handle(Event::Paste("\u{1b}[31m".into()));
     assert_eq!(
-        manager.form.as_ref().unwrap().fields[0].display(),
+        manager.form.as_ref().unwrap().fields[profile].display(),
         "zx[31m",
         "terminal controls are filtered, printable paste text is kept"
     );
     manager.handle(Event::Paste(
-        "a".repeat(yolo_hub_federation_settings::MAX_HOST_BYTES),
+        "a".repeat(yolo_hub_federation_settings::MAX_SSH_TARGET_BYTES),
     ));
-    let display = manager.form.as_ref().unwrap().fields[0].display();
-    assert_eq!(display.len(), yolo_hub_federation_settings::MAX_HOST_BYTES);
+    let display = manager.form.as_ref().unwrap().fields[profile].display();
+    assert_eq!(display.len(), yolo_hub_federation_settings::MAX_SSH_TARGET_BYTES);
     assert!(display.starts_with("zx[31m"));
     let release = KeyEvent {
         code: KeyCode::Char('q'),
@@ -41,7 +49,7 @@ fn unicode_text_editing_and_paste_limits_preserve_utf8_and_reject_terminal_contr
         state: crossterm::event::KeyEventState::NONE,
     };
     manager.handle(Event::Key(release));
-    assert_eq!(manager.form.as_ref().unwrap().fields[0].display(), display);
+    assert_eq!(manager.form.as_ref().unwrap().fields[profile].display(), display);
 }
 
 #[test]
@@ -52,13 +60,13 @@ fn form_navigation_skips_immutable_identity_fields_and_cancels_without_saving() 
     manager.page(Page::Peer(peer.hub()));
     activate(&mut manager, Action::EditPeer(peer.hub()));
     let form = manager.form.as_mut().unwrap();
-    assert_eq!(form.fields[form.focused].id, FieldId::Host);
+    assert_eq!(form.fields[form.focused].id, FieldId::Ssh);
     form.move_focus(false);
     assert!(form.focused >= form.fields.len());
     form.move_focus(true);
-    assert_eq!(form.fields[form.focused].id, FieldId::Host);
+    assert_eq!(form.fields[form.focused].id, FieldId::Ssh);
     let before = manager.draft.clone();
-    field(&mut manager, FieldId::Host, "changed.example");
+    field(&mut manager, FieldId::Ssh, "changed.example");
     key(&mut manager, KeyCode::Esc);
     assert_eq!(manager.draft, before);
 }

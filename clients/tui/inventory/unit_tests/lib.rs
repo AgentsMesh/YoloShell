@@ -14,6 +14,7 @@ mod pointer_support;
 mod pointer_viewport;
 mod selection;
 mod terminal;
+mod tree;
 mod title;
 mod working_directory;
 mod workspace_filter;

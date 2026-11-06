@@ -47,7 +47,7 @@ fn agent_view_attaches_only_the_current_bound_terminal() {
     let mut state = catalog_state();
     let expected = state.selected.unwrap();
     let (jobs, mut incoming) = mpsc::channel(crate::constants::QUEUE_CAPACITY);
-    assert_eq!(state.inventory.view, View::Agents);
+    assert_eq!(state.inventory.view, View::Tree);
     handle(&mut state, &jobs, expected.hub_id, key(KeyCode::Enter));
     assert_eq!(state.mode, Mode::Terminal);
     assert_eq!(state.focused_terminal(), Some(expected));
@@ -60,12 +60,16 @@ fn agent_view_attaches_only_the_current_bound_terminal() {
 fn old_agent_binding_never_opens_a_replacement_execution() {
     let mut state = catalog_state();
     let expected = state.selected.unwrap();
+    let agent = state.inventory.selected_agent.unwrap();
     let mut session = state.terminals[&expected].fields().clone();
     session.runtime.as_mut().unwrap().target.runtime_epoch = yolo_hub_identity::RuntimeEpoch::new();
     state.replace_terminals(vec![
         yolo_hub_terminal_protocol::TerminalSummary::new(session).unwrap(),
     ]);
-    state.inventory.view = View::Agents;
+    state.inventory.view = View::Tree;
+    state.inventory.tree_selected =
+        Some(yolo_tui_inventory::TreeSelection::Agent(agent));
+    state.inventory.selected_agent = Some(agent);
     let (jobs, mut incoming) = mpsc::channel(crate::constants::QUEUE_CAPACITY);
     handle(&mut state, &jobs, expected.hub_id, key(KeyCode::Enter));
     assert_eq!(state.mode, Mode::Inventory);
@@ -90,7 +94,7 @@ fn failed_refresh_marks_existing_catalog_stale_without_inventing_agent_exit() {
     );
     assert!(!state.inventory.current);
     assert_eq!(state.inventory.agents, previous);
-    state.inventory.view = View::Agents;
+    state.inventory.view = View::Tree;
     handle(&mut state, &jobs, HubId::new(), key(KeyCode::Enter));
     assert!(incoming.try_recv().is_err());
 }
@@ -102,7 +106,7 @@ fn hub_scope_controls_shell_creation_destination_and_escape_restores_all_hubs() 
     let entry = HubId::new();
     let (jobs, mut incoming) = mpsc::channel(crate::constants::QUEUE_CAPACITY);
     handle(&mut state, &jobs, entry, key(KeyCode::BackTab));
-    assert_eq!(state.inventory.view, View::Hubs);
+    assert_eq!(state.inventory.view, View::Tree);
     handle(&mut state, &jobs, entry, key(KeyCode::Char('n')));
     assert_eq!(state.mode, Mode::Directory);
     handle(&mut state, &jobs, entry, key(KeyCode::Enter));
@@ -118,7 +122,7 @@ fn hub_scope_controls_shell_creation_destination_and_escape_restores_all_hubs() 
 #[test]
 fn agent_view_cannot_silently_terminate_its_shell_as_a_semantic_agent_command() {
     let mut state = catalog_state();
-    state.inventory.view = View::Agents;
+    state.inventory.view = View::Tree;
     let (jobs, mut incoming) = mpsc::channel(crate::constants::QUEUE_CAPACITY);
     for code in ['x', 'a', 'R'] {
         handle(&mut state, &jobs, HubId::new(), key(KeyCode::Char(code)));

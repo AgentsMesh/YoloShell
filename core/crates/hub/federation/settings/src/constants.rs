@@ -1,6 +1,7 @@
 pub const MAX_PEERS: usize = 32;
 pub const MAX_ORIGINS: usize = 128;
-pub const MAX_HOST_BYTES: usize = 253;
+pub const MAX_SOCKET_PATH_BYTES: usize = 100;
+pub const MAX_SSH_TARGET_BYTES: usize = 255;
 pub const MAX_ROUTES_PER_ORIGIN: usize = 32;
 pub const MAX_PEER_ADVERTISEMENTS: usize = MAX_ORIGINS * MAX_ROUTES_PER_ORIGIN;
 pub(crate) const INVALID: &str = "invalid Hub peer configuration";

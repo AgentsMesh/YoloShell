@@ -1,13 +1,13 @@
 use crate::{ConfigurationSnapshot, ConfigurationState};
 use serde::{Deserialize, Serialize};
-use std::net::SocketAddr;
+use std::path::PathBuf;
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub(crate) struct SnapshotWire {
     state: ConfigurationState,
     applied: bool,
-    listen_address: Option<SocketAddr>,
+    peer_socket: Option<PathBuf>,
 }
 
 impl TryFrom<SnapshotWire> for ConfigurationSnapshot {
@@ -16,7 +16,7 @@ impl TryFrom<SnapshotWire> for ConfigurationSnapshot {
         let snapshot = Self {
             state: wire.state,
             applied: wire.applied,
-            listen_address: wire.listen_address,
+            peer_socket: wire.peer_socket,
         };
         snapshot.validate()?;
         Ok(snapshot)
@@ -28,7 +28,7 @@ impl From<ConfigurationSnapshot> for SnapshotWire {
         Self {
             state: snapshot.state,
             applied: snapshot.applied,
-            listen_address: snapshot.listen_address,
+            peer_socket: snapshot.peer_socket,
         }
     }
 }

@@ -69,7 +69,7 @@ fn reconcile(
     } else {
         let dirty = state
             .tab_snapshot()
-            .shared_tabs()
+            .shared_tabs(state.entry_hub)
             .map_err(|error| error.to_string())?
             != sync.projected;
         sync.projected = adopt(state, &document).map_err(|error| error.to_string())?;
