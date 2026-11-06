@@ -121,7 +121,7 @@ fn errors_and_unapplied_receipts_keep_the_submitted_draft_blocked() {
     reply.state.last_change = change.request_id;
     reply.state.configuration = change.configuration;
     reply.applied = false;
-    manager.complete(request.token, Ok(reply));
+    manager.complete(request.token, Ok(configuration(reply)));
     assert!(manager.blocked && manager.unresolved.is_some());
     let query = manager.query(true);
     manager.complete(
@@ -132,6 +132,6 @@ fn errors_and_unapplied_receipts_keep_the_submitted_draft_blocked() {
     let query = manager.query(false);
     let mut malformed = manager.base.clone().unwrap();
     malformed.state.schema_version = 0;
-    manager.complete(query.token, Ok(malformed));
+    manager.complete(query.token, Ok(configuration(malformed)));
     assert!(manager.blocked);
 }

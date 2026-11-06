@@ -39,6 +39,16 @@ removed only when no remaining machine/trusted-origin pin still authorizes that
 origin. An export can be removed without removing its machine. Discarding a
 dirty draft on close or reload also requires explicit confirmation.
 
+## Consumers
+
+The `Consumers` page is a read-only live view of the machines currently
+importing from this Hub. Each row shows the importing Hub ID, its live link
+count and connection age; `Refresh Consumers` issues a new `ListConsumers`
+query. An empty page means no inbound link is open right now. The page never
+grants or revokes access: admission and export policy remain the authority of
+the configuration pages. Refreshing or leaving the page preserves an unsaved
+draft, and closing the manager does not close inbound links.
+
 ## Concurrency And Failure
 
 `hub/management/client` owns a separate public connection and one absolute

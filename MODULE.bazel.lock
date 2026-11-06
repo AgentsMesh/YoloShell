@@ -262,10 +262,10 @@
     "@@rules_rust+//crate_universe:extensions.bzl%crate": {
       "general": {
         "bzlTransitiveDigest": "J6Ls9yNkaEYC70cPqcvfu/2Ed1zDxtC6n1Ad43au0y8=",
-        "usagesDigest": "xbqxlI2GigBzktfBCBX8ggBCXcVxXf1Ur+o9eeR4s4A=",
+        "usagesDigest": "TyTInL3dxOXtH7M7ktqalHOEBbPy4LipLmfvXIFl3pU=",
         "recordedFileInputs": {
-          "@@//Cargo.lock": "21cc979360ac6f8fc71827384a00bf1affd740663c4da920c4d3d4c9051db11c",
-          "@@//Cargo.toml": "2649116f0bd334cf53f2377c816f0d18f154f4f5171dff0548814322f529c580"
+          "@@//Cargo.lock": "06958cb58f72ffdf898ff9205bce67f8579e4c942aa43330fa54110df1d3b046",
+          "@@//Cargo.toml": "b2383040803e557eb2b27e331c51af0ee145045f39a74c4ce24e7aee829830a0"
         },
         "recordedDirentsInputs": {},
         "envVariables": {

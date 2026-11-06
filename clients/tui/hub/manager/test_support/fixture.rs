@@ -21,10 +21,13 @@ pub fn snapshot() -> ConfigurationSnapshot {
         peer_socket: Some("/run/user/1000/yolo/hub/peer.sock".into()),
     }
 }
+pub fn configuration(snapshot: ConfigurationSnapshot) -> yolo_hub_rpc_protocol::Reply {
+    yolo_hub_rpc_protocol::Reply::Configuration { snapshot }
+}
 pub fn manager() -> Manager {
     let snapshot = snapshot();
     let (mut manager, request) = Manager::open(snapshot.state.identity.hub());
-    manager.complete(request.token, Ok(snapshot));
+    manager.complete(request.token, Ok(configuration(snapshot)));
     manager
 }
 pub fn edit(manager: &mut Manager) {

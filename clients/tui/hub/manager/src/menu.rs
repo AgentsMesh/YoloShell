@@ -32,6 +32,11 @@ impl Manager {
                     Action::Page(Page::Peers),
                     format!("{CONNECTIONS} ({})", draft.peers.len()),
                 ));
+                let consumers = self.consumers.as_ref().map_or_else(
+                    || CONSUMERS.into(),
+                    |list| format!("{CONSUMERS} ({})", list.len()),
+                );
+                items.push(Item::new(Action::Page(Page::Consumers), consumers));
                 items.push(Item::new(
                     Action::Page(Page::Origins),
                     format!("{ORIGINS} ({})", draft.trusted_origins.len()),
@@ -78,6 +83,32 @@ impl Manager {
                     ));
                 }
                 items.push(Item::new(Action::AddPeer, ADD_PEER));
+                items.push(Item::new(Action::Page(Page::Root), BACK));
+            }
+            Page::Consumers => {
+                match &self.consumers {
+                    Some(consumers) if consumers.is_empty() => items.push(Item {
+                        action: Action::None,
+                        label: CONSUMERS_EMPTY.into(),
+                        enabled: false,
+                    }),
+                    Some(consumers) => {
+                        for consumer in consumers {
+                            items.push(Item {
+                                action: Action::None,
+                                label: format!(
+                                    "{}  {} {LINKS}  {CONNECTED} {}",
+                                    consumer.hub,
+                                    consumer.links,
+                                    age(consumer.connected_since_ms)
+                                ),
+                                enabled: false,
+                            });
+                        }
+                    }
+                    None => {}
+                }
+                items.push(Item::new(Action::RefreshConsumers, REFRESH_CONSUMERS));
                 items.push(Item::new(Action::Page(Page::Root), BACK));
             }
             Page::Peer(hub) => {
@@ -127,5 +158,18 @@ impl Manager {
             }
         }
         items
+    }
+}
+
+fn age(since_ms: u64) -> String {
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|elapsed| elapsed.as_millis() as u64)
+        .unwrap_or(since_ms);
+    let seconds = now.saturating_sub(since_ms) / 1_000;
+    match seconds {
+        0..=59 => format!("{seconds}s"),
+        60..=3_599 => format!("{}m", seconds / 60),
+        _ => format!("{}h", seconds / 3_600),
     }
 }

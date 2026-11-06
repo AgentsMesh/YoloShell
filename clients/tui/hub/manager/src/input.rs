@@ -25,6 +25,17 @@ impl Manager {
             return None;
         }
         if self.pending.is_some() {
+            if key.code == KeyCode::Esc
+                && self
+                    .pending
+                    .as_ref()
+                    .is_some_and(|pending| pending.consumers)
+            {
+                self.pending = None;
+                self.epoch = uuid::Uuid::new_v4();
+                self.status = READY.into();
+                return None;
+            }
             return (key.code == KeyCode::Esc).then_some(Effect::Close);
         }
         if let Some(confirmation) = &mut self.confirmation {
@@ -128,7 +139,12 @@ impl Manager {
     }
     fn perform(&mut self, action: Action) -> Option<Effect> {
         match action {
-            Action::Page(page) => self.page(page),
+            Action::Page(page) => {
+                self.page(page);
+                if page == Page::Consumers {
+                    return Some(Effect::Request(self.consumers_query()));
+                }
+            }
             Action::AddPeer => self.form = Some(Form::peer(None)),
             Action::EditPeer(hub) => {
                 self.form = self
@@ -164,9 +180,13 @@ impl Manager {
             | Action::RemoveExport(_, _)
             | Action::RemoveFileRoot(_) => self.remove(action),
             Action::Apply => return self.proposal().map(Effect::Request),
+            Action::RefreshConsumers => {
+                return Some(Effect::Request(self.consumers_query()));
+            }
             Action::Reload => return Some(Effect::Request(self.query(false))),
             Action::Check => return Some(Effect::Request(self.query(true))),
             Action::Close => return Some(Effect::Close),
+            Action::None => {}
         }
         None
     }
