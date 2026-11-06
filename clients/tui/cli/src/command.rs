@@ -65,6 +65,11 @@ pub(crate) enum Command {
         #[command(subcommand)]
         command: AgentCommand,
     },
+    /// Install the hooks that let Yolo observe terminal agents.
+    Hook {
+        #[command(subcommand)]
+        command: yolo_tui_cli_hook::HookCommand,
+    },
     /// Start, stop, restart or inspect the local Host and Hub.
     #[command(group(crate::arguments::connection_group()))]
     Server {

@@ -29,6 +29,7 @@ impl Selection {
                 return yolo_tui_hub_cli::run(&socket, entry, &command, deadline).await;
             }
             Some(Command::Audit(args)) => return crate::audit::run(&self, args).await,
+            Some(Command::Hook { command }) => return yolo_tui_cli_hook::run(command),
             Some(Command::Recipe {
                 command: RecipeCommand::Show(args),
             }) => return crate::recipe::show(&args),
