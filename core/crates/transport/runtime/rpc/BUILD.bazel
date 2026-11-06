@@ -1,0 +1,35 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+
+package(default_visibility = ["//visibility:public"])
+
+rust_library(
+    name = "rpc",
+    crate_name = "yolo_runtime_rpc",
+    crate_root = "src/lib.rs",
+    srcs = glob(["src/**/*.rs"]),
+    edition = "2024",
+    deps = [
+        "//core/crates/transport/capnp/codec",
+        "//core/crates/transport/capnp/rpc",
+        "//core/crates/transport/protocol/validation:yolo_protocol_validation",
+        "//core/crates/wire:yolo_wire",
+        "@crates//:serde",
+        "@crates//:tokio",
+    ],
+)
+
+rust_test(
+    name = "integration_tests",
+    crate_root = "integration_tests/lib.rs",
+    srcs = glob(["integration_tests/**/*.rs", "test_support/**/*.rs"]),
+    edition = "2024",
+    deps = [
+        ":rpc",
+        "//core/crates/transport/capnp/codec",
+        "//core/crates/transport/capnp/rpc",
+        "//core/crates/wire:yolo_wire",
+        "@crates//:tokio",
+    ],
+)
+
+filegroup(name = "architecture_check_data", srcs = glob(["**/*"]))

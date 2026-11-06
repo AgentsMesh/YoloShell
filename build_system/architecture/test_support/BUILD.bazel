@@ -1,0 +1,26 @@
+load("@rules_rust//rust:defs.bzl", "rust_library")
+
+package(default_visibility = ["//visibility:public"])
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = [
+        "BUILD.bazel",
+        "dependency_graph.bzl",
+        "src/cli_constants.rs",
+        "src/lib.rs",
+    ],
+)
+
+rust_library(
+    name = "library",
+    testonly = True,
+    srcs = [
+        "src/cli_constants.rs",
+        "src/lib.rs",
+    ],
+    crate_name = "yolo_architecture_test_support",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    deps = ["//build_system/architecture/foundation:library"],
+)

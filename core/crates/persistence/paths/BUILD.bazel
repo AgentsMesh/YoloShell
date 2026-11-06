@@ -1,0 +1,180 @@
+load("@rules_rust//rust:defs.bzl", "rust_library")
+load("//build_system/bazel:version.bzl", "YOLO_MARKETING_VERSION")
+load("//build_system/bazel/rust:isolated_test.bzl", "isolated_rust_test")
+load(
+    "//build_system/bazel/rust:test_features.bzl",
+    "INTEGRATION_TEST_FEATURES",
+    "UNIT_TEST_FEATURES",
+)
+
+package(default_visibility = ["//visibility:public"])
+
+_PERSISTENCE_TEST_SUPPORT_FEATURE = "persistence-test-support"
+
+_DEPS = [
+    "//core/crates/agent/contract:yolo_agent_contract",
+    "//core/crates/application/support:yolo_application_support",
+    "//core/crates/persistence/acl:yolo_private_acl",
+    "//core/crates/persistence/coordination/core:yolo_coordination_core",
+    "//core/crates/persistence/identity/durable:yolo_durable_identity",
+    "//core/crates/persistence/maintenance/contract:yolo_maintenance_contract",
+    "//core/crates/persistence/paths/core:yolo_paths_core",
+    "@crates//:anyhow",
+    "@crates//:base64",
+    "@crates//:libc",
+    "@crates//:russh",
+    "@crates//:serde",
+    "@crates//:serde_json",
+    "@crates//:sha2",
+    "@crates//:tokio",
+    "@crates//:tracing",
+    "@crates//:uuid",
+]
+
+rust_library(
+    name = "yolo_paths",
+    srcs = [":runtime_sources"],
+    crate_name = "yolo_paths",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    version = YOLO_MARKETING_VERSION,
+    deps = _DEPS,
+)
+
+_PROCESS_TEST_SUPPORT = "//core/crates/runtime/engine/process:yolo_process_adversarial"
+
+_TEST_DEPS = _DEPS + [
+    _PROCESS_TEST_SUPPORT,
+    "@crates//:tempfile",
+]
+
+isolated_rust_test(
+    name = "yolo_paths_unit_tests",
+    srcs = [
+        ":runtime_sources",
+        ":shared_test_support_sources",
+        ":unit_test_sources",
+        ":unit_test_support_sources",
+    ],
+    aliases = {_PROCESS_TEST_SUPPORT: "yolo_process"},
+    crate_features = UNIT_TEST_FEATURES,
+    crate_name = "yolo_paths_unit_tests",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    deps = _TEST_DEPS,
+)
+
+isolated_rust_test(
+    name = "yolo_paths_integration_tests",
+    srcs = [
+        ":integration_test_sources",
+        ":integration_test_support_sources",
+        ":runtime_sources",
+        ":shared_test_support_sources",
+    ],
+    aliases = {_PROCESS_TEST_SUPPORT: "yolo_process"},
+    crate_features = INTEGRATION_TEST_FEATURES,
+    crate_name = "yolo_paths_integration_tests",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    deps = _TEST_DEPS,
+)
+
+rust_library(
+    name = "yolo_paths_adversarial",
+    testonly = True,
+    srcs = [":runtime_sources"],
+    crate_features = ["adversarial-test-hooks"],
+    crate_name = "yolo_paths",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    deps = _DEPS,
+)
+
+rust_library(
+    name = "yolo_paths_persistence_test_support",
+    testonly = True,
+    srcs = [
+        ":persistence_test_support_api_sources",
+        ":runtime_sources",
+        ":shared_test_support_sources",
+    ],
+    crate_features = [_PERSISTENCE_TEST_SUPPORT_FEATURE],
+    crate_name = "yolo_paths",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    deps = _DEPS,
+)
+
+filegroup(
+    name = "runtime_sources",
+    srcs = glob(
+        ["src/**/*.rs"],
+        allow_empty = True,
+    ),
+)
+
+filegroup(
+    name = "persistence_test_support_api_sources",
+    testonly = True,
+    srcs = [
+        "test_support/persistence_api.rs",
+        "test_support/runtime_api.rs",
+    ],
+)
+
+filegroup(
+    name = "shared_test_support_sources",
+    testonly = True,
+    srcs = [
+        "test_support/file_identity_compact.rs",
+        "test_support/private_file_slot_hooks.rs",
+    ],
+)
+
+filegroup(
+    name = "unit_test_sources",
+    testonly = True,
+    srcs = glob(
+        ["unit_tests/**/*.rs"],
+        allow_empty = True,
+    ),
+)
+
+filegroup(
+    name = "integration_test_sources",
+    testonly = True,
+    srcs = glob(
+        ["integration_tests/**/*.rs"],
+        allow_empty = True,
+    ),
+)
+
+filegroup(
+    name = "unit_test_support_sources",
+    testonly = True,
+    srcs = glob(
+        ["test_support/unit/**/*.rs"],
+        allow_empty = False,
+    ),
+)
+
+filegroup(
+    name = "integration_test_support_sources",
+    testonly = True,
+    srcs = glob(
+        ["test_support/integration/**/*.rs"],
+        allow_empty = False,
+    ),
+)
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = glob(
+        ["**/*"],
+        allow_empty = True,
+        exclude = ["BUILD.bazel"],
+    ) + [
+        "BUILD.bazel",
+    ],
+)

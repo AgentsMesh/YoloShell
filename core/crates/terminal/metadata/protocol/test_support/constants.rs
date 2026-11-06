@@ -1,0 +1,13 @@
+pub const TITLE: &str = "Codex";
+pub const BODY: &str = "Task complete";
+pub const FIRST_NOTIFICATION: u64 = 1;
+pub const TITLE_FIELD: &str = "title";
+pub const BODY_FIELD: &str = "body";
+pub const NOTIFICATION_FIELD: &str = "notification";
+pub const SEQUENCE_FIELD: &str = "notification_sequence";
+pub const KIND_FIELD: &str = "kind";
+pub const UNKNOWN_FIELD: &str = "unknown";
+pub const ESCAPE_INJECTION: &str = "bad\u{1b}[31m";
+pub const BIDI_INJECTION: &str = "bad\u{202e}title";
+pub const BELL_KIND: &str = "bell";
+pub const UNICODE_TEXT: &str = "界";

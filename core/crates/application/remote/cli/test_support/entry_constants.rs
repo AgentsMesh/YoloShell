@@ -1,0 +1,9 @@
+pub const PROGRAM_NAME: &str = yolo_launch_contract::ProcessRole::Remote.display_name();
+pub const HELP_ARGUMENT: &str = "--help";
+pub const VERSION_ARGUMENT: &str = "--version";
+pub const INVALID_ARGUMENT: &str = "--invalid-remote-role-option";
+pub const CONFIG: &str = "/private/fixture/config.json";
+pub const STATE: &str = "/private/fixture/broker";
+pub const LAUNCHER_PID: &str = "123";
+pub const LAUNCHER_START: &str = "456";
+pub const ACTIVATION_FD: &str = "7";

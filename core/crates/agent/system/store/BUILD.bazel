@@ -1,0 +1,146 @@
+load("@rules_rust//rust:defs.bzl", "rust_library")
+load("//build_system/bazel:version.bzl", "YOLO_MARKETING_VERSION")
+load(
+    "//build_system/bazel/rust:agent_store_component_deps.bzl",
+    "BINDING_IO_TEST_SUPPORT",
+    "CLAUDE_HOOKS_RESILIENCE_COMPONENT",
+    "CLAUDE_HOOKS_TEST_SUPPORT",
+    "HOOK_GENERATION_TEST_SUPPORT",
+    "CLAUDE_RESILIENCE_COMPONENT",
+    "CLAUDE_TEST_SUPPORT",
+    "CODEX_TEST_SUPPORT",
+    "PATHS_TEST_SUPPORT",
+    "PROCESS_TEST_SUPPORT",
+    "STORE_ADVERSARIAL_DEPS",
+    "STORE_DEPS",
+    "STORE_UNIT_TEST_DEPS",
+)
+load("//build_system/bazel/rust:component_test_graph.bzl", "COMPONENT_TEST_FEATURES", "component_test_aliases", "component_test_dependencies")
+load("//build_system/bazel/rust:isolated_test.bzl", "isolated_rust_test")
+load("//build_system/bazel/rust:test_features.bzl", "INTEGRATION_TEST_FEATURES", "UNIT_TEST_FEATURES")
+
+package(default_visibility = ["//visibility:public"])
+
+rust_library(
+    name = "yolo_agent_store",
+    srcs = glob(["src/**/*.rs"]),
+    crate_name = "yolo_agent_store",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    version = YOLO_MARKETING_VERSION,
+    deps = STORE_DEPS,
+)
+
+rust_library(
+    name = "yolo_agent_store_test_support",
+    testonly = True,
+    srcs = glob(["src/**/*.rs"]),
+    aliases = {
+        CLAUDE_HOOKS_RESILIENCE_COMPONENT: "yolo_claude_hooks",
+        CLAUDE_RESILIENCE_COMPONENT: "yolo_claude",
+        PROCESS_TEST_SUPPORT: "yolo_process",
+    },
+    crate_features = ["adversarial-test-hooks"],
+    crate_name = "yolo_agent_store",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    deps = STORE_ADVERSARIAL_DEPS,
+)
+
+isolated_rust_test(
+    name = "yolo_agent_store_unit_tests",
+    srcs = [
+        ":runtime_sources",
+        ":test_support_sources",
+        ":unit_test_sources",
+    ],
+    aliases = {
+        BINDING_IO_TEST_SUPPORT: "yolo_agent_binding_io",
+        CLAUDE_HOOKS_TEST_SUPPORT: "yolo_claude_hooks",
+        CLAUDE_TEST_SUPPORT: "yolo_claude",
+        HOOK_GENERATION_TEST_SUPPORT: "yolo_agent_hook_generation",
+        CODEX_TEST_SUPPORT: "yolo_codex",
+        PATHS_TEST_SUPPORT: "yolo_paths",
+    },
+    crate_features = UNIT_TEST_FEATURES,
+    crate_name = "yolo_agent_store_unit_tests",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    deps = STORE_UNIT_TEST_DEPS,
+)
+
+isolated_rust_test(
+    name = "yolo_agent_store_integration_tests",
+    srcs = [":runtime_sources", ":test_support_sources", ":integration_test_sources"],
+    aliases = {
+        BINDING_IO_TEST_SUPPORT: "yolo_agent_binding_io",
+        CLAUDE_HOOKS_TEST_SUPPORT: "yolo_claude_hooks",
+        CLAUDE_TEST_SUPPORT: "yolo_claude",
+        HOOK_GENERATION_TEST_SUPPORT: "yolo_agent_hook_generation",
+        CODEX_TEST_SUPPORT: "yolo_codex",
+        PATHS_TEST_SUPPORT: "yolo_paths",
+    },
+    crate_features = INTEGRATION_TEST_FEATURES,
+    crate_name = "yolo_agent_store_integration_tests",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    deps = STORE_UNIT_TEST_DEPS,
+)
+
+filegroup(
+    name = "runtime_sources",
+    srcs = glob(
+        ["src/**/*.rs"],
+        allow_empty = False,
+    ),
+)
+
+filegroup(
+    name = "unit_test_sources",
+    testonly = True,
+    srcs = glob(
+        ["unit_tests/**/*.rs"],
+        allow_empty = True,
+    ),
+)
+
+filegroup(
+    name = "integration_test_sources",
+    testonly = True,
+    srcs = glob(
+        ["integration_tests/**/*.rs"],
+        allow_empty = True,
+    ),
+)
+
+filegroup(
+    name = "test_support_sources",
+    testonly = True,
+    srcs = glob(["test_support/**/*.rs"]),
+)
+
+rust_library(
+    name = "yolo_agent_store_component_test_support",
+    testonly = True,
+    srcs = glob(["src/**/*.rs"]) + glob(
+        ["test_support/**/*.rs"],
+        allow_empty = True,
+    ),
+    aliases = component_test_aliases(STORE_DEPS),
+    crate_features = COMPONENT_TEST_FEATURES,
+    crate_name = "yolo_agent_store",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    deps = component_test_dependencies(STORE_DEPS) + ["@crates//:tempfile"],
+)
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = glob(
+        ["**/*"],
+        allow_empty = True,
+        exclude = ["BUILD.bazel"],
+    ) + [
+        "BUILD.bazel",
+    ],
+)
