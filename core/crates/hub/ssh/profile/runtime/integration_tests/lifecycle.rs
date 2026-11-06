@@ -8,7 +8,7 @@ use yolo_hub_ssh_profile_runtime::SshProfileRuntime;
 async fn final_runtime_owner_drop_closes_live_tunnels_and_releases_the_store_without_a_scheduler_turn()
  {
     let fixture = Fixture::new();
-    let tunnels = Tunnels::open(&fixture).await;
+    let mut tunnels = Tunnels::open(&fixture).await;
     let Fixture {
         root,
         state,
@@ -35,7 +35,7 @@ async fn final_runtime_owner_drop_closes_live_tunnels_and_releases_the_store_wit
 async fn registry_identity_loss_read_closes_every_profile_tunnel_before_its_response() {
     for replacement in [Replacement::Record, Replacement::Root] {
         let fixture = Fixture::new();
-        let tunnels = Tunnels::open(&fixture).await;
+        let mut tunnels = Tunnels::open(&fixture).await;
         replace_same_json(&fixture, replacement);
         let result = ready_now(fixture.call(Command::GetSshProfiles {}));
         assert_eq!(result, Err(PublicError::Unreachable));

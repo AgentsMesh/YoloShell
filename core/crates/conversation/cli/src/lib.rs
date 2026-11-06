@@ -7,6 +7,7 @@ mod runner;
 use clap::Parser;
 use std::{ffi::OsString, io::Write};
 
+pub use arguments::{Action, Options};
 pub use constants::COMMAND;
 const COMMAND_INDEX: usize = 1;
 
@@ -20,6 +21,11 @@ pub fn selects(arguments: &[OsString]) -> bool {
 pub fn run_from(arguments: impl IntoIterator<Item = OsString>) -> anyhow::Result<()> {
     let arguments = arguments::Arguments::try_parse_from(arguments)?;
     let arguments::Command::Conversation(options) = arguments.command;
+    run(options)
+}
+
+/// Runs one already parsed conversation command with its connection selection.
+pub fn run(options: arguments::Options) -> anyhow::Result<()> {
     let request = document::request(&options.action, std::io::stdin().lock())?;
     let reply = tokio::runtime::Builder::new_current_thread()
         .enable_all()

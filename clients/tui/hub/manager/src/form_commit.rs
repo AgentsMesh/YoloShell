@@ -6,7 +6,7 @@ use crate::{
 };
 use anyhow::{Context, Result, ensure};
 use yolo_hub_delegation::PeerIdentity;
-use yolo_hub_federation_settings::{Configuration, DialTransport, ExportPolicy, Peer, PeerAddress};
+use yolo_hub_federation_settings::{Configuration, ExportPolicy, Peer, PeerAddress};
 use yolo_hub_routing::Right;
 
 impl Form {
@@ -22,24 +22,13 @@ impl Form {
                     previous.is_none_or(|previous| previous == identity),
                     INVALID
                 );
-                let host = text(&self.fields, FieldId::Host)?;
-                let port = text(&self.fields, FieldId::Port)?;
-                ensure!(!host.is_empty() || port.is_empty(), INVALID);
-                let existing_ssh = previous
-                    .and_then(|previous| draft.peer(previous.hub()))
-                    .and_then(|peer| peer.dial.as_ref())
-                    .filter(|dial| matches!(dial.transport, DialTransport::Ssh { .. }));
-                let dial = if let Some(existing) = existing_ssh {
-                    ensure!(
-                        host == existing.host
-                            && port.parse::<std::num::NonZeroU16>()? == existing.port,
-                        INVALID
-                    );
-                    Some(existing.clone())
-                } else if host.is_empty() {
+                let profile = text(&self.fields, FieldId::Ssh)?;
+                let socket = text(&self.fields, FieldId::Socket)?;
+                ensure!(profile.is_empty() == socket.is_empty(), INVALID);
+                let dial = if profile.is_empty() {
                     None
                 } else {
-                    Some(PeerAddress::tcp(host, port.parse()?))
+                    Some(PeerAddress::ssh(profile, socket.into())?)
                 };
                 let exports = previous
                     .map(|previous| {
@@ -76,14 +65,6 @@ impl Form {
                     INVALID
                 );
                 next.trusted_origins.push(identity);
-            }
-            FormKind::Listener => {
-                let value = text(&self.fields, FieldId::Listen)?;
-                next.listen = if value.is_empty() {
-                    None
-                } else {
-                    Some(value.parse()?)
-                };
             }
             FormKind::Export { peer, original } => {
                 let origin = text(&self.fields, FieldId::Origin)?.parse()?;

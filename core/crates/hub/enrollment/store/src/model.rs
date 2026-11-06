@@ -54,10 +54,7 @@ impl PreparedEnrollment {
         ensure!(
             peer.identity == request.consumer
                 && export.rights == request.rights
-                && export.remaining_reexports == request.remaining_reexports
-                && configuration
-                    .listen
-                    .is_some_and(|address| address.ip().is_loopback()),
+                && export.remaining_reexports == request.remaining_reexports,
             INVALID
         );
         Ok(())

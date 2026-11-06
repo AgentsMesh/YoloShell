@@ -98,13 +98,12 @@ enum MissingWriter {
 }
 
 #[test]
-fn stale_unreachable_unsupported_and_out_of_scope_agents_cannot_trigger_control() {
+fn stale_unreachable_unsupported_and_unselected_agents_cannot_trigger_control() {
     let mutations: &[fn(&mut crate::State)] = &[
         |s| s.inventory.current = false,
         |s| mutate_agent(s, |f| f.freshness = Freshness::Stale),
         |s| mutate_agent(s, |f| f.reachability = Reachability::Unreachable),
         |s| mutate_agent(s, |f| f.capabilities.interrupt = Capability::Unsupported {}),
-        |s| s.inventory.scope = Some(HubId::new()),
         |s| s.inventory.selected_agent = None,
     ];
     for mutate in mutations {

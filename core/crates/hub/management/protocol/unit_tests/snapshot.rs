@@ -1,27 +1,16 @@
 use super::fixtures::{constants::*, *};
 use crate::ConfigurationSnapshot;
-use std::net::{IpAddr, Ipv4Addr, SocketAddr};
+use std::path::PathBuf;
 
-fn address(port: u16) -> SocketAddr {
-    SocketAddr::new(Ipv4Addr::LOCALHOST.into(), port)
-}
+const SOCKET: &str = "/run/user/1000/yolo/hub/peer.sock";
 
 #[test]
-fn listener_snapshot_accepts_only_applied_actual_endpoint_or_unapplied_absence() {
-    let valid = [
-        (false, None, None),
-        (false, Some(address(PORT)), None),
-        (true, None, None),
-        (true, Some(address(PORT)), Some(address(PORT))),
-        (true, Some(address(ANY_PORT)), Some(address(PORT))),
-    ];
-    for (applied, listen, listen_address) in valid {
-        let mut state = state();
-        state.configuration.listen = listen;
+fn snapshot_accepts_only_an_applied_peer_socket_or_unapplied_absence() {
+    for (applied, peer_socket) in [(false, None), (true, Some(PathBuf::from(SOCKET)))] {
         let snapshot = ConfigurationSnapshot {
-            state,
+            state: state(),
             applied,
-            listen_address,
+            peer_socket,
         };
         snapshot.validate().unwrap();
         roundtrip(&snapshot);
@@ -30,27 +19,19 @@ fn listener_snapshot_accepts_only_applied_actual_endpoint_or_unapplied_absence()
 }
 
 #[test]
-fn inconsistent_bindings_and_nested_invalid_state_are_rejected_on_wire() {
-    let invalid = [
-        (false, None, Some(address(PORT))),
-        (false, Some(address(PORT)), Some(address(PORT))),
-        (true, None, Some(address(PORT))),
-        (true, Some(address(PORT)), None),
-        (true, Some(address(PORT)), Some(address(OTHER_PORT))),
-        (true, Some(address(ANY_PORT)), Some(address(ANY_PORT))),
-        (
-            true,
-            Some(address(PORT)),
-            Some(SocketAddr::new(IpAddr::V4(Ipv4Addr::UNSPECIFIED), PORT)),
-        ),
-    ];
-    for (applied, listen, listen_address) in invalid {
-        let mut state = state();
-        state.configuration.listen = listen;
+fn inconsistent_peer_sockets_and_nested_invalid_state_are_rejected_on_wire() {
+    for (applied, peer_socket) in [
+        (false, Some(PathBuf::from(SOCKET))),
+        (true, None),
+        (true, Some(PathBuf::from("peer.sock"))),
+        (true, Some(PathBuf::from("/tmp/../peer.sock"))),
+        (true, Some(PathBuf::from("/tmp/peer\n.sock"))),
+        (true, Some(PathBuf::from(format!("/{}", "a".repeat(100))))),
+    ] {
         let snapshot = ConfigurationSnapshot {
-            state,
+            state: state(),
             applied,
-            listen_address,
+            peer_socket,
         };
         assert!(snapshot.validate().is_err());
         assert!(
@@ -66,7 +47,7 @@ fn inconsistent_bindings_and_nested_invalid_state_are_rejected_on_wire() {
         ConfigurationSnapshot {
             state,
             applied: false,
-            listen_address: None
+            peer_socket: None
         }
         .validate()
         .is_err()

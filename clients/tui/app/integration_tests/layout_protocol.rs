@@ -94,7 +94,7 @@ async fn new_client_publishes_layout_then_another_client_attaches_via_public_pro
     };
     open(&options, &mut store, &mut other).await.unwrap();
     let published = server.await.unwrap();
-    assert_eq!(other.tab_snapshot().shared_tabs().unwrap(), published.tabs);
+    assert_eq!(other.tab_snapshot().shared_tabs(other.entry_hub).unwrap(), published.tabs);
     assert!(other.terminals.is_empty());
     assert!(other.writers.is_empty());
 }

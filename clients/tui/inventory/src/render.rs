@@ -1,4 +1,4 @@
-use crate::{Inventory, InventoryViewport, View, constants::*, rows, sections};
+use crate::{Inventory, InventoryViewport, TreeSelection, View, constants::*, rows, tree_render};
 use ratatui::{
     Frame,
     layout::{Constraint, Layout, Rect},
@@ -7,7 +7,7 @@ use ratatui::{
     widgets::{List, ListState, Paragraph},
 };
 use std::collections::BTreeMap;
-use yolo_hub_identity::TerminalAddress;
+use yolo_hub_identity::{HubId, TerminalAddress};
 use yolo_hub_terminal_protocol::TerminalSummary;
 
 use crate::labels::ControlBadge;
@@ -20,30 +20,26 @@ pub fn render_viewport(
     filter: &str,
     control_status: &BTreeMap<TerminalAddress, ControlBadge>,
     animation_phase: u8,
+    active_machine: Option<HubId>,
     area: Rect,
 ) -> InventoryViewport {
-    let bands = Layout::vertical([
-        Constraint::Length(SECTION_ROWS),
-        Constraint::Length(CONTEXT_ROWS),
-        Constraint::Min(0),
-    ])
-    .split(area);
-    let tabs = sections::render(frame, inventory.view, bands[0]);
+    let bands = Layout::vertical([Constraint::Length(CONTEXT_ROWS), Constraint::Min(0)]).split(area);
     let mut viewport = InventoryViewport::new(
         area,
-        bands[2],
-        tabs,
+        bands[1],
         inventory,
         terminals,
         session_selected,
         filter,
     );
-    let scope = inventory
-        .scope
-        .filter(|_| inventory.view != View::Hubs)
-        .map_or_else(|| ALL_HUBS.to_owned(), |hub| format!("{HUB_LABEL} {hub}"));
+    let machine = active_machine
+        .map_or_else(|| ALL_MACHINES.to_owned(), |hub| inventory.machine_label(hub));
+    let machine = match inventory.view {
+        View::Terminals => format!("{TERMINAL_PICKER_LABEL} | {machine}"),
+        View::Tree => machine,
+    };
     let context = format!(
-        "{} | {scope} | {}",
+        "{} | {machine} | {}",
         if inventory.current {
             LIVE_LABEL
         } else {
@@ -61,7 +57,7 @@ pub fn render_viewport(
         } else {
             WARNING_COLOR
         })),
-        bands[1],
+        bands[0],
     );
     let (items, selected, empty) = match inventory.view {
         View::Terminals => {
@@ -76,68 +72,54 @@ pub fn render_viewport(
                         session,
                         inventory.phase(address, session.fields()),
                         inventory.attention.contains(&session.fields().address),
-                        bands[2].width,
+                        bands[1].width,
                     )
                 })
                 .collect::<Vec<_>>();
             (items, selected, EMPTY_SESSIONS)
         }
-        View::Agents => {
-            if !inventory.agents_supported {
-                empty(frame, AGENTS_UNSUPPORTED, bands[2]);
+        View::Tree => {
+            let rows = inventory.tree_rows(filter, terminals);
+            if rows.is_empty() {
+                let label = if inventory.machines_supported {
+                    EMPTY_MACHINES
+                } else {
+                    MACHINES_UNSUPPORTED
+                };
+                empty(frame, label, bands[1]);
                 return viewport;
             }
-            let visible = inventory.visible_agents(filter, terminals);
-            let selected = inventory
-                .selected_agent
-                .and_then(|selected| visible.iter().position(|address| *address == selected));
-            let items = visible
-                .iter()
-                .filter_map(|target| inventory.agents.get(target))
-                .map(|agent| {
-                    rows::agent(
-                        agent,
+            let selected = inventory.tree_selected.and_then(|selected| {
+                rows.iter().position(|row| {
+                    matches!(
+                        (row.kind, selected),
+                        (crate::TreeRowKind::Machine(hub), TreeSelection::Machine(machine)) if hub == machine
+                    ) || matches!(
+                        (row.kind, selected),
+                        (crate::TreeRowKind::Agent(target), TreeSelection::Agent(agent)) if target == agent
+                    )
+                })
+            });
+            let items = rows
+                .into_iter()
+                .filter_map(|row| {
+                    tree_render::item(
+                        inventory,
+                        row,
                         terminals,
                         inventory.current,
-                        inventory
-                            .attention
-                            .contains(&agent.fields().terminal.address),
-                        control_status
-                            .get(&agent.fields().terminal.address)
-                            .copied(),
+                        control_status,
                         animation_phase,
-                        bands[2].width,
+                        bands[1].width,
+                        active_machine,
                     )
                 })
-                .collect();
-            (items, selected, EMPTY_AGENTS)
-        }
-        View::Hubs => {
-            if !inventory.hubs_supported {
-                empty(frame, HUBS_UNSUPPORTED, bands[2]);
-                return viewport;
-            }
-            let visible = inventory.visible_hubs(filter);
-            let selected = inventory
-                .selected_hub
-                .and_then(|selected| visible.iter().position(|hub| *hub == selected));
-            let items = visible
-                .iter()
-                .filter_map(|hub| inventory.hubs.get(hub))
-                .map(|hub| {
-                    rows::hub(
-                        hub,
-                        inventory.current,
-                        inventory.local_hub_name(hub.hub_id),
-                        bands[2].width,
-                    )
-                })
-                .collect();
-            (items, selected, EMPTY_HUBS)
+                .collect::<Vec<_>>();
+            (items, selected, EMPTY_MACHINES)
         }
     };
     if items.is_empty() {
-        self::empty(frame, empty, bands[2]);
+        self::empty(frame, empty, bands[1]);
         return viewport;
     }
     let mut selection = ListState::default().with_selected(selected);
@@ -145,10 +127,10 @@ pub fn render_viewport(
     let mut list = List::new(items).highlight_style(Style::default().fg(SELECTED_COLOR));
     let marker = Line::from(SELECTION_MARKER);
     // Ratatui sizes the marker independently of the list rectangle.
-    if marker.width() <= usize::from(bands[2].width) {
+    if marker.width() <= usize::from(bands[1].width) {
         list = list.highlight_symbol(marker);
     }
-    frame.render_stateful_widget(list, bands[2], &mut selection);
+    frame.render_stateful_widget(list, bands[1], &mut selection);
     viewport.bind_rows(selection.offset(), &heights, inventory, terminals);
     viewport
 }

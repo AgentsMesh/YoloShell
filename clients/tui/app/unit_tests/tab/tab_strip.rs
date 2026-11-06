@@ -46,7 +46,7 @@ fn pages(titles: &[&str]) -> State {
     state
 }
 
-fn render(state: &State, area: Rect) -> (Terminal<TestBackend>, Vec<strip::Tab>) {
+fn render(state: &State, area: Rect) -> (Terminal<TestBackend>, Vec<yolo_tui_render::TabHit>) {
     let mut terminal = Terminal::new(TestBackend::new(WIDTH, HEIGHT)).unwrap();
     let mut tabs = Vec::new();
     terminal

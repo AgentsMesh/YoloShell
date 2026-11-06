@@ -1,10 +1,12 @@
 mod catalog;
 mod catalog_edit;
+mod catalog_view;
 mod client_location;
 mod client_registry;
 mod constants;
 mod document;
 mod location;
+mod migration;
 mod shared_layout;
 mod store;
 

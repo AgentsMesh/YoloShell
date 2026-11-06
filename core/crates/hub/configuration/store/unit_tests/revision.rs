@@ -87,10 +87,11 @@ fn replacement_between_revision_check_and_commit_is_a_nonrecoverable_cas_failure
     next.last_change = request.request_id;
     next.configuration = request.configuration;
     let mut replacement = fixture.record();
-    replacement.state.configuration.listen = Some(std::net::SocketAddr::new(
-        std::net::Ipv4Addr::LOCALHOST.into(),
-        OTHER_PORT,
-    ));
+    replacement
+        .state
+        .configuration
+        .trusted_origins
+        .push(super::fixtures::other_identity());
     fixture.replace(&replacement);
     let bytes = fixture.bytes();
     assert!(store.write(next).is_err());

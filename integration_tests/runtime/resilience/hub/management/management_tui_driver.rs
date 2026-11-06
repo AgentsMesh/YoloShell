@@ -106,7 +106,7 @@ impl Driver {
         driver.send(launch.as_bytes()).await;
         driver.wait(|text| text.contains(DRIVER)).await;
         driver.send(OPEN).await;
-        let listening = format!("Listening: {}", node.address);
+        let listening = format!("Peer socket: {}", node.peer_socket.display());
         driver
             .wait(|text| text.contains(TITLE) && text.contains(ACTIVE) && text.contains(&listening))
             .await;

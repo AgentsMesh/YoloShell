@@ -37,7 +37,7 @@ fn agent_history_recovery_targets_ended_agent_terminal_instead_of_focused_live_t
     state.inventory.agents.insert(agent_target, ended_agent);
     state.inventory.selected_agent = Some(agent_target);
     state.inventory.details = Some(agent_target);
-    state.inventory.view = View::Agents;
+    state.inventory.view = View::Tree;
     state.inventory.history = true;
     let (jobs, mut incoming) = mpsc::channel(crate::constants::QUEUE_CAPACITY);
     key(

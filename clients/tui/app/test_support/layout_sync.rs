@@ -11,7 +11,7 @@ use yolo_presentation_protocol::{LayoutAddress, LayoutUpdate, SharedLayoutDocume
 
 pub fn fixture() -> (State, mpsc::Sender<Job>, mpsc::Receiver<Job>) {
     let mut state = crate::client_capability_support::state();
-    let tabs = state.tab_snapshot().shared_tabs().unwrap();
+    let tabs = state.tab_snapshot().shared_tabs(state.entry_hub).unwrap();
     let document = LayoutUpdate {
         address: LayoutAddress {
             hub_id: HubId::new(),

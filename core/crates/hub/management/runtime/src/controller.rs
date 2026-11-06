@@ -4,13 +4,9 @@ use crate::{
     generation::{self, Running},
 };
 use anyhow::Result;
-use std::{
-    net::{SocketAddr, TcpListener},
-    sync::Arc,
-};
+use std::{path::PathBuf, sync::Arc};
 use tokio::sync::{mpsc, watch};
 use yolo_hub_configuration_store::ConfigurationStore;
-use yolo_hub_local_backend::LocalBackend;
 use yolo_hub_management_protocol::{ConfigurationSnapshot, ConfigurationState};
 use yolo_hub_terminal_protocol::PublicError;
 
@@ -18,20 +14,19 @@ pub struct ManagementService {
     pub(crate) hub: Arc<ManagedHub>,
     pub(crate) receiver: mpsc::Receiver<ManagementRequest>,
     pub(crate) store: ConfigurationStore,
-    pub(crate) bindings: yolo_hub_listener_binding::ListenerBindings,
-    pub(crate) backend: LocalBackend,
-    pub(crate) listener: Option<TcpListener>,
+    pub(crate) backend: yolo_hub_local_backend::LocalBackend,
+    pub(crate) listener: crate::listener::PeerListener,
     pub(crate) running: Option<Running>,
     pub(crate) retiring: Option<crate::retirement::Retiring>,
     pub(crate) configuration: ConfigurationState,
     pub(crate) history: Option<yolo_hub_federation::ObservationHistory>,
     pub(crate) activation_pending: bool,
-    pub(crate) origin: Option<Arc<dyn yolo_hub_dispatch::OriginDecorator<LocalBackend>>>,
+    pub(crate) origin: Option<Arc<dyn yolo_hub_dispatch::OriginDecorator<yolo_hub_local_backend::LocalBackend>>>,
 }
 
 impl ManagementService {
-    pub fn listen_address(&self) -> Result<Option<SocketAddr>> {
-        crate::listener::address(&self.listener)
+    pub fn peer_socket(&self) -> Result<PathBuf> {
+        self.hub.state.peer_socket()
     }
 
     pub async fn run(mut self, mut shutdown: watch::Receiver<bool>) -> Result<()> {
@@ -85,32 +80,26 @@ impl ManagementService {
         let result = self.snapshot();
         if result.is_err() {
             let _ = self.retire().await;
-            self.listener = None;
         }
         result
     }
 
     pub(crate) fn snapshot(&self) -> ManagementResult {
         let state = self.store.current().map_err(|_| PublicError::Unreachable)?;
-        self.bindings
-            .verify(&state)
-            .map_err(|_| PublicError::Unreachable)?;
         let applied = self
             .running
             .as_ref()
             .is_some_and(|running| !*running.finished.borrow())
             && state == self.configuration;
-        let listen_address = if applied {
-            crate::listener::verify(&self.bindings, &state, &self.listener)
-                .map_err(|_| PublicError::Unreachable)?;
-            self.listen_address().map_err(|_| PublicError::Internal)?
+        let peer_socket = if applied {
+            Some(self.peer_socket().map_err(|_| PublicError::Internal)?)
         } else {
             None
         };
         let snapshot = ConfigurationSnapshot {
             state,
             applied,
-            listen_address,
+            peer_socket,
         };
         snapshot.validate().map_err(|_| PublicError::Internal)?;
         Ok(snapshot)

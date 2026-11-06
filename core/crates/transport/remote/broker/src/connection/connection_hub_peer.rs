@@ -32,7 +32,7 @@ impl BrokerConnectionPool {
         );
         let remote = HubPeerRequest::new(
             observed.id(),
-            HubPeerEndpoint::new(request.endpoint)?,
+            HubPeerEndpoint::new(request.socket.clone())?,
             request.peer,
         )?;
         let opened = match observed.connection().open_hub_peer(&remote).await {

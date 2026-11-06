@@ -6,12 +6,13 @@ package(default_visibility = ["//visibility:public"])
 
 _DEPS = [
     "//core/crates/hub/configuration/store:yolo_hub_configuration_store",
+    "//core/crates/hub/delegation:yolo_hub_delegation",
+    "//core/crates/persistence/paths:yolo_paths",
     "//core/crates/hub/dispatch:yolo_hub_dispatch",
     "//core/crates/hub/federation:yolo_hub_federation",
     "//core/crates/hub/federation/settings:yolo_hub_federation_settings",
     "//core/crates/hub/identity:yolo_hub_identity",
     "//core/crates/hub/local/backend:yolo_hub_local_backend",
-    "//core/crates/hub/listener/binding:yolo_hub_listener_binding",
     "//core/crates/hub/management/protocol:yolo_hub_management_protocol",
     "//core/crates/hub/peer/dialer:yolo_hub_peer_dialer",
     "//core/crates/hub/rpc/protocol:yolo_hub_rpc_protocol",
@@ -62,8 +63,6 @@ rust_test(
     crate_root = "src/lib.rs",
     edition = "2024",
     deps = _DEPS + [
-        "//core/crates/hub/delegation:yolo_hub_delegation",
-        "//core/crates/hub/peer/transport:yolo_hub_peer_transport",
         "@crates//:tempfile",
         "@crates//:uuid",
     ],

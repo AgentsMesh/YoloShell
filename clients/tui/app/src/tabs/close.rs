@@ -26,7 +26,7 @@ pub(crate) fn tab(state: &mut State, id: Uuid) -> Result<()> {
         .map(|pane| pane.id)
         .collect::<Vec<_>>();
     let active = catalog.active().id == id;
-    let last = catalog.entries().len() == SINGLE_TAB;
+    let last = catalog.count_for(catalog.machine()) == SINGLE_TAB;
     if last {
         catalog.update_active(LocalTabView::default());
     } else {

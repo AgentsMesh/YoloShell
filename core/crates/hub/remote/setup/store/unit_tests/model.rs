@@ -64,7 +64,7 @@ fn routing_cannot_claim_ready_from_unknown_provision_or_an_unrelated_configurati
     else {
         panic!("expected link change")
     };
-    change.configuration.listen = Some((std::net::Ipv4Addr::LOCALHOST, EXTRA_PORT).into());
+    change.request_id = uuid::Uuid::nil();
     assert!(record.validate().is_err());
 }
 

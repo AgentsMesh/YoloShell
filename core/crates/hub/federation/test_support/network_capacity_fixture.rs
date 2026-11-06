@@ -1,15 +1,11 @@
 use super::{constants::*, peer::DirectoryPeer};
 use crate::{Federation, registry::Link};
 use std::sync::Arc;
-use tokio::{
-    net::{TcpListener, TcpStream},
-    sync::mpsc,
-    time::{Instant, timeout},
-};
-use yolo_hub_federation_settings::{Configuration, Peer};
+use tokio::time::Instant;
+use yolo_hub_federation_settings::{Configuration, Peer, PeerAddress};
 use yolo_hub_local_backend::LocalBackend;
+use yolo_hub_peer_link::{Admission, accept, connect};
 use yolo_hub_peer_protocol::FIRST_REVISION;
-use yolo_hub_peer_transport::{PeerConnection, PeerPins, PeerStream};
 use yolo_hub_state::HubState;
 
 #[path = "constants.rs"]
@@ -18,12 +14,8 @@ mod paths;
 pub struct LinkFixture {
     pub node: Arc<Federation>,
     pub link: Arc<Link>,
-    pub peer: Arc<PeerConnection>,
     pub responder: Arc<DirectoryPeer>,
-    pub incoming: Option<mpsc::Receiver<PeerStream>>,
-    pub peer_incoming: Option<mpsc::Receiver<PeerStream>>,
-    pub output: PeerStream,
-    pub input: PeerStream,
+    pub server: tokio::task::JoinHandle<()>,
     _root: tempfile::TempDir,
 }
 
@@ -51,7 +43,13 @@ impl LinkFixture {
             Configuration {
                 peers: vec![Peer {
                     identity: peer_state.peer_identity(),
-                    dial: None,
+                    dial: Some(
+                        PeerAddress::ssh(
+                            "in-process",
+                            peer_state.peer_socket().unwrap(),
+                        )
+                        .unwrap(),
+                    ),
                     consume: true,
                     exports: Vec::new(),
                 }],
@@ -60,58 +58,54 @@ impl LinkFixture {
         )
         .await
         .unwrap();
-        let listener = TcpListener::bind(TEST_LISTEN_ADDRESS).await.unwrap();
-        let (local_socket, peer_socket) = tokio::join!(
-            TcpStream::connect(listener.local_addr().unwrap()),
-            listener.accept(),
-        );
+        let responder = Arc::new(DirectoryPeer::new(peer_state.clone(), local.peer_identity()));
+        let (local_stream, peer_stream) = tokio::io::duplex(DUPLEX_BYTES);
         let deadline = Instant::now() + TEST_TIMEOUT;
-        let (local_connection, peer_connection) = tokio::join!(
-            yolo_hub_peer_transport::connect(
-                local_socket.unwrap(),
-                node.key.clone(),
-                peer_state.peer_identity(),
-                deadline
-            ),
-            yolo_hub_peer_transport::accept(
-                peer_socket.unwrap().0,
-                Arc::new(peer_state.transport_key().unwrap()),
-                PeerPins::new(vec![local.peer_identity()]).unwrap(),
-                deadline
-            ),
-        );
-        let (local_connection, incoming) = local_connection.unwrap();
-        let (peer_connection, mut peer_incoming) = peer_connection.unwrap();
-        let link = node
-            .register(local_connection, local.hub_id())
+        let local_identity = local.peer_identity();
+        let remote_identity = peer_state.peer_identity();
+        let served = responder.clone();
+        let server_state = peer_state.clone();
+        let server = tokio::spawn(async move {
+            let (_, stream) = accept(
+                peer_stream,
+                remote_identity,
+                server_state.as_ref(),
+                Admission::Only(&[local_identity]),
+                deadline,
+            )
             .await
             .unwrap();
-        let responder = Arc::new(DirectoryPeer::new(peer_state, local.peer_identity()));
+            let _ = yolo_hub_peer_rpc::serve(stream, served).await;
+        });
+        let client = connect(
+            local_stream,
+            local_identity,
+            local.as_ref(),
+            remote_identity,
+            deadline,
+        )
+        .await
+        .unwrap();
+        let link = node
+            .register(remote_identity, client)
+            .await
+            .unwrap();
         node.book
             .lock()
             .await
             .install(
-                link.connection.peer(),
+                link.peer,
                 link.id,
                 FIRST_REVISION,
                 vec![responder.export.clone()],
                 crate::node::now_ms().unwrap(),
             )
             .unwrap();
-        let output = link.connection.open_channel(deadline).await.unwrap();
-        let input = timeout(TEST_TIMEOUT, peer_incoming.recv())
-            .await
-            .unwrap()
-            .unwrap();
         Self {
             node,
             link,
-            peer: Arc::new(peer_connection),
             responder,
-            incoming: Some(incoming),
-            peer_incoming: Some(peer_incoming),
-            output,
-            input,
+            server,
             _root: root,
         }
     }

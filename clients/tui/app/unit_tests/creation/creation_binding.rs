@@ -6,7 +6,7 @@ use yolo_presentation_layout::Axis;
 fn unchanged_active_creation_binds_and_selects_the_new_resource_then_finalizes_once() {
     let mut fixture = Fixture::new();
     fixture.state.filter = RETAINED_FILTER.into();
-    fixture.state.inventory.view = yolo_tui_inventory::View::Agents;
+    fixture.state.inventory.view = yolo_tui_inventory::View::Tree;
     let request = fixture.start();
     let created = fixture.created();
     fixture.finish(request.clone(), created);
@@ -15,7 +15,7 @@ fn unchanged_active_creation_binds_and_selects_the_new_resource_then_finalizes_o
     assert_eq!(fixture.state.selected, Some(created.address));
     assert_eq!(
         fixture.state.inventory.view,
-        yolo_tui_inventory::View::Agents
+        yolo_tui_inventory::View::Tree
     );
     assert!(fixture.state.filter.is_empty());
     assert_eq!(fixture.state.mode, Mode::Inventory);
@@ -32,7 +32,7 @@ fn delayed_creation_binds_its_original_inactive_tab_without_stealing_current_foc
     let active = fixture.switch_tab();
     let view = fixture.state.tab_layout().clone();
     fixture.state.filter = RETAINED_FILTER.into();
-    fixture.state.inventory.view = yolo_tui_inventory::View::Hubs;
+    fixture.state.inventory.view = yolo_tui_inventory::View::Tree;
     let selected = fixture.state.selected;
     let created = fixture.created();
     fixture.finish(request.clone(), created);
@@ -41,7 +41,7 @@ fn delayed_creation_binds_its_original_inactive_tab_without_stealing_current_foc
     assert_eq!(*fixture.state.tab_layout(), view);
     assert_eq!(fixture.state.selected, selected);
     assert_eq!(fixture.state.filter, RETAINED_FILTER);
-    assert_eq!(fixture.state.inventory.view, yolo_tui_inventory::View::Hubs);
+    assert_eq!(fixture.state.inventory.view, yolo_tui_inventory::View::Tree);
     fixture.assert_finalize(&request, created, true);
 }
 

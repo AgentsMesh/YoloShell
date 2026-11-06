@@ -35,8 +35,6 @@ fn terminal_lookup_requires_supported_current_reachable_observation_and_scope() 
     assert_eq!(inventory.terminal_for_selected(&terminals), None);
     inventory.selected_agent = Some(agent_target);
     inventory.scope = Some(HubId::new());
-    assert_eq!(inventory.terminal_for_selected(&terminals), None);
-    inventory.scope = Some(address.hub_id);
     assert_eq!(
         inventory.terminal_for_selected(&terminals),
         Some(runtime_target)

@@ -3,8 +3,9 @@
 Hub discovery is entry-relative, not a globally replicated inventory. For
 authorized A -> B -> C sharing, A sees A/B/C resources, B sees B/C, and C sees C.
 B serves its own resources and relays C without changing C's resource addresses
-or acquiring ownership of C's PTYs. Sharing direction is independent of which
-endpoint dials the authenticated SSH connection.
+or acquiring ownership of C's PTYs. Sharing direction is policy, not transport:
+a Hub dials every next hop it needs, and an accepted link never carries reverse
+requests.
 
 ## Public Management Boundary
 
@@ -12,7 +13,8 @@ endpoint dials the authenticated SSH connection.
 Mac, TUI, and independent clients can use the same public command contract:
 
 - `GetConfiguration {}` returns the local Hub's public identity, durable revision,
-  latest change receipt, configuration, activation status, and actual listener.
+  latest change receipt, configuration, activation status, and published peer
+  socket.
 - `Configure { change }` carries a non-nil request ID, expected revision, and the
   complete desired `federation_settings::Configuration`.
 
@@ -24,12 +26,17 @@ and terminal control remain separately authorized and origin-addressed.
 Public clients use JSON-RPC 2.0 and negotiate the current Hub capability schema.
 Peer negotiation is a separate internal Cap’n Proto contract. Configuration DTOs
 reject unknown fields, invalid identity/revision values, and contradictory
-activation/listener state. A Configure success must match its exact request ID,
+activation/peer-socket state. A Configure success must match its exact request ID,
 new revision, and desired configuration and must report `applied: true`.
 
 The public `get_configuration` and `configure` methods transport these commands.
-The [TUI](tui-hub-management.md) has a configuration editor using this
-entry-local administration boundary.
+The [TUI](tui-machine-management.md) has a configuration editor using this
+entry-local administration boundary. `yolo machine pin` writes one machine with
+its SSH destination, remote socket and export policy; there is no pairing code or
+enrollment operation. The local Hub publishes `<hub-state>/peer.sock`; the
+remote side pins the importing machine identity and configures its export policy
+locally or through remote setup. See [Machines](machines.md).
+`Configure` remains the only general configuration mutation.
 
 ## Persistence And Concurrency
 
@@ -48,11 +55,10 @@ the same request ID conflict. Older receipts are not a general operation journal
 `--peer-config` is an explicit initialization seed. Once the Hub has a persisted
 configuration, an explicitly supplied conflicting file fails startup rather than
 silently replacing durable policy, and the error points at this boundary. Normal
-subsequent starts can omit the seed. Change peers or the listening endpoint on a
-persisted Hub through `Configure` (the JSON-RPC method behind the TUI and Mac
-configuration editors); a restart seed cannot update them. This protects a
-running owner from replacement, not against an authorized user rewriting valid
-historical state while the service is stopped.
+subsequent starts can omit the seed. Change peers on a persisted Hub through
+`Configure` (the JSON-RPC method behind `yolo machine pin`, the TUI and the Mac
+configuration editors); a restart seed cannot update them. This protects a running owner from replacement, not against an authorized
+user rewriting valid historical state while the service is stopped.
 
 ## Activation And Failure
 
@@ -61,12 +67,12 @@ continues if the requesting client times out or disconnects. Clients must inspec
 the resulting revision/receipt after an uncertain outcome, not automatically
 replay a mutation.
 
-An update validates policy and reserves a changed listening endpoint first.
-Bind failure leaves the existing generation intact. For activation, the actor
-fences old admission, stops and joins peer tasks, closes old peer channels,
-drains public operations, and releases the old Publication owner. It persists
-the desired configuration before constructing the replacement generation.
-Unchanged ephemeral listeners retain their actual port across updates.
+An update validates policy first. For activation, the actor fences old
+admission, stops and joins peer tasks, drops old peer links, drains public
+operations, and releases the old Publication owner. It persists the desired
+configuration before constructing the replacement generation. The peer socket
+is derived from Hub state and is republished once for the service lifetime, so
+an update never rebinds it.
 
 History transfer contains only origin-signed catalogues, never delegated grants,
 route proofs, or connection generations. History stays unreachable until new

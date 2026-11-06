@@ -1,7 +1,6 @@
 pub use yolo_launch_contract::EXECUTABLE_NAME as PROGRAM;
 pub const HELP_ARGUMENT: &str = "--help";
 pub const LAYOUT_ARGUMENT: &str = "--layout";
-pub const JSON_ARGUMENT: &str = "--json";
 pub const ALL_ARGUMENT: &str = "--all";
 pub const LAYOUTS_COMMAND: &str = "layouts";
 pub const LAYOUT_ID: &str = "74d01669-13e2-4d8d-a7ab-a8b5a75a8d0f";
@@ -48,3 +47,24 @@ pub const ARCHIVE_COMMAND: &str = "archive";
 pub const TERMINATE_COMMAND: &str = "terminate";
 pub const FORCE_ARGUMENT: &str = "--force";
 pub const NAME: &str = "alpha";
+pub const WORKSPACE_ENTRY: &str = "workspace";
+pub const STATUS_COMMAND: &str = "status";
+// Not named `_COMMAND`: the literal would enter the architecture registry and
+// collide with generic "version" fields outside the CLI.
+pub const VERSION_ENTRY: &str = "version";
+pub const START_COMMAND: &str = "start";
+pub const STOP_COMMAND: &str = "stop";
+pub const RESTART_COMMAND: &str = "restart";
+pub const MACHINE_COMMAND: &str = "machine";
+pub const CONSUMERS_COMMAND: &str = "consumers";
+pub const ADD_COMMAND: &str = "add";
+pub const REMOVE_COMMAND: &str = "remove";
+pub const PIN_COMMAND: &str = "pin";
+pub const IDENTITY_COMMAND: &str = "identity";
+pub const PIN_ONLY_ARGUMENT: &str = "--pin-only";
+pub const SSH_ARGUMENT: &str = "--ssh";
+pub const REMOTE_SOCKET_ARGUMENT: &str = "--remote-socket";
+pub const SSH_TARGET: &str = "remote-linux";
+pub const REMOTE_SOCKET: &str = "/home/stone/.local/state/yolo/hub/peer.sock";
+pub const EXPORT_LOCAL_ARGUMENT: &str = "--export-local";
+pub const JSON_ARGUMENT: &str = "--json";

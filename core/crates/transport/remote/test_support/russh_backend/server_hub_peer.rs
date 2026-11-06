@@ -1,19 +1,17 @@
 macro_rules! hub_peer_handler {
     () => {
-        async fn channel_open_direct_tcpip(
+        async fn channel_open_direct_streamlocal(
             &mut self,
             channel: Channel<Msg>,
-            host: &str,
-            port: u32,
-            _: &str,
-            _: u32,
+            socket_path: &str,
             reply: russh::server::ChannelOpenHandle,
             _: &mut Session,
         ) -> Result<(), Self::Error> {
             let allowed = self.filesystem.hub_peer_target();
-            if !allowed.is_some_and(|target| {
-                host == target.ip().to_string() && port == u32::from(target.port())
-            }) {
+            if !allowed
+                .as_ref()
+                .is_some_and(|target| target.as_path() == std::path::Path::new(socket_path))
+            {
                 reply
                     .reject(ChannelOpenFailure::AdministrativelyProhibited)
                     .await;
@@ -27,7 +25,7 @@ macro_rules! hub_peer_handler {
                 if delayed && !filesystem.permit_channel_open().await {
                     return;
                 }
-                let mut socket = tokio::net::TcpStream::connect(allowed.unwrap())
+                let mut socket = tokio::net::UnixStream::connect(allowed.unwrap())
                     .await
                     .unwrap();
                 reply.accept().await;

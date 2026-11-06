@@ -95,12 +95,13 @@ curl -fsSL https://raw.githubusercontent.com/AgentsMesh/YoloShell/main/scripts/i
 Update an installed binary from GitHub Releases:
 
 ```bash
-yolo update --check-release
-yolo update --install-release
-yolo update --install-release --channel nightly
+yolo update                       # install and activate the latest release
+yolo update --check               # show the latest release without changing anything
+yolo update --channel nightly     # select the nightly channel
 ```
 
-`yolo update` without release flags checks live service admission. See
+`yolo update` installs a newer image, restarts the local Host and Hub when
+needed, then probes live service admission. See
 [operations](docs/operations.md) for the restart boundary.
 
 ## The Web Client

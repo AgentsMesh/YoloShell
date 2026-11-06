@@ -38,7 +38,7 @@ fn restart_accepts_matching_committed_draft_and_retains_conflicting_draft() {
     assert!(restore_draft(&mut state, &other, Some(&checkpoint)).is_err());
     assert_eq!(*state.tab_layout(), draft);
     let mut accepted = other;
-    accepted.tabs = state.tab_snapshot().shared_tabs().unwrap();
+    accepted.tabs = state.tab_snapshot().shared_tabs(state.entry_hub).unwrap();
     assert_eq!(
         restore_draft(&mut state, &accepted, Some(&checkpoint)).unwrap(),
         accepted.tabs

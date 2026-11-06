@@ -53,6 +53,8 @@ async fn malformed_unknown_and_stale_controller_requests_are_rejected() {
             cwd: harness.home.path().to_path_buf(),
             cols: None,
             rows: None,
+            initial_input: None,
+            context: None,
         })
         .await
         .unwrap();

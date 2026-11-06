@@ -1,6 +1,47 @@
 use crate::support::*;
 use serde_json::{Value, json};
+use yolo_hub_identity::{HubId, TerminalId};
+use yolo_presentation_layout::Layout;
 use yolo_tui_tab::*;
+
+#[test]
+fn v5_catalog_migrates_to_per_machine_v6_and_persists() {
+    let (_root, path, hub) = fixture();
+    let mut store = TabStore::open(&path, hub).unwrap();
+    let remote = HubId::new();
+    let mut tabs = TabCatalog::new(hub, LocalTabView::default());
+    tabs.select_machine(remote).unwrap();
+    tabs.update_active(LocalTabView {
+        layout: Layout::new(Some(yolo_hub_identity::TerminalAddress {
+            hub_id: remote,
+            terminal_id: TerminalId::new(),
+        })),
+        view: TabViewMode::Terminal,
+    });
+    store.save_catalog(&tabs).unwrap();
+    drop(store);
+    let mut value: Value = yolo_paths::read_json(&path.join(TAB_FILE)).unwrap();
+    value[SCHEMA_FIELD] = Value::from(5);
+    let tabs = value[TABS_FIELD].as_object_mut().unwrap();
+    tabs.remove("machine");
+    tabs.remove("active_by_machine");
+    for entry in tabs[ENTRIES_FIELD].as_array_mut().unwrap() {
+        entry.as_object_mut().unwrap().remove("machine");
+    }
+    yolo_paths::atomic_write_json(&path.join(TAB_FILE), &value).unwrap();
+    let store = TabStore::open(&path, hub).unwrap();
+    assert_eq!(store.document().schema_version, TAB_SCHEMA_VERSION);
+    assert!(
+        store
+            .document()
+            .tabs
+            .entries()
+            .iter()
+            .any(|entry| entry.machine == remote)
+    );
+    let rewritten: Value = yolo_paths::read_json(&path.join(TAB_FILE)).unwrap();
+    assert_eq!(rewritten[SCHEMA_FIELD], Value::from(TAB_SCHEMA_VERSION));
+}
 
 #[test]
 fn single_workspace_format_is_rejected_without_rewriting_bindings() {

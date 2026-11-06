@@ -44,7 +44,7 @@ client ID.
 Terminal names are labels: `yolo new --name` does not reserve a unique name,
 and a selector that matches several terminals opens the picker.
 Client discovery and detach inspect the existing Hub identity without starting
-new services. Ctrl-B d detaches; Ctrl-B s focuses the Agent runs / Hubs sidebar,
+new services. Ctrl-B d detaches; Ctrl-B s focuses the machine tree sidebar,
 and Ctrl-B g opens the existing-terminal picker. New shells open in a dedicated
 Tab; splits create real PTYs inside the current Tab.
 

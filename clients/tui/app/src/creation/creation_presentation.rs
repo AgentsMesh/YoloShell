@@ -5,7 +5,7 @@ use yolo_tui_inventory::View;
 #[derive(Clone)]
 pub(crate) struct CreationPresentation {
     filter: String,
-    scope: Option<HubId>,
+    machine: HubId,
     view: View,
     mode: Mode,
 }
@@ -14,7 +14,7 @@ impl CreationPresentation {
     pub fn capture(state: &State) -> Self {
         Self {
             filter: state.filter.clone(),
-            scope: state.inventory.scope,
+            machine: state.tabs.machine(),
             view: state.inventory.view,
             mode: if state.mode == Mode::Directory {
                 Mode::Inventory
@@ -26,7 +26,7 @@ impl CreationPresentation {
 
     pub fn matches(&self, state: &State) -> bool {
         state.filter == self.filter
-            && state.inventory.scope == self.scope
+            && state.tabs.machine() == self.machine
             && state.inventory.view == self.view
             && state.mode == self.mode
             && state.tab_manager.is_none()
@@ -36,7 +36,7 @@ impl CreationPresentation {
 
     pub fn restore_directory(self, state: &mut State) {
         state.filter = self.filter;
-        state.inventory.scope = self.scope;
+        state.inventory.selected_machine = Some(self.machine);
         state.inventory.view = self.view;
         state.mode = Mode::Directory;
     }

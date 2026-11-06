@@ -26,7 +26,7 @@ fn fixture() -> (
         generation: RwLock::new(None),
         commands,
         build: None,
-        dialer: Arc::new(TcpPeerDialer),
+        dialer: Arc::new(crate::NoDialer),
     });
     (directory, hub, receiver)
 }
@@ -161,7 +161,7 @@ async fn configuration_reply_preserves_actor_result() {
             configuration: Configuration::default(),
         },
         applied: false,
-        listen_address: None,
+        peer_socket: None,
     };
     receiver
         .recv()

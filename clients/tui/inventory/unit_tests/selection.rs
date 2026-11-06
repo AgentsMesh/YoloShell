@@ -1,9 +1,8 @@
 use crate::{constants::NONMATCHING_FILTER, fixtures::Fixture};
-use yolo_hub_identity::HubId;
-use yolo_tui_inventory::View;
+use yolo_tui_inventory::{InventorySelection, View};
 
 #[test]
-fn agent_and_hub_selections_stay_stable_and_clamp_at_both_ends() {
+fn tree_selection_walks_machines_and_agents_and_clamps_at_both_ends() {
     let first = Fixture::new();
     let second = Fixture::new();
     let mut terminals = first.terminals();
@@ -13,57 +12,46 @@ fn agent_and_hub_selections_stay_stable_and_clamp_at_both_ends() {
         Some(vec![second.agent.clone(), first.agent.clone()]),
         Some(vec![second.hub.clone(), first.hub.clone()]),
     );
-    let agents = inventory.visible_agents("", &terminals);
-    let hubs = inventory.visible_hubs("");
-    inventory.selected_agent = None;
+    let rows = inventory.tree_selections("", &terminals);
+    inventory.tree_selected = None;
     inventory.move_selection(true, "", &terminals);
-    assert_eq!(inventory.selected_agent, Some(agents[0]));
+    assert_eq!(inventory.selected(None), Some(rows[0]));
     inventory.move_selection(false, "", &terminals);
-    assert_eq!(inventory.selected_agent, Some(agents[0]));
+    assert_eq!(inventory.selected(None), Some(rows[0]));
+    for row in rows.iter().skip(1) {
+        inventory.move_selection(true, "", &terminals);
+        assert_eq!(inventory.selected(None), Some(*row));
+    }
+    let last = *rows.last().unwrap();
+    let InventorySelection::Agent(last_agent) = last else {
+        panic!()
+    };
     inventory.move_selection(true, "", &terminals);
-    assert_eq!(inventory.selected_agent, Some(agents[1]));
-    inventory.move_selection(true, "", &terminals);
-    assert_eq!(inventory.selected_agent, Some(agents[1]));
+    assert_eq!(inventory.selected(None), Some(last));
     inventory.reconcile("", &terminals);
-    assert_eq!(inventory.selected_agent, Some(agents[1]));
-    inventory.view = View::Hubs;
-    inventory.selected_hub = Some(HubId::new());
-    inventory.move_selection(false, "", &terminals);
-    assert_eq!(inventory.selected_hub, Some(hubs[0]));
-    inventory.move_selection(true, "", &terminals);
-    assert_eq!(inventory.selected_hub, Some(hubs[1]));
-    inventory.move_selection(true, "", &terminals);
-    assert_eq!(inventory.selected_hub, Some(hubs[1]));
-    inventory.move_selection(false, "", &terminals);
-    assert_eq!(inventory.selected_hub, Some(hubs[0]));
+    assert_eq!(inventory.selected(None), Some(last));
     inventory.view = View::Terminals;
     inventory.move_selection(true, "", &terminals);
-    assert_eq!(inventory.selected_hub, Some(hubs[0]));
-    assert_eq!(inventory.selected_agent, Some(agents[1]));
+    assert_eq!(inventory.selected(None), None);
+    assert_eq!(inventory.selected_agent, Some(last_agent));
 }
 
 #[test]
-fn filtering_and_scope_reconcile_without_modifying_the_selected_view() {
+fn filtering_reconciles_the_tree_cursor_without_modifying_the_view() {
     let fixture = Fixture::new();
     let terminals = fixture.terminals();
     let mut inventory = fixture.inventory();
     inventory.reconcile(NONMATCHING_FILTER, &terminals);
+    assert_eq!(inventory.tree_selected, None);
     assert_eq!(inventory.selected_agent, None);
-    assert_eq!(inventory.selected_hub, None);
+    assert_eq!(inventory.selected_machine, None);
     inventory.move_selection(true, NONMATCHING_FILTER, &terminals);
-    assert_eq!(inventory.selected_agent, None);
-    inventory.view = View::Hubs;
-    inventory.move_selection(false, NONMATCHING_FILTER, &terminals);
-    assert_eq!(inventory.selected_hub, None);
+    assert_eq!(inventory.tree_selected, None);
     inventory.reconcile("", &terminals);
+    assert_eq!(inventory.selected_machine, Some(fixture.hub.hub_id));
     assert_eq!(
         inventory.selected_agent,
         Some(fixture.agent.cursor().target())
     );
-    assert_eq!(inventory.selected_hub, Some(fixture.hub.hub_id));
-    inventory.scope = Some(HubId::new());
-    inventory.reconcile("", &terminals);
-    assert_eq!(inventory.selected_agent, None);
-    assert_eq!(inventory.selected_hub, Some(fixture.hub.hub_id));
-    assert_eq!(inventory.view, View::Hubs);
+    assert_eq!(inventory.view, View::Tree);
 }

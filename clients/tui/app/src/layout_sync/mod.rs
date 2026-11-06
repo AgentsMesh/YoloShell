@@ -48,7 +48,7 @@ pub(crate) fn refresh(state: &mut State) {
 }
 
 pub(crate) fn pump(state: &mut State, jobs: &mpsc::Sender<Job>) {
-    let Ok(tabs) = state.tab_snapshot().shared_tabs() else {
+    let Ok(tabs) = state.tab_snapshot().shared_tabs(state.entry_hub) else {
         return;
     };
     let Some(sync) = &mut state.shared_layout else {
@@ -97,7 +97,7 @@ pub(super) fn adopt(
         .into_iter()
         .find(|pane| pane.id == previous_focus)
         .and_then(|pane| pane.terminal);
-    let tabs = yolo_tui_tab::TabCatalog::from_shared(document, &previous)?;
+    let tabs = yolo_tui_tab::TabCatalog::from_shared(document, &previous, state.entry_hub)?;
     let changed = tabs != previous;
     // Admission also runs when the remote topology is unchanged: the local
     // catalog may already hold a binding this client now knows is gone.
@@ -125,7 +125,7 @@ pub(super) fn adopt(
     // For every non-empty document, `projected` is the server view so a pruned
     // local topology is published in the same round.
     if document.tabs.is_empty() {
-        return state.tab_snapshot().shared_tabs();
+        return state.tab_snapshot().shared_tabs(state.entry_hub);
     }
     Ok(document.tabs.clone())
 }

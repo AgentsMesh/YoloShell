@@ -107,7 +107,7 @@ fn closing_last_pane_or_whole_tab_keeps_processes_and_reveals_another_tab() {
         assert!(fixture.state.focused_terminal().is_none());
         assert_eq!(fixture.state.mode, Mode::Inventory);
         assert!(fixture.state.sidebar_visible);
-        assert_eq!(fixture.state.inventory.view, View::Agents);
+        assert_eq!(fixture.state.inventory.view, View::Tree);
         assert!(fixture.state.terminals.contains_key(&fixture.expected));
         assert!(fixture.incoming.try_recv().is_err());
     }
@@ -143,7 +143,7 @@ fn sidebar_navigation_leaves_picker_and_never_presents_terminal_inventory_as_a_s
     tabs::terminal_picker::open(&mut fixture.state);
     tabs::sidebar(&mut fixture.state);
     assert!(fixture.state.terminal_picker.is_none());
-    assert_eq!(fixture.state.inventory.view, View::Agents);
+    assert_eq!(fixture.state.inventory.view, View::Tree);
     assert_eq!(fixture.state.mode, Mode::Inventory);
     prefix(&mut fixture, tabs::TOGGLE_SIDEBAR_KEY);
     assert!(!fixture.state.sidebar_visible);

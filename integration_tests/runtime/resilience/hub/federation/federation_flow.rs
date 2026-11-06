@@ -28,21 +28,12 @@ async fn real_three_hubs_relay_reverse_connection_and_tui_keep_origin_custody() 
         b_state.peer_identity(),
         c_state.peer_identity(),
     );
-    let (a_listener, b_listener, c_listener) =
-        (listener().await, listener().await, listener().await);
-    let (a_addr, b_addr, c_addr) = (
-        a_listener.local_addr().unwrap(),
-        b_listener.local_addr().unwrap(),
-        c_listener.local_addr().unwrap(),
-    );
     let a_config = Configuration {
-        listen: Some(a_addr),
         trusted_origins: vec![c],
         file_roots: vec![],
-        peers: vec![peer(b, Some(b_addr), true, vec![])],
+        peers: vec![peer(b, Some(&b_state), true, vec![])],
     };
     let b_config = Configuration {
-        listen: Some(b_addr),
         trusted_origins: vec![],
         file_roots: vec![],
         peers: vec![
@@ -52,18 +43,17 @@ async fn real_three_hubs_relay_reverse_connection_and_tui_keep_origin_custody() 
                 false,
                 vec![exports(b.hub(), false), exports(c.hub(), false)],
             ),
-            peer(c, None, true, vec![]),
+            peer(c, Some(&c_state), true, vec![]),
         ],
     };
     let c_config = Configuration {
-        listen: Some(c_addr),
         trusted_origins: vec![],
         file_roots: vec![],
-        peers: vec![peer(b, Some(b_addr), false, vec![exports(c.hub(), true)])],
+        peers: vec![peer(b, Some(&b_state), false, vec![exports(c.hub(), true)])],
     };
-    let a_node = RunningNode::start(&a_host, a_state, a_config, a_listener).await;
-    let b_node = RunningNode::start(&b_host, b_state, b_config.clone(), b_listener).await;
-    let c_node = RunningNode::start(&c_host, c_state, c_config, c_listener).await;
+    let a_node = RunningNode::start(&a_host, a_state, a_config).await;
+    let b_node = RunningNode::start(&b_host, b_state, b_config.clone()).await;
+    let c_node = RunningNode::start(&c_host, c_state, c_config).await;
     launch(&a_node, &a_host, NAME_A).await;
     launch(&b_node, &b_host, NAME_B).await;
     let created = launch_queryable(&c_node, &c_host, NAME_C).await;
@@ -172,10 +162,9 @@ async fn real_three_hubs_relay_reverse_connection_and_tui_keep_origin_custody() 
         surviving.agent.as_ref().unwrap().process_start_time,
         before.agent.as_ref().unwrap().process_start_time
     );
-    let listener = tokio::net::TcpListener::bind(b_addr).await.unwrap();
     let b_state = Arc::new(HubState::open(&b_path, b_host.home.path()).unwrap());
     assert_eq!(b_state.peer_identity(), b);
-    let b_node = RunningNode::start(&b_host, b_state, b_config, listener).await;
+    let b_node = RunningNode::start(&b_host, b_state, b_config).await;
     assert_eq!(a_node.wait_origins(&[a.hub(), b.hub(), c.hub()]).await, all);
     creation_query::verify(&[&a_node], &created).await;
     let replay = Attachment::open(

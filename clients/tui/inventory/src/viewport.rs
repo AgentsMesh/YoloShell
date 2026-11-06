@@ -8,7 +8,6 @@ use yolo_hub_terminal_protocol::TerminalSummary;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum InventoryHit {
-    Tab(View),
     Row(InventorySelection),
 }
 
@@ -16,7 +15,6 @@ pub enum InventoryHit {
 pub struct InventoryViewport {
     area: Rect,
     rows_area: Rect,
-    tabs: Vec<(Rect, View)>,
     rows: Vec<(Rect, InventorySelection, RowEvidence)>,
     view: View,
     scope: Option<HubId>,
@@ -33,7 +31,6 @@ impl InventoryViewport {
     pub(crate) fn new(
         area: Rect,
         rows_area: Rect,
-        tabs: Vec<(Rect, View)>,
         inventory: &Inventory,
         terminals: &BTreeMap<TerminalAddress, TerminalSummary>,
         selected: Option<TerminalAddress>,
@@ -42,14 +39,13 @@ impl InventoryViewport {
         Self {
             area,
             rows_area,
-            tabs,
             rows: Vec::new(),
             view: inventory.view,
             scope: inventory.scope,
             history: inventory.history,
             details: inventory.details,
             current: inventory.current,
-            support: (inventory.agents_supported, inventory.hubs_supported),
+            support: (inventory.agents_supported, inventory.machines_supported),
             filter: filter.into(),
             selected: inventory.selected(selected),
             ordered: inventory.visible_selections(filter, terminals),
@@ -75,7 +71,7 @@ impl InventoryViewport {
             && self.history == inventory.history
             && self.details == inventory.details
             && self.current == inventory.current
-            && self.support == (inventory.agents_supported, inventory.hubs_supported)
+            && self.support == (inventory.agents_supported, inventory.machines_supported)
             && self.filter == filter
             && self.selected == inventory.selected(selected)
             && self.ordered == inventory.visible_selections(filter, terminals)
@@ -90,16 +86,10 @@ impl InventoryViewport {
         if !self.area.contains(position) {
             return None;
         }
-        self.tabs
+        self.rows
             .iter()
-            .find(|(area, _)| area.contains(position))
-            .map(|(_, view)| InventoryHit::Tab(*view))
-            .or_else(|| {
-                self.rows
-                    .iter()
-                    .find(|(area, _, _)| area.contains(position))
-                    .map(|(_, row, _)| InventoryHit::Row(*row))
-            })
+            .find(|(area, _, _)| area.contains(position))
+            .map(|(_, row, _)| InventoryHit::Row(*row))
     }
 
     pub fn scroll_target(&self, forward: bool) -> Option<InventorySelection> {

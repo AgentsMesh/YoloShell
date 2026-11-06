@@ -3,13 +3,12 @@ use crate::{
     fields::{FieldId, Value},
     form::Form,
 };
-use yolo_hub_federation_settings::{PeerAddress, SshProfileRef};
 #[path = "../test_support/ssh_constants.rs"]
 mod constants;
 use constants::*;
 
 #[test]
-fn editing_imports_keeps_ssh_reference_and_rejects_endpoint_tampering() {
+fn editing_imports_preserves_the_ssh_socket_dial_until_explicitly_changed() {
     let mut manager = manager();
     let pin = peer_identity();
     add_peer(&mut manager, pin);
@@ -20,23 +19,10 @@ fn editing_imports_keeps_ssh_reference_and_rejects_endpoint_tampering() {
         .find(|peer| peer.identity == pin)
         .unwrap();
     peer.dial = Some(
-        PeerAddress::ssh(
-            SshProfileRef::new(PROFILE_ID, DIGEST_CHARACTER.repeat(DIGEST_BYTES)).unwrap(),
-            ENDPOINT.parse().unwrap(),
-        )
-        .unwrap(),
+        yolo_hub_federation_settings::PeerAddress::ssh(PROFILE, SOCKET.into()).unwrap(),
     );
     let mut form = Form::peer(Some(peer));
     let original = peer.dial.clone();
-    for field in [FieldId::Host, FieldId::Port] {
-        assert!(
-            form.fields
-                .iter()
-                .find(|entry| entry.id == field)
-                .unwrap()
-                .read_only
-        );
-    }
     form.fields
         .iter_mut()
         .find(|field| field.id == FieldId::Import)
@@ -48,10 +34,29 @@ fn editing_imports_keeps_ssh_reference_and_rejects_endpoint_tampering() {
     assert!(!changed.peer(pin.hub()).unwrap().consume);
     form.fields
         .iter_mut()
-        .find(|field| field.id == FieldId::Host)
+        .find(|field| field.id == FieldId::Ssh)
         .unwrap()
         .value = Value::Text {
-        text: OTHER_HOST.into(),
+        text: CHANGED_PROFILE.into(),
+        cursor: Default::default(),
+    };
+    let changed = form.commit(&draft, local).unwrap();
+    assert_eq!(
+        changed
+            .peer(pin.hub())
+            .unwrap()
+            .dial
+            .as_ref()
+            .unwrap()
+            .ssh_target(),
+        Some(CHANGED_PROFILE)
+    );
+    form.fields
+        .iter_mut()
+        .find(|field| field.id == FieldId::Socket)
+        .unwrap()
+        .value = Value::Text {
+        text: "relative.sock".into(),
         cursor: Default::default(),
     };
     assert!(form.commit(&draft, local).is_err());

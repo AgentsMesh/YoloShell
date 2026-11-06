@@ -30,36 +30,17 @@ hooks, not terminal output. Disabled, untrusted, restricted, or incomplete hooks
 remain unmanaged/Unknown; Yolo does not grant provider hook trust. Resume
 requires verified durable identity.
 
-## GitHub Releases and Updates
+## Local Services and Updates
 
-Official assets are published to GitHub Releases by the GitHub Actions release
-workflow, triggered by the GitLab tag or schedule pipeline. A tag that starts
-with `v` creates a stable release; the scheduled nightly pipeline creates a
-prerelease on the `nightly-<date>-<sha>` channel.
+Use `yolo status` and `yolo version` to distinguish the installed image from the
+images the running Host and Hub mapped. `yolo start`, `yolo stop` and
+`yolo restart` control the current profile; stopping services preserves live
+Workers and PTYs. `yolo update` checks for a newer release, installs it, and
+activates it through the same restart path; `--check` is the read-only mode.
 
-Install the latest stable release:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/AgentsMesh/YoloShell/main/scripts/install.sh | sh
-```
-
-Check or install a newer GitHub release:
-
-```bash
-yolo update --check-release
-yolo update --install-release
-yolo update --install-release --channel nightly
-```
-
-The updater downloads the platform archive and `SHA256SUMS`, verifies the
-digest, installs an immutable image under `~/.local/lib/yolo/<sha>/yolo`, and
-atomically points `~/.local/bin/yolo` at it. It does not restart services.
-Run `yolo update` without release flags to probe the live Host/Hub image,
-protocol and storage contract; restart the Host runner and Hub only after that
-admission check reports `ready`.
-
-Release assets cover macOS arm64, Linux x86_64 and Linux arm64. Linux archives
-are built against glibc 2.31 so they run on the supported Linux baseline.
+See [local service lifecycle](local-service-lifecycle.md) for the command
+contract and [upgrade admission](upgrade-admission.md) for the compatibility
+checks.
 
 ## Tabs, Panes, and Terminals
 
@@ -78,7 +59,7 @@ detaches its views and leaves live PTYs and processes running.
 - `Ctrl-B d` exits the client while preserving its terminals; `yolo attach`
   reconnects.
 - `Ctrl-B g` or `yolo terminals` opens the terminal picker; `Ctrl-B s` focuses
-  the Agent runs / Hubs sidebar.
+  the machine tree sidebar.
 - `Ctrl-B w` opens the tab manager; `Ctrl-B c` creates a tab with a shell;
   `Ctrl-B ?` shows help.
 - `yolo clients` lists attached clients; `yolo detach [CLIENT_ID]` disconnects
@@ -91,11 +72,13 @@ shell in its original pane should acquire control without that action.
 
 ## Hubs and Remote Runtime
 
-The Hubs inventory exposes `Configure Hub` (`m`). Configuration belongs to the
-entry Hub: it manages peer connections, trusted origins, file roots, listener
-settings, and per-peer export policies. Reciprocal identity enrollment and
-export authorization must also be configured at the other Hub; the TUI does not
-silently enroll an unknown key. See [TUI Hub management](tui-hub-management.md).
+The Machines inventory exposes `Manage machines` (`m`). Configuration belongs
+to the local Hub: it manages machine SSH/socket dials, trusted origins, file
+roots and per-machine export policies. Reciprocal identity pinning and export authorization
+must also be configured at the remote machine; the TUI never trusts an unknown key.
+Machine links use the user's SSH access to `<hub-state>/peer.sock` and open no
+public Hub port. See [Machines](machines.md) and [TUI Hub
+management](tui-machine-management.md).
 
 One SSH transport multiplexes runtime, attachment, bounded command, SFTP read,
 and deployment channels. Host keys are verified before authentication against

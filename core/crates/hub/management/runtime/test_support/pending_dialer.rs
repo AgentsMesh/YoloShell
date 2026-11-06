@@ -4,7 +4,7 @@ use tokio::{sync::mpsc, time::Instant};
 use yolo_hub_delegation::PeerIdentity;
 use yolo_hub_federation_settings::PeerAddress;
 use yolo_hub_peer_dialer::{PeerDialFuture, PeerDialer};
-use yolo_hub_peer_transport::PeerIo;
+use yolo_hub_peer_dialer::PeerIo;
 
 pub enum Event {
     Started {

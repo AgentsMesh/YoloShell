@@ -6,9 +6,9 @@ use ratatui::{
     widgets::Paragraph,
 };
 
-/// Healthy inventory views show no redundant title line: the section tabs
-/// already name the view and each row carries its own identity/status. Keep a
-/// single line for the two states a user must not miss.
+/// Healthy inventory views show no redundant title line: machine roots and
+/// agent rows carry their own identity/status. Keep a single line for the two
+/// states a user must not miss.
 pub(crate) fn height(state: &State) -> u16 {
     u16::from(status(state).is_some())
 }

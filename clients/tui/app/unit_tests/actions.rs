@@ -54,6 +54,8 @@ fn empty_inventory_c_creates_a_shell_from_the_absolute_current_directory() {
     let hub = yolo_hub_identity::HubId::new();
     let mut state = crate::client_capability_support::state();
     state.control_generation = Some(uuid::Uuid::new_v4());
+    state.entry_hub = hub;
+    state.tabs = yolo_tui_tab::TabCatalog::new(hub, yolo_tui_tab::LocalTabView::default());
     crate::startup::install(
         &mut state,
         hub,

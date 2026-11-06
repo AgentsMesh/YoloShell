@@ -12,11 +12,9 @@ use yolo_hub_client_channels::{ControlEvent, ControlRequest};
 use yolo_hub_identity::{HubId, TerminalAddress, TerminalId};
 use yolo_hub_rpc_protocol::{Command, Reply};
 use yolo_hub_terminal_protocol::{CreateShellRequest, CreateShellResult, SecretCapability};
-
 #[path = "creation_constants.rs"]
 mod constants;
 pub use constants::*;
-
 pub struct Fixture {
     pub state: State,
     pub jobs: mpsc::Sender<Job>,
@@ -26,7 +24,6 @@ pub struct Fixture {
     pub pane: Uuid,
     pub expected: TerminalAddress,
 }
-
 impl Fixture {
     pub fn new() -> Self {
         Self::with_capacity(QUEUE_CAPACITY)
@@ -39,6 +36,11 @@ impl Fixture {
         // allocation and user navigation are covered by tab-specific tests.
         state.inventory.view = yolo_tui_inventory::View::Terminals;
         state.control_generation = Some(Uuid::new_v4());
+        state.entry_hub = expected.hub_id;
+        state.tabs = yolo_tui_tab::TabCatalog::new(
+            expected.hub_id,
+            yolo_tui_tab::LocalTabView::default(),
+        );
         state.replace_terminals(vec![existing]);
         state.bind_focused(Some(expected)).unwrap();
         let tab = state.tabs.active().id;

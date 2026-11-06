@@ -15,7 +15,7 @@ pub fn snapshot() -> ConfigurationSnapshot {
             configuration: Default::default(),
         },
         applied: true,
-        listen_address: None,
+        peer_socket: Some("/run/user/1000/yolo/hub/peer.sock".into()),
     }
 }
 pub fn change(state: &ConfigurationSnapshot) -> (Command, ConfigurationSnapshot) {

@@ -11,7 +11,7 @@ pub async fn run(
     updates: &mpsc::Sender<Update>,
 ) {
     while let Some(operation) = requests.recv().await {
-        let result = yolo_hub_management_client::execute_endpoint(
+        let result = yolo_hub_management_client::execute_endpoint_reply(
             &options.endpoint,
             options.hub,
             operation.command.clone(),

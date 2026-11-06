@@ -5,7 +5,7 @@ use yolo_hub_identity::HubId;
 
 pub const HASH: &str = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
 pub const HOST: &str = "hub-fixture";
-pub const ENDPOINT: &str = "127.0.0.1:32123";
+pub const SOCKET: &str = "/run/user/1000/yolo/hub/peer.sock";
 pub const PEER_KEY: [u8; 32] = [7; 32];
 pub const GENERATION: u64 = 1;
 pub const CHANNEL: u64 = 3;
@@ -28,7 +28,7 @@ pub fn binding() -> BrokerHubConnectionBinding {
 pub fn request() -> BrokerHubOpenRequest {
     BrokerHubOpenRequest {
         binding: binding(),
-        endpoint: ENDPOINT.parse().unwrap(),
+        socket: SOCKET.into(),
         peer: PeerIdentity::new(HubId::new(), PEER_KEY).unwrap(),
     }
 }

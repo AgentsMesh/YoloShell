@@ -76,13 +76,13 @@ fn hub_rows_use_local_hostname_and_a_single_status_glyph() {
     let terminals = fixture.terminals();
     let mut inventory = fixture.inventory();
     inventory.set_local_hub(fixture.hub.hub_id, Some("build-host".into()));
-    inventory.view = View::Hubs;
+    inventory.view = View::Tree;
     let mut terminal = Terminal::new(TestBackend::new(WIDTH, HEIGHT)).unwrap();
     terminal
         .draw(|frame| render(frame, &inventory, &terminals, None, "", frame.area()))
         .unwrap();
     let content = contents(&terminal);
-    assert!(content.contains("Hub build-host"), "{content}");
+    assert!(content.contains("This machine build-host"), "{content}");
     assert!(content.contains(HUB_REACHABLE_GLYPH), "{content}");
     assert!(!content.contains("Reachable"), "{content}");
     assert!(
@@ -91,7 +91,7 @@ fn hub_rows_use_local_hostname_and_a_single_status_glyph() {
     );
 
     inventory
-        .hubs
+        .machines
         .get_mut(&fixture.hub.hub_id)
         .unwrap()
         .reachable = false;
@@ -125,6 +125,7 @@ fn agent_control_and_spinner_occupy_fixed_icon_slots() {
                 "",
                 &writable,
                 0,
+                None,
                 frame.area(),
             );
         })
@@ -147,6 +148,7 @@ fn agent_control_and_spinner_occupy_fixed_icon_slots() {
                 "",
                 &writable,
                 1,
+                None,
                 frame.area(),
             );
         })
@@ -167,6 +169,7 @@ fn agent_control_and_spinner_occupy_fixed_icon_slots() {
                 "",
                 &read_only,
                 0,
+                None,
                 frame.area(),
             );
         })
