@@ -3,7 +3,7 @@ use uuid::Uuid;
 use yolo_hub_federation_settings::Configuration;
 use yolo_hub_identity::{FileRootId, HubId};
 use yolo_hub_management_protocol::{ConfigurationChange, ConfigurationSnapshot};
-use yolo_hub_rpc_protocol::Command;
+use yolo_hub_rpc_protocol::{Command, ConsumerSummary};
 
 #[derive(Clone, Debug)]
 pub struct Operation {
@@ -22,6 +22,7 @@ pub(crate) enum Page {
     Origins,
     FileRoots,
     Exports(HubId),
+    Consumers,
 }
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(crate) enum Action {
@@ -37,6 +38,8 @@ pub(crate) enum Action {
     AddFileRoot,
     EditFileRoot(FileRootId),
     RemoveFileRoot(yolo_hub_file_protocol::FileRootConfiguration),
+    RefreshConsumers,
+    None,
     Apply,
     Reload,
     Check,
@@ -46,6 +49,7 @@ pub(crate) struct Pending {
     pub token: Uuid,
     pub change: Option<ConfigurationChange>,
     pub reconcile: bool,
+    pub consumers: bool,
 }
 pub(crate) struct Confirmation {
     pub action: Action,
@@ -58,6 +62,7 @@ pub struct Manager {
     pub(crate) entry: HubId,
     pub(crate) base: Option<ConfigurationSnapshot>,
     pub(crate) draft: Option<Configuration>,
+    pub(crate) consumers: Option<Vec<ConsumerSummary>>,
     pub(crate) page: Page,
     pub(crate) selected: usize,
     pub(crate) form: Option<Form>,
@@ -74,6 +79,7 @@ impl Manager {
             entry,
             base: None,
             draft: None,
+            consumers: None,
             page: Page::Root,
             selected: 0,
             form: None,
@@ -101,11 +107,26 @@ impl Manager {
             token,
             change: None,
             reconcile,
+            consumers: false,
         });
         self.status = LOADING.into();
         Operation {
             token,
             command: Command::GetConfiguration {},
+        }
+    }
+    pub(crate) fn consumers_query(&mut self) -> Operation {
+        let token = Uuid::new_v4();
+        self.pending = Some(Pending {
+            token,
+            change: None,
+            reconcile: false,
+            consumers: true,
+        });
+        self.status = LOADING.into();
+        Operation {
+            token,
+            command: Command::ListConsumers {},
         }
     }
     pub(crate) fn proposal(&mut self) -> Option<Operation> {
@@ -127,6 +148,7 @@ impl Manager {
             token: change.request_id,
             change: Some(change.clone()),
             reconcile: false,
+            consumers: false,
         });
         self.status = SAVING.into();
         Some(Operation {

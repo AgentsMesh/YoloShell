@@ -3,6 +3,11 @@
 All notable changes to Yolo are recorded here. The project follows semantic
 versioning once a stable release exists.
 
+## 0.3.1 — Alpha
+
+### Added
+- `Manage machines` has a read-only Consumers page listing the machines importing from this Hub, with live link count and connection age.
+
 ## 0.3.0 — Alpha
 
 ### Changed
@@ -59,13 +64,9 @@ versioning once a stable release exists.
 
 ### Changed
 
-- `yolo update` checks, installs, restarts and probes admission; `--check`/`--admit`/`--no-restart` select modes; `--install-release` is hidden.
-- Top-level help lists the auxiliary commands; one clap tree accepts root options before or after the command.
-- `yolo update` accepts `--local-profile`.
-- Help covers update, workspace, conversation, recipe and plugin commands, including plugin `--trust`.
-- `yolo workspace update` uses the resolved revision unless `--expected-revision` conflicts.
-- `yolo worktree create` requires `--trust-repository`; its options are documented.
-- `yolo update --check` reports availability; `--no-restart` prints the restart step.
+- `yolo update` checks, installs, restarts and probes admission; `--check`/`--admit`/`--no-restart` select modes, `--install-release` is hidden and `--local-profile` is accepted; `--check` reports availability and `--no-restart` prints the restart step.
+- Top-level help lists auxiliary commands and covers update, workspace, conversation, recipe and plugin commands, including plugin `--trust`; one clap tree accepts root options before or after the command.
+- `yolo workspace update` uses the resolved revision unless `--expected-revision` conflicts; `yolo worktree create` requires `--trust-repository`.
 - `agent send`, `ask` and `prompt` help states the wait and atomicity difference; `hub peer add` is the advanced pre-shared-key path.
 
 ### Fixed
@@ -104,11 +105,10 @@ versioning once a stable release exists.
 ### Added
 
 - Hubs pair with a single-use, expiring `yolo1_` code. `yolo hub peer invite`
-  mints a code signed by the inviting Hub; `yolo hub peer join` verifies the
-  inviting Hub's SSH host key, admits the joining identity and configures both
-  peer directions without copying Hub IDs, keys, hosts or ports. Codes expire
-  in 1–60 minutes, are consumed durably, and grant only the minted export and
-  import directions.
+  mints a signed code; `yolo hub peer join` verifies the inviting Hub's SSH
+  host key, admits the joining identity and configures both directions without
+  copying Hub IDs, keys or ports. Codes expire in 1–60 minutes, are consumed
+  durably, and grant only the minted export and import directions.
 
 ### Changed
 

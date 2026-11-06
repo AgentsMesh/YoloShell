@@ -167,7 +167,7 @@ fn loading_failure_all_pages_and_confirmation_are_rendered_without_fake_configur
     manager.not_sent(request.token);
     view(&manager);
     let request = manager.query(false);
-    manager.complete(request.token, Ok(snapshot));
+    manager.complete(request.token, Ok(configuration(snapshot)));
     let pin = peer_identity();
     add_peer(&mut manager, pin);
     manager.draft.as_mut().unwrap().trusted_origins.push(pin);
@@ -177,6 +177,7 @@ fn loading_failure_all_pages_and_confirmation_are_rendered_without_fake_configur
         Page::Peer(pin.hub()),
         Page::Origins,
         Page::Exports(pin.hub()),
+        Page::Consumers,
     ] {
         manager.page(page);
         view(&manager);

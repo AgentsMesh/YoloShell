@@ -16,7 +16,6 @@ _DEPS = [
     "//core/crates/hub/client:yolo_hub_client",
     "//core/crates/hub/identity:yolo_hub_identity",
     "//core/crates/hub/management/client:yolo_hub_management_client",
-    "//core/crates/hub/management/protocol:yolo_hub_management_protocol",
     "//core/crates/hub/rpc/protocol:yolo_hub_rpc_protocol",
     "//core/crates/hub/terminal/protocol:yolo_hub_terminal_protocol",
     "//core/crates/hub/workspace/protocol:yolo_hub_workspace_protocol",

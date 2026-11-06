@@ -73,8 +73,9 @@ discovery.
 
 On the machine being imported from, `yolo machine consumers` lists the
 machines currently importing from it, with their link count and first-connected
-time. This is a live inbound view; it does not grant or revoke access. The
-remote machine's export policy remains the authority.
+time. The TUI `Manage machines` view exposes the same read-only list on its
+Consumers page. This is a live inbound view; it does not grant or revoke
+access. The remote machine's export policy remains the authority.
 
 ## Trust model
 

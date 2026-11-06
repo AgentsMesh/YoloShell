@@ -86,6 +86,7 @@ fn menu(frame: &mut Frame<'_>, manager: &Manager, area: Rect) -> View {
         Page::Peers => CONNECTIONS.into(),
         Page::Origins => ORIGINS.into(),
         Page::FileRoots => FILE_ROOTS.into(),
+        Page::Consumers => CONSUMERS.into(),
         Page::Peer(hub) => format!("{CONNECTIONS}: {hub}"),
         Page::Exports(hub) => format!("{EXPORTS}: {hub}"),
     };

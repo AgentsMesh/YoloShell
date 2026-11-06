@@ -35,7 +35,7 @@ Machines:
 
     yolo machine add <user@host>
 
-Both machines need this release; the SSH login must be non-interactive (key or agent).
+Both machines must run 0.3.0 or later; the SSH login must be non-interactive (key or agent).
 
 Nightly channel:
 
