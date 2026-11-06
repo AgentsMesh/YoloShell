@@ -13,8 +13,9 @@ pub const CONTROLS: &str = concat!(
     "Ctrl-B d detaches. Ordinary keys (including q) go to the shell.\n",
     "Detaching leaves shells and agents running. An agent can finish while its shell remains usable.\n",
     "Commands: yolo terminal|client|layout for terminals, yolo server for local services,\n",
-    "yolo machine|agent for machines and agents. Root connection options may precede\n",
-    "or follow a command; run yolo <command> --help for details."
+    "yolo machine|agent for machines and agents, yolo hook to install agent hooks.\n",
+    "Root connection options may precede or follow a command; run yolo <command>\n",
+    "--help for details."
 );
 pub const TERMINALS_COMMAND: &str = "terminals";
 pub const CATALOG_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(10);

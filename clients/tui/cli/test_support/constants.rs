@@ -48,6 +48,8 @@ pub const FORCE_ARGUMENT: &str = "--force";
 pub const NAME: &str = "alpha";
 pub const WORKSPACE_ENTRY: &str = "workspace";
 pub const STATUS_COMMAND: &str = "status";
+pub const INSTALL_COMMAND: &str = "install";
+pub const YES_ARGUMENT: &str = "--yes";
 // Not named `_COMMAND`: the literal would enter the architecture registry and
 // collide with generic "version" fields outside the CLI.
 pub const VERSION_ENTRY: &str = "version";

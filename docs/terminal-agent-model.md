@@ -29,6 +29,17 @@ unresolved Stop as Running lifecycle with Unknown activity. Semantic prompt
 submission requires confirmed input readiness; ordinary leased PTY input remains
 independent. See [provider hook evidence](provider-hooks-research.md).
 
+Hooks are installed per provider with `yolo hook install <provider>` for one or
+more of `claude`, `codex`, `qwen`, `gemini` and `grok`. `yolo hook status`
+shows each provider's configuration file and state. The command reviews the
+target file and managed callbacks, asks for confirmation, preserves existing
+user hooks and unrelated settings, and keeps a backup. The installed callback
+only runs when the managed Worker exports `YOLO_HOOK_EXECUTABLE` and
+`YOLO_HOOK_HOME`, so ordinary shells are unaffected. Codex, Gemini CLI and Grok
+Build additionally require the user to trust the hooks in the provider's own
+settings; Yolo never bypasses hook trust. A provider whose configuration
+disables hooks is reported as `disabled` and is not rewritten.
+
 | Event | Meaning | User-facing action |
 | --- | --- | --- |
 | A normally launched agent finishes or quits | That AgentRun ended; the shell and PTY may still be live. | Continue at the shell prompt, run another command, or detach. Do not show the Terminal as exited solely because the agent ended. |

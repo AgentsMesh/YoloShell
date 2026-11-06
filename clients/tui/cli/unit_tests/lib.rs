@@ -3,6 +3,7 @@ mod aux_commands;
 mod clients;
 mod commands;
 mod entry;
+mod hook;
 mod machine;
 mod machine_commands;
 mod layouts;
