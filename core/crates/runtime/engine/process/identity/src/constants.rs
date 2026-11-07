@@ -1,0 +1,14 @@
+#[cfg(target_os = "macos")]
+pub const MACOS_BOOT_SESSION_UUID_NAME: &str = "kern.bootsessionuuid";
+#[cfg(target_os = "macos")]
+pub const MICROSECONDS_PER_SECOND: u64 = 1_000_000;
+pub const UNKNOWN_BOOT_ID_PREFIX: &str = "unknown:";
+#[cfg(target_os = "macos")]
+pub const MACOS_PROC_PIDINFO_NO_ARGUMENT: u64 = 0;
+#[cfg(target_os = "linux")]
+pub const LINUX_START_TIME_FIELD_OFFSET: usize = 19;
+#[cfg(target_os = "linux")]
+pub const LINUX_PROC_ENVIRONMENT_ENTRY: &str = "environ";
+#[cfg(target_os = "linux")]
+pub const LINUX_PROC_STATUS_ENTRY: &str = "status";
+pub(crate) const HEX_DIGITS_PER_BYTE: usize = 2;

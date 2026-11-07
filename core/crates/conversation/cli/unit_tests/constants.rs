@@ -1,0 +1,12 @@
+pub const SOCKET_FLAG: &str = "--socket";
+pub const HUB_FLAG: &str = "--hub";
+pub const AGENT_FLAG: &str = "--agent";
+pub const ORIGIN_FLAG: &str = "--origin";
+pub const WAIT_FLAG: &str = "--wait-ms";
+pub const RESOLVE_ACTION: &str = "resolve";
+pub const READ_ACTION: &str = "read";
+pub const WATCH_ACTION: &str = "watch";
+pub const ATTACH_ACTION: &str = "attach";
+pub const PLUGINS_ACTION: &str = "plugins";
+pub const LOCAL_PROFILE_FLAG: &str = "--local-profile";
+pub const PROFILE_PATH: &str = "/tmp/conversation-profile.json";

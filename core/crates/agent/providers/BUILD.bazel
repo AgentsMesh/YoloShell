@@ -1,0 +1,16 @@
+load(
+    "//build_system/bazel/rust:providers.bzl",
+    "PROVIDER_AGENT_ARCHITECTURE",
+    "PROVIDER_CONVERSATION_ARCHITECTURE",
+)
+
+package(default_visibility = ["//visibility:public"])
+
+# This tree contains only provider implementations and policies. Mechanism
+# packages stay under agent/{contract,runtime,system} and conversation/.
+filegroup(
+    name = "architecture_check_data",
+    srcs = [
+        "BUILD.bazel",
+    ] + PROVIDER_AGENT_ARCHITECTURE + PROVIDER_CONVERSATION_ARCHITECTURE,
+)

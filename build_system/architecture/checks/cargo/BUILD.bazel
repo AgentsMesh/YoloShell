@@ -1,0 +1,51 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+
+package(default_visibility = ["//visibility:public"])
+
+_SOURCES = glob(["src/*.rs"])
+
+_UNIT_TEST_SOURCES = glob(["unit_tests/*.rs"])
+
+_TEST_SUPPORT_SOURCES = glob(["test_support/*.rs"])
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = _SOURCES + _UNIT_TEST_SOURCES + _TEST_SUPPORT_SOURCES + ["BUILD.bazel"],
+)
+
+rust_library(
+    name = "library",
+    srcs = _SOURCES,
+    crate_name = "yolo_architecture_cargo_policy",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    deps = [
+        "//build_system/architecture/foundation:library",
+        "//build_system/architecture/contracts:library",
+        "//build_system/architecture/syntax:library",
+    ],
+)
+
+rust_library(
+    name = "test_support",
+    testonly = True,
+    srcs = ["test_support/cargo_manifest_test_support.rs"],
+    crate_name = "yolo_architecture_cargo_policy_test_support",
+    crate_root = "test_support/cargo_manifest_test_support.rs",
+    edition = "2024",
+    deps = ["//build_system/architecture/contracts:library"],
+)
+
+rust_test(
+    name = "unit_tests",
+    srcs = _SOURCES + _UNIT_TEST_SOURCES + _TEST_SUPPORT_SOURCES,
+    crate_name = "yolo_architecture_cargo_policy_unit_tests",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    deps = [
+        "//build_system/architecture/foundation:library",
+        "//build_system/architecture/contracts:library",
+        "//build_system/architecture/syntax:library",
+        "//build_system/architecture/test_support:library",
+    ],
+)

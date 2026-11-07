@@ -1,0 +1,76 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+load("//build_system/platform/macos:config.bzl", "RELEASE_EVIDENCE_MACOS_MINIMUM_OS_ENV")
+load("//build_system/bazel/rust:test_features.bzl", "INTEGRATION_TEST_FEATURES", "TEST_SUPPORT_FEATURE")
+
+package(default_visibility = ["//visibility:public"])
+
+_SOURCES = glob(["src/*.rs"])
+
+_TEST_SUPPORT_SOURCES = glob(["test_support/*.rs"])
+
+_INTEGRATION_TEST_SOURCES = glob(["integration_tests/*.rs"])
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = _SOURCES + _TEST_SUPPORT_SOURCES + _INTEGRATION_TEST_SOURCES + ["BUILD.bazel"],
+)
+
+rust_library(
+    name = "library",
+    srcs = _SOURCES,
+    crate_name = "yolo_release_tool_custody",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    rustc_env = RELEASE_EVIDENCE_MACOS_MINIMUM_OS_ENV,
+    deps = [
+        "//build_system/release/contracts:library",
+        "//build_system/release/evidence_model:library",
+        "//build_system/release/filesystem:library",
+        "//build_system/release/foundation:library",
+        "//build_system/release/process_execution:library",
+        "@crates//:anyhow",
+        "@crates//:libc",
+        "@crates//:tempfile",
+    ],
+)
+
+rust_library(
+    name = "test_support",
+    testonly = True,
+    srcs = _SOURCES + _TEST_SUPPORT_SOURCES,
+    crate_features = [TEST_SUPPORT_FEATURE],
+    crate_name = "yolo_release_tool_custody",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    rustc_env = RELEASE_EVIDENCE_MACOS_MINIMUM_OS_ENV,
+    deps = [
+        "//build_system/release/contracts:library",
+        "//build_system/release/evidence_model:library",
+        "//build_system/release/filesystem:library",
+        "//build_system/release/foundation:library",
+        "//build_system/release/process_execution:library",
+        "@crates//:anyhow",
+        "@crates//:libc",
+        "@crates//:tempfile",
+    ],
+)
+
+rust_test(
+    name = "integration_tests",
+    srcs = _SOURCES + _TEST_SUPPORT_SOURCES + _INTEGRATION_TEST_SOURCES,
+    crate_features = INTEGRATION_TEST_FEATURES,
+    crate_name = "yolo_release_tool_custody_integration_tests",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    rustc_env = RELEASE_EVIDENCE_MACOS_MINIMUM_OS_ENV,
+    deps = [
+        "//build_system/release/contracts:library",
+        "//build_system/release/evidence_model:library",
+        "//build_system/release/filesystem:library",
+        "//build_system/release/foundation:library",
+        "//build_system/release/process_execution:library",
+        "@crates//:anyhow",
+        "@crates//:libc",
+        "@crates//:tempfile",
+    ],
+)

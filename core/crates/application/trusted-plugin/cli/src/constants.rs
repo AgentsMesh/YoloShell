@@ -1,0 +1,13 @@
+pub(crate) const GIT: &str = "git";
+pub(crate) const GIT_CLONE: &str = "clone";
+pub(crate) const GIT_DEPTH: &str = "--depth";
+pub(crate) const GIT_DEPTH_VALUE: &str = "1";
+pub(crate) const GIT_NO_TAGS: &str = "--no-tags";
+pub(crate) const GIT_BRANCH: &str = "--branch";
+pub(crate) const GIT_OPTIONS_END: &str = "--";
+pub(crate) const GIT_DIRECTORY: &str = "-C";
+pub(crate) const GIT_REV_PARSE: &str = "rev-parse";
+pub(crate) const GIT_HEAD: &str = "HEAD";
+pub(crate) const GIT_TERMINAL_PROMPT: &str = "GIT_TERMINAL_PROMPT";
+pub(crate) const GIT_PROMPT_DISABLED: &str = "0";
+pub(crate) const SCHEMA_VERSION_FIELD: &str = "schema_version";

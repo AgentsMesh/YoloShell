@@ -1,0 +1,10 @@
+pub(crate) const TITLE_PREFIX: &[u8] = b"\x1b]2;";
+pub(crate) const STRING_TERMINATOR: &[u8] = b"\x1b\\";
+pub(crate) const OSC_TITLE_AND_ICON: &[u8] = b"0";
+pub(crate) const OSC_TITLE: &[u8] = b"2";
+pub(crate) const OSC_NOTIFICATION: &[u8] = b"9";
+pub(crate) const OSC_URXVT: &[u8] = b"777";
+pub(crate) const URXVT_NOTIFY: &[u8] = b"notify";
+pub(crate) const WINDOWS_PROGRESS: &[u8] = b"4";
+pub(crate) const OSC_SEPARATOR: char = ';';
+pub(crate) const NEXT_NOTIFICATION: u64 = 1;

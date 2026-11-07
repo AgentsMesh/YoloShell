@@ -1,0 +1,41 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+load("//build_system/bazel:version.bzl", "YOLO_MARKETING_VERSION")
+
+package(default_visibility = ["//visibility:public"])
+
+_DEPS = [
+    "//core/crates/hub/identity:yolo_hub_identity",
+    "//core/crates/presentation/layout:yolo_presentation_layout",
+    "@crates//:serde",
+    "@crates//:uuid",
+]
+
+filegroup(name = "architecture_check_data", srcs = glob(["**/*.rs"]) + ["BUILD.bazel"])
+
+rust_library(
+    name = "yolo_presentation_protocol",
+    crate_name = "yolo_presentation_protocol",
+    crate_root = "src/lib.rs",
+    srcs = glob(["src/**/*.rs"]),
+    edition = "2024",
+    version = YOLO_MARKETING_VERSION,
+    deps = _DEPS,
+)
+
+rust_test(
+    name = "unit_tests",
+    crate_name = "yolo_presentation_protocol_unit_tests",
+    crate_root = "src/lib.rs",
+    srcs = glob(["src/**/*.rs", "unit_tests/**/*.rs", "test_support/**/*.rs"]),
+    edition = "2024",
+    deps = _DEPS + ["@crates//:serde_json"],
+)
+
+rust_test(
+    name = "integration_tests",
+    crate_name = "yolo_presentation_protocol_integration_tests",
+    crate_root = "integration_tests/lib.rs",
+    srcs = glob(["integration_tests/**/*.rs", "test_support/**/*.rs"]),
+    edition = "2024",
+    deps = _DEPS + [":yolo_presentation_protocol", "@crates//:serde_json"],
+)

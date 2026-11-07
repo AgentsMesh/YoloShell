@@ -1,0 +1,12 @@
+pub const ACL_ADD_ARGUMENT: &str = "+a";
+pub const ACL_REMOVE_ARGUMENT: &str = "-N";
+pub const CHMOD_EXECUTABLE: &str = "/bin/chmod";
+pub const TEST_DENY_DELETE_ACL: &str = "everyone deny delete";
+pub const PRIVATE_FILE_MODE: u32 = 0o600;
+pub const ARTIFACT_SHA256_JSON_KEY: &str = "artifact_sha256";
+pub const SOURCE_REVISION_JSON_KEY: &str = "source_revision";
+pub const TEST_SRCDIR_ENVIRONMENT: &str = "TEST_SRCDIR";
+pub const TEST_WORKSPACE_ENVIRONMENT: &str = "TEST_WORKSPACE";
+pub const BAZEL_RUNFILES_ROOT_DETAIL: &str = "Bazel runfiles root";
+pub const BAZEL_WORKSPACE_NAME_DETAIL: &str = "Bazel workspace name";
+pub const NORMALIZED_WHITESPACE_SEPARATOR: &str = " ";
