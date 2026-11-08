@@ -1,0 +1,58 @@
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library")
+
+VERSION_ARGUMENT = "--version"
+VERSION_ARGUMENT_ENVIRONMENT = "YOLO_CODEX_VERSION_ARGUMENT"
+
+package(default_visibility = ["//visibility:public"])
+
+exports_files([
+    "codex_live_peer.rs",
+    "codex_version.rs",
+])
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = glob(["*.rs"]) + ["BUILD.bazel"],
+)
+
+rust_library(
+    name = "yolo_codex_live_peer_fixture_contract",
+    testonly = True,
+    srcs = ["codex_live_peer_contract.rs"],
+    crate_name = "yolo_codex_live_peer_fixture_contract",
+    crate_root = "codex_live_peer_contract.rs",
+    edition = "2024",
+)
+
+rust_binary(
+    name = "codex_live_peer_fixture",
+    testonly = True,
+    srcs = ["codex_live_peer.rs"],
+    crate_name = "codex_live_peer_fixture",
+    crate_root = "codex_live_peer.rs",
+    edition = "2024",
+    deps = [":yolo_codex_live_peer_fixture_contract"],
+)
+
+rust_binary(
+    name = "codex_version_fixture",
+    testonly = True,
+    srcs = ["codex_version.rs"],
+    crate_name = "codex_version_fixture",
+    crate_root = "codex_version.rs",
+    edition = "2024",
+    rustc_env = {VERSION_ARGUMENT_ENVIRONMENT: VERSION_ARGUMENT},
+    deps = [
+        ":yolo_codex_version_fixture_contract",
+        "@crates//:libc",
+    ],
+)
+
+rust_library(
+    name = "yolo_codex_version_fixture_contract",
+    testonly = True,
+    srcs = ["codex_version_contract.rs"],
+    crate_name = "yolo_codex_version_fixture_contract",
+    crate_root = "codex_version_contract.rs",
+    edition = "2024",
+)

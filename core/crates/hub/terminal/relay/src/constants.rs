@@ -1,0 +1,20 @@
+use std::time::Duration;
+pub const STATUS_QUEUE_CAPACITY: usize = 8;
+pub const COMMAND_QUEUE_CAPACITY: usize = 8;
+pub(crate) const COMMAND_CLOSED: &str = "terminal relay command channel is unavailable";
+pub const REQUEST_TIMEOUT: Duration = Duration::from_secs(15);
+pub(crate) const HOLDER_LOOKUP_TIMEOUT: Duration = Duration::from_millis(250);
+pub const OUTPUT_TIMEOUT: Duration = Duration::from_secs(3);
+pub(crate) const EVENT_TIMEOUT: Duration = Duration::from_secs(45);
+pub(crate) const RELEASE_TIMEOUT: Duration = Duration::from_secs(3);
+pub(crate) const INPUT_BUFFER_BYTES: usize = 8 * 1024;
+pub(crate) const IO_FAILURE: &str = "terminal relay input or output failed";
+pub(crate) const STATUS_FAILURE: &str = "terminal relay status peer is unavailable";
+pub(crate) const OUTPUT_FAILURE: &str = "terminal relay output deadline expired";
+pub(crate) const UNREACHABLE: &str = "terminal origin is unreachable";
+pub(crate) const RESYNC_REQUIRED: &str = "terminal output requires a fresh snapshot";
+pub(crate) const INVALID_REPLY: &str = "terminal relay received an invalid reply";
+pub(crate) const INVALID_OPTIONS: &str = "terminal relay options are invalid";
+pub(crate) const CLIENT_FAILURE: &str = "terminal relay Hub operation failed";
+pub(crate) const UNKNOWN_OUTCOME: &str =
+    "terminal operation outcome is unknown; do not replay automatically";

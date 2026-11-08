@@ -1,0 +1,9 @@
+pub const JOURNAL_DIRECTORY: &str = "agent-control";
+pub const ANCHOR_PREFIX: &str = "agent-control-";
+pub const ANCHOR_EXTENSION: &str = "json";
+pub(crate) const SCHEMA: u16 = 3;
+pub(crate) const SESSION_NAMESPACE: &str = "Agent control runtime session";
+pub(crate) const INVALID_INITIALIZATION: &str = "Agent control initialization evidence is invalid";
+pub(crate) const CHANGED_INITIALIZATION: &str = "Agent control initialization evidence changed";
+pub(crate) const INVALID_ANCHOR: &str = "Agent control runtime anchor is invalid";
+pub(crate) const CHANGED_ANCHOR: &str = "Agent control runtime anchor changed";

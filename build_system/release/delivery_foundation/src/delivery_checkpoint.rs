@@ -1,0 +1,21 @@
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum DeliveryCheckpoint {
+    CandidateVerified,
+    ArchiveCopied,
+    Extracted,
+    TreeVerified,
+    SignatureVerified,
+    BeforePublish,
+    PreparedBeforeRename,
+    PublishedDestinationOpen,
+    PublishedDestinationIdentityValidation,
+    PublishedSignatureValidation,
+    PublishedDeliverySync,
+    PublishedParentSync,
+    PublishedNamespaceValidation,
+    PublishedTreeValidation,
+    PublishedArchiveValidation,
+    PublishedChecksumValidation,
+    PublishedReceiptValidation,
+    PublishedCandidateValidation,
+}

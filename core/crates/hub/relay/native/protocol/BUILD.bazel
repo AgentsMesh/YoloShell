@@ -1,0 +1,8 @@
+load("//build_system/bazel/capnp:defs.bzl", "capnp_rust_library")
+package(default_visibility = ["//visibility:public"])
+capnp_rust_library(
+    name = "yolo_native_relay_schema",
+    srcs = ["relay.capnp"],
+    crate_name = "yolo_native_relay_schema",
+)
+filegroup(name = "architecture_check_data", srcs = ["BUILD.bazel", "relay.capnp"])

@@ -1,0 +1,24 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+package(default_visibility = ["//visibility:public"])
+rust_library(
+    name = "rpc", crate_name = "yolo_hub_peer_rpc", crate_root = "src/lib.rs",
+    srcs = glob(["src/**/*.rs"]), edition = "2024",
+    deps = [
+        "//core/crates/hub/peer/protocol:yolo_hub_peer_protocol",
+        "//core/crates/transport/capnp/rpc",
+        "//core/crates/transport/capnp/codec",
+        "@crates//:tokio",
+    ],
+)
+rust_test(
+    name = "integration_tests", crate_root = "integration_tests/lib.rs",
+    srcs = glob(["integration_tests/**/*.rs"]), edition = "2024",
+    deps = [
+        ":rpc", "//core/crates/hub/peer/protocol:test_support",
+        "//core/crates/hub/peer/protocol:yolo_hub_peer_protocol",
+        "//core/crates/hub/rpc/protocol:yolo_hub_rpc_protocol",
+        "//core/crates/transport/capnp/rpc", "//core/crates/transport/capnp/codec",
+        "@crates//:tokio",
+    ],
+)
+filegroup(name = "architecture_check_data", srcs = glob(["**/*"]))

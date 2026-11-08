@@ -1,0 +1,42 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+load("//build_system/bazel:version.bzl", "YOLO_MARKETING_VERSION")
+package(default_visibility = ["//visibility:public"])
+_DEPS = [
+    "//core/crates/hub/delegation:yolo_hub_delegation",
+    "//core/crates/hub/management/protocol:yolo_hub_management_protocol",
+    "//core/crates/hub/remote/setup/protocol:yolo_hub_remote_setup_protocol",
+    "//core/crates/hub/ssh/profile/protocol:yolo_hub_ssh_profile_protocol",
+    "//core/crates/persistence/paths:yolo_paths",
+    "//core/crates/transport/remote/provisioning/protocol:yolo_remote_provisioning_protocol",
+    "@crates//:anyhow", "@crates//:serde", "@crates//:uuid",
+]
+filegroup(name = "architecture_check_data", srcs = glob(["**/*.rs"]) + ["BUILD.bazel"])
+rust_library(name = "yolo_hub_remote_setup_store", srcs = glob(["src/**/*.rs"]), crate_name = "yolo_hub_remote_setup_store", crate_root = "src/lib.rs", edition = "2024", version = YOLO_MARKETING_VERSION, deps = _DEPS)
+
+_TEST_DEPS = _DEPS + [
+    ":yolo_hub_remote_setup_store",
+    "//core/crates/distribution/bundle:yolo_distribution_bundle",
+    "//core/crates/distribution/publication/protocol:yolo_distribution_publication_protocol",
+    "//core/crates/hub/federation/settings:yolo_hub_federation_settings",
+    "//core/crates/hub/remote/startup/protocol:test_support",
+    "//core/crates/transport/broker/hub/protocol:yolo_broker_hub_protocol",
+    "@crates//:serde_json",
+    "@crates//:tempfile",
+]
+
+rust_test(
+    name = "unit_tests",
+    srcs = glob(["unit_tests/**/*.rs", "test_support/**/*.rs"]),
+    crate_root = "unit_tests/lib.rs",
+    crate_name = "yolo_hub_remote_setup_store_unit_tests",
+    edition = "2024",
+    deps = _TEST_DEPS,
+)
+rust_test(
+    name = "integration_tests",
+    srcs = glob(["integration_tests/**/*.rs", "test_support/**/*.rs"]),
+    crate_root = "integration_tests/lib.rs",
+    crate_name = "yolo_hub_remote_setup_store_integration_tests",
+    edition = "2024",
+    deps = _TEST_DEPS,
+)

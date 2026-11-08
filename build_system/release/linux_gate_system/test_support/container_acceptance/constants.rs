@@ -1,0 +1,23 @@
+use std::time::Duration;
+
+pub const USAGE: &str = "container_owner_driver NEW_DIAGNOSTIC_RECEIPT.json";
+pub const SCHEMA: u16 = 1;
+pub const TOOL_PREFIX: &str = "yolo-container-owner-acceptance-";
+pub const TOOL_NAME: &str = "bazel";
+pub const READY_FILE: &str = "waiting-for-owner";
+pub const READY_BYTES: &[u8] = b"waiting-for-owner\n";
+pub const READY_MAX_BYTES: u64 = 64;
+pub const CLI_DESCRIPTION: &str = "container owner acceptance Docker CLI";
+pub const CLI_TIMEOUT: Duration = Duration::from_secs(20);
+pub const ACCEPTANCE_BUDGET: Duration = Duration::from_secs(120);
+pub const FIXTURE_LIFETIME: Duration = Duration::from_secs(180);
+pub const FIXTURE_POLL: Duration = Duration::from_secs(1);
+pub const FIXTURE_EXIT: u8 = 97;
+pub const IMAGE_COMMAND: &str = "image";
+pub const STATE_FORMAT: &str = "{{json .State}}";
+pub const RUNNING_STATUS: &str = "running";
+pub const PLANNED: &str = "planned";
+pub const OWNER_PREPARED: &str = "owner_prepared";
+pub const CLI_SETTLED: &str = "cli_settled_container_running";
+pub const ENGINE_ABSENT: &str = "engine_absent";
+pub const RELEASED: &str = "resources_released";

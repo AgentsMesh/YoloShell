@@ -1,0 +1,10 @@
+pub const SOURCE_DIRECTORY_ENV: &str = "TEST_SRCDIR";
+pub const WORKSPACE_ENV: &str = "TEST_WORKSPACE";
+pub const SAMPLE_PATH: &str = "core/crates/runtime/engine/process/src/sample_child.rs";
+pub const TEST_SAMPLE_PATH: &str = "core/crates/runtime/engine/process/unit_tests/sample.rs";
+pub const FIRST_FUNCTION: &str = "first";
+pub const SECOND_FUNCTION: &str = "second";
+pub const OWNER: &str = "Owner";
+pub const BINDING: &str = "binding";
+pub const REPLACED_FUNCTION: &str = "replacement";
+pub const REORDERED_CHILD_CALL: &str = "temporary_reordered_child_call";

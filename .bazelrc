@@ -1,0 +1,31 @@
+common --enable_bzlmod
+common --announce_rc
+common --color=yes
+
+build --incompatible_strict_action_env
+# Bazel's LCOV merger is also executed as collector test data.
+build --java_runtime_version=remotejdk_21
+build --show_timestamps
+build --strategy=MetalCompile=local
+build:macos --macos_cpus=arm64
+build:macos --macos_minimum_os=14.2
+build:macos --@rules_rust//rust/settings:extra_rustc_flag=-Clink-arg=-Wl,-no_fixup_chains
+build:macos --@rules_rust//rust/settings:extra_exec_rustc_flag=-Clink-arg=-Wl,-no_fixup_chains
+
+test --test_output=errors
+test --keep_going
+
+coverage --combined_report=lcov
+coverage --instrument_test_targets
+
+coverage:macos --instrumentation_filter=^//plugins/macos[/:]
+coverage:rust --instrumentation_filter=^//(core|plugins|integration_tests)[/:]
+coverage:rust --@rules_rust//rust/settings:extra_rustc_env=RUSTC_BOOTSTRAP=1
+coverage:rust --@rules_rust//rust/settings:extra_rustc_flag=-Zcoverage-options=branch
+
+coverage:rust_tooling --config=rust
+coverage:rust_tooling --instrumentation_filter=^//(core|plugins|build_system|integration_tests)[/:]
+
+build:rust_coverage_direct --extra_toolchains=@yolo_coverage_rustc//:toolchain
+build:rust_coverage_direct --repo_env=YOLO_COVERAGE_RUSTC_ROOT=.build/coverage-rustc-1.93.1
+coverage:rust_coverage_direct --config=rust_tooling
