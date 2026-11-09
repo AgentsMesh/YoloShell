@@ -1,0 +1,17 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+load("//build_system/bazel:version.bzl", "YOLO_MARKETING_VERSION")
+package(default_visibility = ["//visibility:public"])
+_DEPS = [
+    "//core/crates/hub/identity:yolo_hub_identity",
+    "//core/crates/hub/federation/settings:yolo_hub_federation_settings",
+    "//core/crates/hub/management/protocol:yolo_hub_management_protocol",
+    "//core/crates/transport/ssh/profile/protocol:yolo_ssh_profile_protocol",
+    "//core/crates/transport/remote/provisioning/protocol:yolo_remote_provisioning_protocol",
+    "@crates//:anyhow", "@crates//:serde", "@crates//:serde_bytes", "@crates//:uuid", "@crates//:zeroize",
+]
+filegroup(name = "architecture_check_data", srcs = glob(["**/*.rs"]) + ["BUILD.bazel"])
+rust_library(name = "yolo_hub_remote_setup_protocol", srcs = glob(["src/**/*.rs"]), crate_name = "yolo_hub_remote_setup_protocol", crate_root = "src/lib.rs", edition = "2024", version = YOLO_MARKETING_VERSION, deps = _DEPS)
+
+_TEST_DEPS = _DEPS + [":yolo_hub_remote_setup_protocol", "//core/crates/distribution/publication/protocol:yolo_distribution_publication_protocol", "//core/crates/hub/remote/startup/protocol:test_support", "//core/crates/transport/remote/provisioning/protocol:test_support"]
+rust_test(name = "unit_tests", srcs = glob(["unit_tests/**/*.rs", "test_support/**/*.rs"]), crate_root = "unit_tests/lib.rs", crate_name = "yolo_hub_remote_setup_protocol_unit_tests", edition = "2024", deps = _TEST_DEPS + ["@crates//:serde_json"])
+rust_library(name = "test_support", testonly = True, srcs = glob(["test_support/**/*.rs"]), crate_root = "test_support/lib.rs", crate_name = "yolo_hub_remote_setup_protocol_test_support", edition = "2024", deps = _TEST_DEPS)

@@ -1,0 +1,32 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+load("//build_system/bazel:process_role_contract.bzl", "process_role_rust_contract")
+load("//build_system/bazel/rust:source_paths.bzl", "canonical_source_path_flags")
+
+package(default_visibility = ["//visibility:public"])
+
+_SOURCES = glob(["src/**/*.rs"])
+
+process_role_rust_contract(name = "process_role_constants")
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = _SOURCES + glob(["unit_tests/**/*.rs"]) + ["BUILD.bazel", ":process_role_constants"],
+)
+
+rust_library(
+    name = "yolo_launch_contract",
+    srcs = _SOURCES,
+    compile_data = [":process_role_constants"],
+    crate_name = "yolo_launch_contract",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    rustc_flags = canonical_source_path_flags(_SOURCES),
+)
+
+rust_test(
+    name = "unit_tests",
+    srcs = glob(["unit_tests/**/*.rs"]),
+    crate_root = "unit_tests/lib.rs",
+    edition = "2024",
+    deps = [":yolo_launch_contract"],
+)

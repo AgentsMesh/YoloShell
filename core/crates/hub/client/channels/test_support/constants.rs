@@ -1,0 +1,9 @@
+pub const ROOT: &str = "/tmp";
+pub const SOCKET: &str = "channels.sock";
+pub const TIMEOUT: std::time::Duration = std::time::Duration::from_secs(8);
+pub const SHUTDOWN_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(2);
+pub const CAPACITY: usize = 8;
+pub const EXPIRES_MS: i64 = 1_900_000_000_000;
+pub const LEASE_TTL_MS: u64 = 10_000;
+pub const RENEW_AFTER_MS: u64 = 5_000;
+pub const INPUT: &[u8] = b"protocol input";

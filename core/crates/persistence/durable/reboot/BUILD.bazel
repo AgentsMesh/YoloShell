@@ -1,0 +1,195 @@
+load("@rules_rust//rust:defs.bzl", "rust_library")
+load("//build_system/bazel:version.bzl", "YOLO_MARKETING_VERSION")
+load("//build_system/bazel/rust:component_test_graph.bzl", "COMPONENT_TEST_FEATURES", "component_test_aliases", "component_test_dependencies")
+load("//build_system/bazel/rust:isolated_test.bzl", "isolated_rust_test")
+load(
+    "//build_system/bazel/rust:test_features.bzl",
+    "INTEGRATION_TEST_FEATURES",
+    "UNIT_TEST_FEATURES",
+)
+
+package(default_visibility = ["//visibility:public"])
+
+_CLAUDE_COMPONENT = "//core/crates/agent/providers/claude:yolo_claude"
+
+_CLAUDE_RESILIENCE_COMPONENT = "//core/crates/agent/providers/claude:yolo_claude_resilience_support"
+
+_CLAUDE_CUSTODY_COMPONENT = "//core/crates/agent/system/custody:yolo_claude_custody"
+
+_CLAUDE_CUSTODY_RESILIENCE_COMPONENT = "//core/crates/agent/system/custody:yolo_claude_custody_resilience_support"
+
+_PTY_CUSTODY_COMPONENT = "//core/crates/runtime/engine/pty/custody:yolo_pty_custody"
+
+_PTY_CUSTODY_TEST_SUPPORT = "//core/crates/runtime/engine/pty/custody:yolo_pty_custody_test_support"
+
+_RUNTIME_SOURCES = glob(["src/**/*.rs"])
+
+_RESILIENCE_SUPPORT_SOURCES = glob(["test_support/**/*.rs"])
+
+_DEPS = [
+    _CLAUDE_COMPONENT,
+    _CLAUDE_CUSTODY_COMPONENT,
+    "//core/crates/application/support:yolo_application_support",
+    "//core/crates/crypto:yolo_crypto",
+    "//core/crates/persistence/paths:yolo_paths",
+    "//core/crates/runtime/engine/process/identity:yolo_process_identity",
+    _PTY_CUSTODY_COMPONENT,
+    "//core/crates/runtime/engine/startup/checkpoint/contract:yolo_startup_checkpoint_contract",
+    "//core/crates/terminal/model:yolo_terminal_model",
+    "@crates//:anyhow",
+    "@crates//:libc",
+    "@crates//:serde",
+    "@crates//:serde_json",
+    "@crates//:uuid",
+]
+
+rust_library(
+    name = "yolo_durable_reboot",
+    srcs = _RUNTIME_SOURCES,
+    crate_name = "yolo_durable_reboot",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    version = YOLO_MARKETING_VERSION,
+    deps = _DEPS,
+)
+
+_TEST_DEPS = [
+    dependency
+    for dependency in _DEPS
+    if dependency not in [
+        _CLAUDE_COMPONENT,
+        _CLAUDE_CUSTODY_COMPONENT,
+        _PTY_CUSTODY_COMPONENT,
+    ]
+] + [
+    _CLAUDE_RESILIENCE_COMPONENT,
+    _CLAUDE_CUSTODY_RESILIENCE_COMPONENT,
+    _PTY_CUSTODY_TEST_SUPPORT,
+    "//core/crates/agent/system/core:yolo_agent_core",
+    "//core/crates/agent/providers/claude/hooks:yolo_claude_hooks",
+    "//core/crates/wire:yolo_wire",
+    "@crates//:tempfile",
+]
+
+_TEST_ALIASES = {
+    _CLAUDE_RESILIENCE_COMPONENT: "yolo_claude",
+    _CLAUDE_CUSTODY_RESILIENCE_COMPONENT: "yolo_claude_custody",
+    _PTY_CUSTODY_TEST_SUPPORT: "yolo_pty_custody",
+}
+
+isolated_rust_test(
+    name = "yolo_durable_reboot_unit_tests",
+    srcs = [
+        ":runtime_sources",
+        ":test_support_sources",
+        ":unit_test_sources",
+    ],
+    aliases = _TEST_ALIASES,
+    crate_features = UNIT_TEST_FEATURES,
+    crate_name = "yolo_durable_reboot_unit_tests",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    deps = _TEST_DEPS,
+)
+
+isolated_rust_test(
+    name = "yolo_durable_reboot_integration_tests",
+    srcs = [
+        ":integration_test_sources",
+        ":runtime_sources",
+        ":test_support_sources",
+    ],
+    aliases = _TEST_ALIASES,
+    crate_features = INTEGRATION_TEST_FEATURES,
+    crate_name = "yolo_durable_reboot_integration_tests",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    deps = _TEST_DEPS,
+)
+
+rust_library(
+    name = "yolo_durable_reboot_resilience_support",
+    testonly = True,
+    srcs = _RUNTIME_SOURCES + _RESILIENCE_SUPPORT_SOURCES,
+    aliases = {
+        _CLAUDE_RESILIENCE_COMPONENT: "yolo_claude",
+        _CLAUDE_CUSTODY_RESILIENCE_COMPONENT: "yolo_claude_custody",
+    },
+    crate_features = ["adversarial-test-hooks"],
+    crate_name = "yolo_durable_reboot",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    version = YOLO_MARKETING_VERSION,
+    deps = [
+        dependency
+        for dependency in _DEPS
+        if dependency not in [
+            _CLAUDE_COMPONENT,
+            _CLAUDE_CUSTODY_COMPONENT,
+        ]
+    ] + [
+        _CLAUDE_RESILIENCE_COMPONENT,
+        _CLAUDE_CUSTODY_RESILIENCE_COMPONENT,
+    ],
+)
+
+filegroup(
+    name = "runtime_sources",
+    srcs = glob(
+        ["src/**/*.rs"],
+        allow_empty = False,
+    ),
+)
+
+filegroup(
+    name = "unit_test_sources",
+    testonly = True,
+    srcs = glob(
+        ["unit_tests/**/*.rs"],
+        allow_empty = True,
+    ),
+)
+
+filegroup(
+    name = "integration_test_sources",
+    testonly = True,
+    srcs = glob(
+        ["integration_tests/**/*.rs"],
+        allow_empty = True,
+    ),
+)
+
+filegroup(
+    name = "test_support_sources",
+    testonly = True,
+    srcs = glob(
+        ["test_support/**/*.rs"],
+        allow_empty = False,
+    ),
+)
+
+rust_library(
+    name = "yolo_durable_reboot_component_test_support",
+    testonly = True,
+    srcs = glob(["src/**/*.rs"]) + glob(
+        ["test_support/**/*.rs"],
+        allow_empty = True,
+    ),
+    aliases = component_test_aliases(_DEPS),
+    crate_features = COMPONENT_TEST_FEATURES,
+    crate_name = "yolo_durable_reboot",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    deps = component_test_dependencies(_DEPS) + ["@crates//:tempfile"],
+)
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = glob(
+        ["**/*"],
+        allow_empty = True,
+        exclude = ["BUILD.bazel"],
+    ) + [
+        "BUILD.bazel",
+    ],
+)
