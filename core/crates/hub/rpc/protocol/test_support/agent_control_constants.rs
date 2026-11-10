@@ -1,0 +1,13 @@
+pub const REQUEST_FIELD: &str = "request";
+pub const GRANT_FIELD: &str = "grant";
+pub const RECEIPT_FIELD: &str = "receipt";
+pub const TARGET_FIELD: &str = "target";
+pub const EXPECTED_CURSOR_FIELD: &str = "expected_cursor";
+pub const ACTION_FIELD: &str = "action";
+pub const INTERACTION_FIELD: &str = "interaction";
+pub const RESPONSE_FIELD: &str = "response";
+pub const SCHEMA_FIELD: &str = "schema_version";
+pub const OUTCOME_FIELD: &str = "outcome";
+pub const CONTROL_METHOD: &str = "agent_control";
+pub const CHOICE_ID: &str = "allow";
+pub const PREVIOUS_RPC_VERSION: u16 = 5;

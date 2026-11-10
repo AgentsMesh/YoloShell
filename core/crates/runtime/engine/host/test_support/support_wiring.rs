@@ -1,0 +1,16 @@
+#[cfg(all(test, feature = "yolo-test-support"))] include!("creation.rs");
+#[cfg(all(test, feature = "yolo-test-support"))] include!("runtime.rs");
+#[cfg(all(test, feature = "yolo-test-support"))] include!("recovery.rs");
+#[cfg(all(test, feature = "yolo-test-support"))] include!("socket_namespace.rs");
+#[cfg(all(test, feature = "yolo-test-support"))] include!("unit/core_fixture.rs");
+#[cfg(all(test, feature = "yolo-test-support"))] include!("unit/archive_test_support.rs");
+#[cfg(all(test, feature = "yolo-test-support"))] include!("unit/completed_attachment_support.rs");
+#[cfg(all(test, feature = "yolo-test-support"))] include!("unit/creation/creation_runtime_support.rs");
+#[cfg(all(test, feature = "yolo-unit-tests"))] include!("unit/creation/creation_resized_support.rs");
+#[cfg(test)] #[cfg(feature = "yolo-test-support")] include!("unit/creation/creation_survivor_support.rs");
+#[cfg(test)] #[cfg(any(not(test), feature = "yolo-test-support"))] include!("integration/reaped_process_test_support.rs");
+#[cfg(test)] #[cfg(feature = "yolo-test-support")] include!("unit/automatic_worker_crash_exit_test_support.rs");
+#[cfg(test)] #[cfg(feature = "yolo-test-support")] include!("unit/resume/resume_transaction_support.rs");
+#[cfg(test)] #[cfg(feature = "yolo-test-support")] include!("unit/resume/resume_validation_support.rs");
+#[cfg(test)] #[cfg(feature = "yolo-test-support")] include!("unit/resume/resume_tombstone_commit_race_support.rs");
+#[cfg(test)] #[cfg(feature = "yolo-test-support")] include!("unit/resume/resume_transaction_survivor_retirement_support.rs");

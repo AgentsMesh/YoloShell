@@ -1,0 +1,9 @@
+pub(super) const STATE: &str = "state";
+pub(super) const HOST: &str = "host";
+pub(super) const RETIRED: &str = "retired";
+pub(super) const FOREIGN: &str = "foreign";
+pub(super) const NAMESPACE: &str = "durable Hub binding test";
+pub(super) const BINDING: &str = "binding";
+pub(super) const DIRECTORY: &str = "directory";
+pub(super) const SCHEMA: &str = "schema";
+pub(super) const RETIRED_SCHEMA: u16 = 1;

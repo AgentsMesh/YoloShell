@@ -1,0 +1,35 @@
+load("@rules_rust//rust:defs.bzl", "rust_library")
+load("//build_system/bazel/rust:component_test_graph.bzl", "component_test_aliases", "component_test_dependencies")
+
+package(default_visibility = ["//visibility:public"])
+
+_DEPS = [
+    "//core/crates/crypto:yolo_crypto",
+    "//core/crates/persistence/paths:yolo_paths",
+    "//core/crates/runtime/engine/custody/guardian:yolo_custody_guardian",
+    "//core/crates/runtime/engine/process:yolo_process",
+    "//core/crates/runtime/engine/pty/custody:yolo_pty_custody",
+    "//core/crates/terminal/model:yolo_terminal_model",
+    "//core/crates/transport/session:yolo_session_timing",
+    "@crates//:anyhow",
+    "@crates//:uuid",
+]
+
+rust_library(
+    name = "yolo_resilience_support",
+    testonly = True,
+    srcs = glob(["src/**/*.rs"]),
+    aliases = component_test_aliases(_DEPS),
+    crate_name = "yolo_resilience_support",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    deps = component_test_dependencies(_DEPS),
+)
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = glob(
+        ["**/*"],
+        exclude = ["BUILD.bazel"],
+    ) + ["BUILD.bazel"],
+)

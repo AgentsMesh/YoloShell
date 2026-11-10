@@ -1,0 +1,47 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+load("//build_system/bazel:version.bzl", "YOLO_MARKETING_VERSION")
+
+package(default_visibility = ["//visibility:public"])
+
+_DEPS = [
+    "//core/crates/agent/contract:yolo_agent_contract",
+    "//core/crates/agent/system/adapter/contract:yolo_agent_adapter_contract",
+    "//core/crates/crypto:yolo_crypto",
+    "//core/crates/runtime/engine/process/identity:yolo_process_identity",
+    "@crates//:serde",
+    "@crates//:serde_json",
+    "@crates//:uuid",
+]
+
+rust_library(
+    name = "yolo_agent_control_contract",
+    srcs = glob(["src/**/*.rs"]),
+    crate_name = "yolo_agent_control_contract",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    version = YOLO_MARKETING_VERSION,
+    deps = _DEPS,
+)
+
+rust_test(
+    name = "unit_tests",
+    srcs = glob(["unit_tests/**/*.rs", "test_support/**/*.rs"]),
+    crate_name = "yolo_agent_control_contract_unit_tests",
+    crate_root = "unit_tests/lib.rs",
+    edition = "2024",
+    deps = _DEPS + [":yolo_agent_control_contract"],
+)
+
+rust_test(
+    name = "integration_tests",
+    srcs = glob(["integration_tests/**/*.rs", "test_support/**/*.rs"]),
+    crate_name = "yolo_agent_control_contract_integration_tests",
+    crate_root = "integration_tests/lib.rs",
+    edition = "2024",
+    deps = _DEPS + [":yolo_agent_control_contract"],
+)
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = glob(["**/*.rs"]) + ["BUILD.bazel"],
+)

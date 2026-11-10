@@ -1,0 +1,168 @@
+load("@rules_rust//rust:defs.bzl", "rust_library")
+load("//build_system/bazel:version.bzl", "YOLO_MARKETING_VERSION")
+load(
+    "//build_system/bazel/rust:claude_component_deps.bzl",
+    "BINDING_IO_TEST_SUPPORT",
+    "CLAUDE_DEPS",
+    "CLAUDE_HOOKS_TEST_SUPPORT",
+    "CLAUDE_INTEGRATION_TEST_DEPS",
+    "CLAUDE_RESILIENCE_DEPS",
+    "CLAUDE_STORE_TEST_DEPS",
+    "CLAUDE_UNIT_TEST_DEPS",
+    "PATHS_TEST_SUPPORT",
+    "PROCESS_TEST_SUPPORT",
+)
+load("//build_system/bazel/rust:component_test_graph.bzl", "COMPONENT_TEST_FEATURES", "component_test_aliases", "component_test_dependencies")
+load("//build_system/bazel/rust:isolated_test.bzl", "isolated_rust_test")
+load(
+    "//build_system/bazel/rust:test_features.bzl",
+    "INTEGRATION_TEST_FEATURES",
+    "UNIT_TEST_FEATURES",
+)
+
+package(default_visibility = ["//visibility:public"])
+
+_RUNTIME_SOURCES = glob(["src/**/*.rs"])
+
+_RESILIENCE_SUPPORT_SOURCES = [
+    "test_support/generation/adversarial_test_support.rs",
+    "test_support/generation/store_test_api.rs",
+    "test_support/generation_test_hook.rs",
+] + glob(["test_support/generation/adversarial_test_support/**/*.rs"])
+
+rust_library(
+    name = "yolo_claude",
+    srcs = _RUNTIME_SOURCES,
+    crate_name = "yolo_claude",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    version = YOLO_MARKETING_VERSION,
+    deps = CLAUDE_DEPS,
+)
+
+isolated_rust_test(
+    name = "yolo_claude_unit_tests",
+    srcs = [
+        ":runtime_sources",
+        ":test_support_sources",
+        ":unit_test_sources",
+    ],
+    aliases = {
+        CLAUDE_HOOKS_TEST_SUPPORT: "yolo_claude_hooks",
+        PROCESS_TEST_SUPPORT: "yolo_process",
+    },
+    compile_data = [":schema_fixture"],
+    crate_features = UNIT_TEST_FEATURES,
+    crate_name = "yolo_claude_unit_tests",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    deps = CLAUDE_UNIT_TEST_DEPS,
+)
+
+isolated_rust_test(
+    name = "yolo_claude_integration_tests",
+    srcs = [
+        ":integration_test_sources",
+        ":runtime_sources",
+        ":test_support_sources",
+    ],
+    aliases = {PROCESS_TEST_SUPPORT: "yolo_process"},
+    compile_data = [":schema_fixture"],
+    crate_features = INTEGRATION_TEST_FEATURES,
+    crate_name = "yolo_claude_integration_tests",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    deps = CLAUDE_INTEGRATION_TEST_DEPS,
+)
+
+rust_library(
+    name = "yolo_claude_resilience_support",
+    testonly = True,
+    srcs = _RUNTIME_SOURCES + _RESILIENCE_SUPPORT_SOURCES,
+    aliases = {PROCESS_TEST_SUPPORT: "yolo_process"},
+    crate_features = ["adversarial-test-hooks"],
+    crate_name = "yolo_claude",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    version = YOLO_MARKETING_VERSION,
+    deps = CLAUDE_RESILIENCE_DEPS,
+)
+
+rust_library(
+    name = "yolo_claude_store_test_support",
+    testonly = True,
+    srcs = _RUNTIME_SOURCES + _RESILIENCE_SUPPORT_SOURCES,
+    aliases = {
+        BINDING_IO_TEST_SUPPORT: "yolo_agent_binding_io",
+        PATHS_TEST_SUPPORT: "yolo_paths",
+        PROCESS_TEST_SUPPORT: "yolo_process",
+    },
+    crate_features = ["adversarial-test-hooks"],
+    crate_name = "yolo_claude",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    deps = CLAUDE_STORE_TEST_DEPS,
+)
+
+filegroup(
+    name = "runtime_sources",
+    srcs = glob(
+        ["src/**/*.rs"],
+        allow_empty = False,
+    ),
+)
+
+filegroup(
+    name = "unit_test_sources",
+    testonly = True,
+    srcs = glob(["unit_tests/**/*.rs"]),
+)
+
+filegroup(
+    name = "integration_test_sources",
+    testonly = True,
+    srcs = glob(
+        ["integration_tests/**/*.rs"],
+        allow_empty = True,
+    ),
+)
+
+filegroup(
+    name = "test_support_sources",
+    testonly = True,
+    srcs = glob(
+        ["test_support/**/*.rs"],
+        allow_empty = False,
+    ),
+)
+
+rust_library(
+    name = "yolo_claude_component_test_support",
+    testonly = True,
+    srcs = glob(["src/**/*.rs"]) + glob(
+        ["test_support/**/*.rs"],
+        allow_empty = True,
+    ),
+    aliases = component_test_aliases(CLAUDE_DEPS),
+    crate_features = COMPONENT_TEST_FEATURES,
+    crate_name = "yolo_claude",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    deps = component_test_dependencies(CLAUDE_DEPS) + ["@crates//:tempfile"],
+)
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = glob(
+        ["**/*"],
+        allow_empty = True,
+        exclude = ["BUILD.bazel"],
+    ) + [
+        "BUILD.bazel",
+    ],
+)
+
+filegroup(
+    name = "schema_fixture",
+    srcs = ["src/fixtures/claude-code-2.1.222-transcript.redacted.jsonl"],
+)

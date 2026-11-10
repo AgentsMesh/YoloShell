@@ -1,0 +1,20 @@
+pub(super) const TERMINAL_ID: &str = "00112233-4455-6677-8899-aabbccddeeff";
+pub(super) const REPLACEMENT_TERMINAL_ID: &str = "ffeeddcc-bbaa-9988-7766-554433221100";
+pub(super) const EXPECTED_DIGEST: &str =
+    "4b79971bea4f5acd57ad75ce2e54d3d9431229f52be3c046c55a6ec2b346be47";
+pub(super) const SCHEMA_VERSION: u16 = 2;
+pub(super) const NAME: &str = "digest fixture";
+pub(super) const REPLACEMENT_NAME: &str = "replacement";
+pub(super) const COMMAND: &str = "/bin/sh";
+pub(super) const REPLACEMENT_COMMAND: &str = "/bin/zsh";
+pub(super) const LOGIN_ARGUMENT: &str = "-l";
+pub(super) const FLAG_ARGUMENT: &str = "--flag=value";
+pub(super) const WORKING_DIRECTORY: &str = "/tmp/yolo digest";
+pub(super) const REPLACEMENT_WORKING_DIRECTORY: &str = "/tmp/replacement";
+pub(super) const COLUMNS: u16 = 120;
+pub(super) const ROWS: u16 = 32;
+pub(super) const CREATED_AT_MS: i64 = 1_700_000_000_123;
+pub(super) const UPDATED_AT_MS: i64 = 1_700_000_000_456;
+pub(super) const U16_MUTATION_INCREMENT: u16 = 1;
+pub(super) const I64_MUTATION_INCREMENT: i64 = 1;
+pub(super) const NONCANONICAL_DIGEST_JSON: &str = "\"ABC\"";

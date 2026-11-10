@@ -1,0 +1,84 @@
+diff --git a/compiler/rustc_mir_transform/src/coverage/counters.rs b/compiler/rustc_mir_transform/src/coverage/counters.rs
+index 879a20e7..70e8d81b 100644
+--- a/compiler/rustc_mir_transform/src/coverage/counters.rs
++++ b/compiler/rustc_mir_transform/src/coverage/counters.rs
+@@ -75,6 +75,25 @@ fn make_node_flow_priority_list(
+     nodes
+ }
+ 
++/// Allocate one physical counter per surviving mapped BCB, without assuming
++/// balanced flow across calls, unwinds, suspension, or process termination.
++pub(crate) fn direct_counters(
++    bcb_needs_counter: &DenseBitSet<BasicCoverageBlock>,
++    bcbs_seen: &DenseBitSet<BasicCoverageBlock>,
++) -> CoverageCounters {
++    let mut counters = CoverageCounters::with_num_bcbs(bcb_needs_counter.domain_size());
++    for bcb in bcb_needs_counter.iter() {
++        let term = if bcbs_seen.contains(bcb) {
++            counters.ensure_phys_counter(bcb)
++        } else {
++            // Keep optimized-away mappings in the denominator with zero hits.
++            CovTerm::Zero
++        };
++        counters.set_node_counter(bcb, term);
++    }
++    counters
++}
++
+ // Converts node counters into a form suitable for embedding into MIR.
+ pub(crate) fn transcribe_counters(
+     old: &NodeCounters<BasicCoverageBlock>,
+diff --git a/compiler/rustc_mir_transform/src/coverage/query.rs b/compiler/rustc_mir_transform/src/coverage/query.rs
+index 63c550c2..8935235e 100644
+--- a/compiler/rustc_mir_transform/src/coverage/query.rs
++++ b/compiler/rustc_mir_transform/src/coverage/query.rs
+@@ -10,7 +10,7 @@
+ use tracing::trace;
+ 
+ use crate::coverage::counters::node_flow::make_node_counters;
+-use crate::coverage::counters::{CoverageCounters, transcribe_counters};
++use crate::coverage::counters::{CoverageCounters, direct_counters, transcribe_counters};
+ 
+ /// Registers query/hook implementations related to coverage.
+ pub(crate) fn provide(providers: &mut Providers) {
+@@ -114,21 +114,25 @@ fn coverage_ids_info<'tcx>(
+         }
+     }
+ 
+-    // Clone the priority list so that we can re-sort it.
+-    let mut priority_list = fn_cov_info.priority_list.clone();
+-    // The first ID in the priority list represents the synthetic "sink" node,
+-    // and must remain first so that it _never_ gets a physical counter.
+-    debug_assert_eq!(priority_list[0], priority_list.iter().copied().max().unwrap());
+-    assert!(!bcbs_seen.contains(priority_list[0]));
+-    // Partition the priority list, so that unreachable nodes (removed by MIR opts)
+-    // are sorted later and therefore are _more_ likely to get a physical counter.
+-    // This is counter-intuitive, but it means that `transcribe_counters` can
+-    // easily skip those unused physical counters and replace them with zero.
+-    // (The original ordering remains in effect within both partitions.)
+-    priority_list[1..].sort_by_key(|&bcb| !bcbs_seen.contains(bcb));
+-
+-    let node_counters = make_node_counters(&fn_cov_info.node_flow_data, &priority_list);
+-    let coverage_counters = transcribe_counters(&node_counters, &bcb_needs_counter, &bcbs_seen);
++    let coverage_counters = if tcx.sess.opts.unstable_opts.coverage_direct_counters {
++        direct_counters(&bcb_needs_counter, &bcbs_seen)
++    } else {
++        // Clone the priority list so that we can re-sort it.
++        let mut priority_list = fn_cov_info.priority_list.clone();
++        // The first ID in the priority list represents the synthetic "sink" node,
++        // and must remain first so that it _never_ gets a physical counter.
++        debug_assert_eq!(priority_list[0], priority_list.iter().copied().max().unwrap());
++        assert!(!bcbs_seen.contains(priority_list[0]));
++        // Partition the priority list, so that unreachable nodes (removed by MIR opts)
++        // are sorted later and therefore are _more_ likely to get a physical counter.
++        // This is counter-intuitive, but it means that `transcribe_counters` can
++        // easily skip those unused physical counters and replace them with zero.
++        // (The original ordering remains in effect within both partitions.)
++        priority_list[1..].sort_by_key(|&bcb| !bcbs_seen.contains(bcb));
++
++        let node_counters = make_node_counters(&fn_cov_info.node_flow_data, &priority_list);
++        transcribe_counters(&node_counters, &bcb_needs_counter, &bcbs_seen)
++    };
+ 
+     let CoverageCounters {
+         phys_counter_for_node, next_counter_id, node_counters, expressions, ..

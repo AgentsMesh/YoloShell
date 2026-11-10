@@ -1,0 +1,12 @@
+package(default_visibility = ["//visibility:public"])
+
+exports_files(["defs.bzl", "generation.bzl"])
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = glob(["*.bzl", "*.md"]) + [
+        "BUILD.bazel",
+        "//build_system/bazel/capnp/generator:architecture_check_data",
+        "//build_system/bazel/capnp/integration_tests:architecture_check_data",
+    ],
+)
