@@ -1,0 +1,14 @@
+pub(super) const FIRST_QUEUE: usize = 0;
+pub(super) const SESSION_START_INDEX: usize = 0;
+pub(super) const CWD_CHANGED_INDEX: usize = 1;
+pub(super) const STATE_CHANGED_INDEX: usize = 2;
+pub(super) const SESSION_END_INDEX: usize = 3;
+pub(super) const FIRST_AUDIT: usize = 0;
+pub(super) const STEP: u64 = 1;
+pub(super) const COUNT_STEP: usize = 1;
+pub(super) const SCHEMA_VERSION_STEP: u32 = 1;
+pub(super) const BEFORE_DIGEST_BYTE: u8 = 41;
+pub(super) const AFTER_DIGEST_BYTE: u8 = 42;
+pub(super) const TRANSCRIPT_FILE: &str = "integrity-session.jsonl";
+pub(super) const TRANSCRIPT_BYTES: &[u8] = b"durable integrity fixture transcript";
+pub(super) const NESTED_DIRECTORY: &str = "nested";

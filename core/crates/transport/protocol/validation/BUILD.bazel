@@ -1,0 +1,44 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+load("//build_system/bazel:version.bzl", "YOLO_MARKETING_VERSION")
+
+package(default_visibility = ["//visibility:public"])
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = glob(
+        ["**/*"],
+        allow_empty = True,
+        exclude = ["BUILD.bazel"],
+    ) + ["BUILD.bazel"],
+)
+
+rust_library(
+    name = "yolo_protocol_validation",
+    srcs = ["src/lib.rs"],
+    crate_name = "yolo_protocol_validation",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    version = YOLO_MARKETING_VERSION,
+    deps = [
+        "//core/crates/crypto:yolo_crypto",
+        "//core/crates/terminal/model:yolo_terminal_model",
+        "//core/crates/wire:yolo_wire",
+        "//core/crates/transport/capnp/value",
+        "@crates//:uuid",
+    ],
+)
+
+rust_test(
+    name = "yolo_protocol_validation_unit_tests",
+    srcs = ["unit_tests/lib.rs"],
+    crate_name = "yolo_protocol_validation_unit_test",
+    crate_root = "unit_tests/lib.rs",
+    edition = "2024",
+    deps = [
+        ":yolo_protocol_validation",
+        "//core/crates/terminal/model:yolo_terminal_model",
+        "//core/crates/wire:yolo_wire",
+        "//core/crates/transport/capnp/value",
+        "@crates//:uuid",
+    ],
+)

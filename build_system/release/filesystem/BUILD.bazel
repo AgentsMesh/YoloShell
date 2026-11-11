@@ -1,0 +1,67 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+load("//build_system/bazel/rust:test_features.bzl", "INTEGRATION_TEST_FEATURES", "UNIT_TEST_FEATURES")
+
+package(default_visibility = ["//visibility:public"])
+
+_SOURCES = glob(["src/*.rs"])
+
+_UNIT_TEST_SOURCES = glob(["unit_tests/*.rs"])
+_INTEGRATION_TEST_SOURCES = glob(["integration_tests/*.rs"])
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = _SOURCES + _UNIT_TEST_SOURCES + _INTEGRATION_TEST_SOURCES + ["BUILD.bazel"],
+)
+
+rust_library(
+    name = "library",
+    srcs = _SOURCES,
+    crate_name = "yolo_release_filesystem",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    target_compatible_with = ["@platforms//os:macos"],
+    deps = [
+        "//build_system/release/evidence_model:library",
+        "//build_system/release/foundation:library",
+        "@crates//:anyhow",
+        "@crates//:libc",
+        "@crates//:sha2",
+        "@crates//:tempfile",
+    ],
+)
+
+rust_test(
+    name = "unit_tests",
+    srcs = _SOURCES + _UNIT_TEST_SOURCES,
+    crate_features = UNIT_TEST_FEATURES,
+    crate_name = "yolo_release_filesystem_unit_tests",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    target_compatible_with = ["@platforms//os:macos"],
+    deps = [
+        "//build_system/release/evidence_model:library",
+        "//build_system/release/foundation:library",
+        "@crates//:anyhow",
+        "@crates//:libc",
+        "@crates//:sha2",
+        "@crates//:tempfile",
+    ],
+)
+
+rust_test(
+    name = "integration_tests",
+    srcs = _SOURCES + _INTEGRATION_TEST_SOURCES,
+    crate_name = "yolo_release_filesystem_integration_tests",
+    crate_root = "src/lib.rs",
+    crate_features = INTEGRATION_TEST_FEATURES,
+    edition = "2024",
+    target_compatible_with = ["@platforms//os:macos"],
+    deps = [
+        "//build_system/release/evidence_model:library",
+        "//build_system/release/foundation:library",
+        "@crates//:anyhow",
+        "@crates//:libc",
+        "@crates//:sha2",
+        "@crates//:tempfile",
+    ],
+)

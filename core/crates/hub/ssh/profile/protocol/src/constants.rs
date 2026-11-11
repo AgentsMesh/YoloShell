@@ -1,0 +1,9 @@
+pub const SSH_PROFILE_SCHEMA_VERSION: u16 = 1;
+pub const FIRST_SSH_PROFILE_REVISION: u64 = 1;
+pub const SSH_PROFILE_REVISION_STEP: u64 = 1;
+pub const MAX_SSH_PROFILES: usize = 32;
+pub const MAX_BROKER_STATE_PATH_BYTES: usize = 4096;
+pub(crate) const INVALID_PROFILE: &str = "invalid Hub SSH broker profile";
+pub(crate) const INVALID_CONFIGURATION: &str = "invalid Hub SSH profile configuration";
+pub(crate) const INVALID_STATE: &str = "invalid Hub SSH profile state";
+pub(crate) const INVALID_CHANGE: &str = "invalid Hub SSH profile change";

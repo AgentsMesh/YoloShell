@@ -1,0 +1,17 @@
+load("@rules_rust//rust:defs.bzl", "rust_test")
+
+package(default_visibility = ["//visibility:public"])
+
+rust_test(
+    name = "unit_tests",
+    srcs = glob(["unit_tests/*.rs", "test_support/*.rs"]),
+    crate_name = "yolo_coverage_runner_tests",
+    crate_root = "unit_tests/runner.rs",
+    edition = "2024",
+    deps = ["//build_system/coverage/protocol"],
+)
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = glob(["unit_tests/*.rs", "test_support/*.rs"]) + ["BUILD.bazel"],
+)

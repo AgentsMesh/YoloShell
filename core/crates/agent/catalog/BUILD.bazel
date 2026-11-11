@@ -1,0 +1,32 @@
+load("@rules_rust//rust:defs.bzl", "rust_library")
+load("//build_system/bazel:version.bzl", "YOLO_MARKETING_VERSION")
+
+package(default_visibility = ["//visibility:public"])
+
+_DEPS = [
+    "//core/crates/hub/agent/protocol:yolo_hub_agent_protocol",
+    "//core/crates/hub/agent/run/protocol:yolo_hub_agent_run_protocol",
+    "//core/crates/hub/catalog/client:yolo_hub_catalog_client",
+    "//core/crates/hub/client:yolo_hub_client",
+    "//core/crates/hub/identity:yolo_hub_identity",
+    "//core/crates/hub/rpc/protocol:yolo_hub_rpc_protocol",
+    "//core/crates/hub/terminal/protocol:yolo_hub_terminal_protocol",
+    "@crates//:anyhow",
+    "@crates//:tokio",
+    "@crates//:uuid",
+]
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = glob(["src/**/*.rs"]) + ["BUILD.bazel"],
+)
+
+rust_library(
+    name = "yolo_agent_catalog",
+    srcs = glob(["src/**/*.rs"]),
+    crate_name = "yolo_agent_catalog",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    version = YOLO_MARKETING_VERSION,
+    deps = _DEPS,
+)

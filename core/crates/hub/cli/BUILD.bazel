@@ -1,0 +1,56 @@
+load("@rules_rust//rust:defs.bzl", "rust_library")
+load("//build_system/bazel:version.bzl", "YOLO_MARKETING_VERSION")
+
+package(default_visibility = ["//visibility:public"])
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = glob(["src/**/*.rs"]) + ["BUILD.bazel"],
+)
+
+rust_library(
+    name = "yolo_hub_cli",
+    srcs = glob(["src/**/*.rs"]),
+    crate_name = "yolo_hub_cli",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    version = YOLO_MARKETING_VERSION,
+    deps = [
+        "//core/crates/transport/capnp/codec",
+        "//core/crates/transport/capnp/argument",
+        "//core/crates/application/launch/contract:yolo_launch_contract",
+        "//core/crates/agent/system/providers:yolo_agent_providers",
+        "//core/crates/hub/audit:yolo_hub_audit",
+        "//core/crates/hub/dispatch:yolo_hub_dispatch",
+        "//core/crates/hub/identity:yolo_hub_identity",
+    "//core/crates/hub/client/access/runtime:yolo_hub_client_access_runtime",
+        "//core/crates/hub/public/client/server:yolo_hub_public_client_server",
+        "//core/crates/distribution/publication/protocol:yolo_distribution_publication_protocol",
+        "//core/crates/distribution/release/store:yolo_distribution_release_store",
+        "//core/crates/hub/connector/service:yolo_hub_connector_service",
+        "//core/crates/runtime/engine/executable/identity:yolo_executable_identity",
+        "//core/crates/hub/connector/store:yolo_hub_connector_store",
+        "//core/crates/hub/federation/settings:yolo_hub_federation_settings",
+        "//core/crates/hub/local/backend:yolo_hub_local_backend",
+        "//core/crates/hub/local/providers:yolo_hub_local_providers",
+        "//core/crates/hub/local/terminal/history:yolo_hub_local_terminal_history",
+        "//core/crates/hub/rpc/protocol:yolo_hub_rpc_protocol",
+        "//core/crates/transport/client:yolo_client",
+        "//core/crates/hub/local/startup:yolo_hub_local_startup",
+        "//core/crates/hub/management/runtime:yolo_hub_management_runtime",
+        "//core/crates/hub/remote/startup:yolo_hub_remote_startup",
+        "//core/crates/transport/remote/provisioning/protocol:yolo_remote_provisioning_protocol",
+        "//core/crates/hub/ssh/profile/runtime:yolo_hub_ssh_profile_runtime",
+        "//core/crates/hub/remote/setup/runtime:yolo_hub_remote_setup_runtime",
+        "//core/crates/hub/server:yolo_hub_server",
+        "//core/crates/hub/state:yolo_hub_state",
+        "//core/crates/persistence/paths:yolo_paths",
+        "//core/crates/runtime/engine/process:yolo_process",
+        "//core/crates/runtime/engine/startup/guard:yolo_startup_guard",
+        "@crates//:anyhow",
+        "@crates//:clap",
+        "@crates//:serde_json",
+        "@crates//:tokio",
+        "@crates//:tracing-subscriber",
+    ],
+)

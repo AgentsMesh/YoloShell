@@ -1,0 +1,10 @@
+package(default_visibility = ["//visibility:public"])
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = [
+        "BUILD.bazel",
+        "//core/crates/terminal/metadata:architecture_check_data",
+        "//core/crates/terminal/metadata/protocol:architecture_check_data",
+    ],
+)
