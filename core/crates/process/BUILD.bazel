@@ -1,0 +1,9 @@
+package(default_visibility = ["//visibility:public"])
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = [
+        "BUILD.bazel",
+        "//core/crates/process/spawn:architecture_check_data",
+    ],
+)

@@ -1,0 +1,73 @@
+load("@rules_rust//rust:defs.bzl", "rust_binary")
+load("//build_system/bazel/rust:isolated_test.bzl", "isolated_rust_test")
+
+package(default_visibility = [
+    "//core:__pkg__",
+    "//integration_tests/runtime:__pkg__",
+])
+
+rust_binary(
+    name = "failed_rearm_process_fixture",
+    testonly = True,
+    srcs = [
+        "failed_rearm_process_constants.rs",
+        "failed_rearm_process_fixture.rs",
+    ],
+    crate_name = "failed_rearm_process_fixture",
+    crate_root = "failed_rearm_process_fixture.rs",
+    edition = "2024",
+    deps = [
+        "//core/crates/runtime/engine/host:yolo_host_adversarial_support",
+        "@crates//:anyhow",
+        "@crates//:tokio",
+    ],
+)
+
+isolated_rust_test(
+    name = "failed_rearm_process_test",
+    timeout = "long",
+    srcs = [
+        "failed_rearm_process.rs",
+        "failed_rearm_process_child.rs",
+        "failed_rearm_process_child_custody.rs",
+        "failed_rearm_process_child_tests.rs",
+        "failed_rearm_process_constants.rs",
+    ],
+    aliases = {
+        "//core/crates/runtime/engine/process:yolo_process_adversarial": "yolo_process_test_support",
+    },
+    crate_name = "failed_rearm_process_test",
+    crate_root = "failed_rearm_process.rs",
+    data = [":failed_rearm_process_fixture"],
+    edition = "2024",
+    env = {
+        "RUST_TEST_THREADS": "1",
+        "YOLO_TEST_FAILED_REARM_FIXTURE_BINARY": "$(rootpath :failed_rearm_process_fixture)",
+    },
+    tags = [
+        "exclusive",
+        "no-sandbox",
+    ],
+    deps = [
+        "//core:yolo_runtime",
+        "//core/crates/runtime/engine/host:yolo_host_adversarial_support",
+        "//core/crates/runtime/engine/process:yolo_process_adversarial",
+        "@crates//:anyhow",
+        "@crates//:libc",
+        "@crates//:tempfile",
+    ],
+)
+
+test_suite(
+    name = "failed_rearm_process_tests",
+    tests = [":failed_rearm_process_test"],
+)
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = glob(
+        ["**/*"],
+        exclude = ["BUILD.bazel"],
+    ) + ["BUILD.bazel"],
+    visibility = ["//visibility:public"],
+)

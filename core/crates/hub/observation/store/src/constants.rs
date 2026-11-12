@@ -1,0 +1,16 @@
+pub const OBSERVATION_DIRECTORY: &str = "observations";
+pub const OBSERVATION_INDEX_FILE: &str = "index.json";
+pub(crate) const ORIGIN_EXTENSION: &str = "json";
+pub(crate) const LOCK_FILE: &str = "observations.lock";
+pub(crate) const NAMESPACE: &str = "hub-observation-history";
+pub(crate) const SCHEMA_VERSION: u16 = 2;
+pub(crate) const LOCK_BYTES: u64 = 4096;
+pub(crate) const BUSY: &str = "Hub observation cache is already owned";
+pub(crate) const INVALID: &str = "Hub observation cache schema or entry identity is invalid";
+pub(crate) const CHANGED: &str = "Hub observation cache file or directory identity changed";
+pub(crate) const LOST: &str = "Hub observation cache lost retained storage authority";
+pub(crate) const LIMIT: &str = "Hub observation cache exceeds its durable byte limit";
+pub(crate) const CAPACITY: &str = "Hub observation cache exceeds its origin capacity";
+pub(crate) const DUPLICATE: &str = "Hub observation cache index repeats or reorders an origin";
+pub(crate) const UNINDEXED: &str = "Hub observation cache has no index for existing files";
+pub(crate) const CONFLICT: &str = "Hub observation origin reused a revision for different data";

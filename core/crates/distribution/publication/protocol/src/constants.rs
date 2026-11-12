@@ -1,0 +1,23 @@
+pub const SELECTION_SCHEMA_VERSION: u16 = 1;
+pub const PUBLICATION_SCHEMA_VERSION: u16 = 1;
+pub const FIRST_REVISION: u64 = 1;
+pub const REVISION_STEP: u64 = 1;
+pub const CURRENT_FILE_NAME: &str = "current.json";
+pub const STAGE_PREFIX: &str = ".upload-";
+pub const EXECUTABLE_MODE: u32 = 0o700;
+pub const MANIFEST_MODE: u32 = 0o600;
+pub const DIRECTORY_MODE: u32 = 0o700;
+pub const MAX_PUBLICATION_BYTES: usize = 64 * 1024;
+pub const MAX_INSTALL_PATH_BYTES: usize = 4096;
+pub const INSTALL_BUNDLE_ARGUMENT: &str = "--install-bundle";
+pub const INSPECT_INSTALL_ARGUMENT: &str = "--inspect-install";
+pub const INSTALL_ROOT_ARGUMENT: &str = "--install-root";
+pub const REQUEST_CAPNP_ARGUMENT: &str = "--request-capnp";
+pub(crate) const INVALID_SELECTION: &str = "invalid runtime selection";
+pub(crate) const REVISION_OVERFLOW: &str = "runtime selection revision is exhausted";
+pub(crate) const INVALID_REQUEST: &str = "invalid bundle publication request";
+pub(crate) const INVALID_RECEIPT: &str = "bundle publication receipt does not match request";
+pub(crate) const INVALID_INSPECTION: &str = "invalid bundle installation inspection";
+pub(crate) const INVALID_ROOT: &str =
+    "installation path must be bounded, scoped, absolute, and lexically normalized";
+pub(crate) const PUBLICATION_LIMIT: &str = "publication document exceeds its byte limit";

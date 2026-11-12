@@ -1,0 +1,10 @@
+pub const ENTRY_DIRECTORY: &str = "crash-entry";
+pub const RELAY_DIRECTORY: &str = "crash-relay";
+pub const ORIGIN_DIRECTORY: &str = "crash-origin";
+pub const CONFIGURATION_FILE: &str = "relay-peers.json";
+pub const RELAY_AGENT: &str = "relay-owned-agent";
+pub const ORIGIN_AGENT: &str = "origin-owned-agent";
+pub const PRIVATE_FILE_MODE: u32 = 0o600;
+pub const MAX_DIAGNOSTIC_BYTES: u64 = 64 * 1024;
+pub const RELAY_START_FAILURE: &str = "independent relay did not become ready";
+pub const ORIGIN_AGENT_COUNT: usize = 1;

@@ -1,0 +1,96 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+load("//build_system/bazel:version.bzl", "YOLO_MARKETING_VERSION")
+load("//build_system/bazel/rust:test_features.bzl", "TEST_SUPPORT_FEATURE", "UNIT_TEST_FEATURES")
+
+package(default_visibility = ["//visibility:public"])
+
+_DEPS = [
+    "//core/crates/crypto:yolo_crypto",
+    "//core/crates/agent/hooks:yolo_hooks",
+    "@crates//:serde",
+    "@crates//:serde_json",
+    "@crates//:uuid",
+]
+
+_TEST_DEPS = _DEPS + ["//core/crates/storage:yolo_storage"]
+
+filegroup(
+    name = "runtime_sources",
+    srcs = glob(
+        ["src/**/*.rs"],
+        allow_empty = False,
+    ),
+)
+
+filegroup(
+    name = "unit_test_sources",
+    testonly = True,
+    srcs = glob(
+        ["unit_tests/**/*.rs"],
+        allow_empty = True,
+    ),
+)
+
+filegroup(
+    name = "integration_test_sources",
+    testonly = True,
+    srcs = glob(
+        ["integration_tests/**/*.rs"],
+        allow_empty = True,
+    ),
+)
+
+filegroup(
+    name = "test_support_sources",
+    testonly = True,
+    srcs = glob(["test_support/**/*.rs"]),
+)
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = glob(
+        ["**/*"],
+        allow_empty = True,
+        exclude = ["BUILD.bazel"],
+    ) + [
+        "BUILD.bazel",
+    ],
+)
+
+rust_library(
+    name = "yolo_hooks_runtime",
+    srcs = [":runtime_sources"],
+    crate_name = "yolo_hooks_runtime",
+    crate_root = "src/mod.rs",
+    edition = "2024",
+    version = YOLO_MARKETING_VERSION,
+    deps = _DEPS,
+)
+
+rust_library(
+    name = "yolo_hooks_runtime_test_support",
+    testonly = True,
+    srcs = [
+        ":runtime_sources",
+        ":test_support_sources",
+    ],
+    crate_features = [TEST_SUPPORT_FEATURE],
+    crate_name = "yolo_hooks_runtime_test_support",
+    crate_root = "src/mod.rs",
+    edition = "2024",
+    deps = _DEPS,
+)
+
+rust_test(
+    name = "yolo_hooks_runtime_unit_tests",
+    srcs = [
+        ":runtime_sources",
+        ":test_support_sources",
+        ":unit_test_sources",
+    ],
+    crate_features = UNIT_TEST_FEATURES,
+    crate_name = "yolo_hooks_runtime_unit_test",
+    crate_root = "src/mod.rs",
+    edition = "2024",
+    deps = _TEST_DEPS,
+)
