@@ -1,0 +1,9 @@
+pub const REVISION_STEP: u64 = 1;
+pub const TIMESTAMP_STEP: i64 = 1;
+pub const CHECKPOINT_AGE: i64 = TIMESTAMP_STEP + TIMESTAMP_STEP;
+pub const OTHER_CWD: &str = "other-project";
+pub const OTHER_HOME: &str = "other-codex-home";
+pub const RETAINED_OBJECT: &str = "retained";
+pub const ROLLOUT_DATE: &str = "2026/09/09";
+pub const ROLLOUT_STAMP: &str = "2026-09-09T13-00-00";
+pub const OTHER_BOOT: &str = "codex-consistency-previous-boot";

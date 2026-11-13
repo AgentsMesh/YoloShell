@@ -1,0 +1,164 @@
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_test")
+load("@rules_cc//cc:defs.bzl", "cc_binary")
+load(":defs.bzl", "MACOS", "profile_link_flags")
+load("test_support/fixture.bzl", "coverage_fixture")
+
+package(default_visibility = ["//visibility:public"])
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = glob(["**/*.rs", "**/*.bzl", "test_support/*.c"]) + ["BUILD.bazel"],
+)
+
+exports_files(["defs.bzl"])
+
+coverage_fixture(name = "toolchain_fixture", testonly = True)
+
+rust_binary(
+    name = "profile_probe",
+    testonly = True,
+    srcs = ["test_support/profile_probe.rs", "test_support/constants.rs"],
+    crate_name = "yolo_coverage_profile_probe",
+    crate_root = "test_support/profile_probe.rs",
+    edition = "2024",
+    rustc_flags = ["-Cinstrument-coverage"] + profile_link_flags(MACOS),
+    target_compatible_with = ["@platforms//os:macos"],
+    deps = ["@crates//:anyhow"],
+)
+
+rust_binary(
+    name = "pipeline_probe",
+    testonly = True,
+    srcs = ["test_support/profile_probe.rs", "test_support/constants.rs"],
+    crate_name = "yolo_coverage_pipeline_probe",
+    crate_root = "test_support/profile_probe.rs",
+    edition = "2024",
+    target_compatible_with = ["@platforms//os:macos"],
+    deps = ["@crates//:anyhow"],
+)
+
+rust_test(
+    name = "integration_tests",
+    srcs = [
+        "integration_tests/profiles.rs",
+        "test_support/commands.rs",
+        "test_support/constants.rs",
+        "test_support/report.rs",
+        "test_support/resources.rs",
+    ],
+    crate_name = "yolo_coverage_instrumentation_tests",
+    crate_root = "integration_tests/profiles.rs",
+    edition = "2024",
+    data = [":profile_probe", ":pipeline_probe", ":toolchain_fixture"],
+    env = {
+        "YOLO_COVERAGE_PROBE_BINARY": "$(rootpath :profile_probe)",
+        "YOLO_COVERAGE_PIPELINE_PROBE": "$(rootpath :pipeline_probe)",
+        "YOLO_COVERAGE_TOOLCHAIN_FIXTURE": "$(rootpath :toolchain_fixture)",
+        "RUST_TEST_THREADS": "1",
+    },
+    tags = ["exclusive"],
+    target_compatible_with = ["@platforms//os:macos"],
+    deps = [
+        "//core/crates/runtime/engine/process:yolo_process",
+        "@crates//:libc",
+        "@crates//:serde",
+        "@crates//:serde_json",
+        "@crates//:tempfile",
+        "@crates//:tokio",
+        "@rules_rust//rust/runfiles",
+    ],
+)
+
+rust_test(
+    name = "unit_tests",
+    srcs = ["unit_tests/configuration.rs", "test_support/constants.rs", "test_support/resources.rs"],
+    crate_name = "yolo_coverage_instrumentation_unit_tests",
+    crate_root = "unit_tests/configuration.rs",
+    edition = "2024",
+    data = [":toolchain_fixture"],
+    env = {"YOLO_COVERAGE_TOOLCHAIN_FIXTURE": "$(rootpath :toolchain_fixture)"},
+    deps = ["//build_system/coverage/protocol", "@crates//:serde_json", "@rules_rust//rust/runfiles"],
+)
+
+_OPTIMIZED_FIXTURE_SOURCES = [
+    "test_support/optimized_probe.rs",
+    "test_support/layout_marker.rs",
+    "test_support/constants.rs",
+]
+_OPTIMIZED_FLAGS = ["-Copt-level=3", "-Ccodegen-units=1"]
+_MACHO_SUPPORT = glob(["test_support/macho*.rs"])
+
+rust_binary(
+    name = "optimized_probe",
+    testonly = True,
+    srcs = _OPTIMIZED_FIXTURE_SOURCES,
+    crate_name = "yolo_coverage_optimized_probe",
+    crate_root = "test_support/optimized_probe.rs",
+    edition = "2024",
+    rustc_flags = _OPTIMIZED_FLAGS + ["-Cinstrument-coverage"] + profile_link_flags(MACOS),
+    target_compatible_with = ["@platforms//os:macos"],
+)
+
+rust_binary(
+    name = "optimized_pipeline_probe",
+    testonly = True,
+    srcs = _OPTIMIZED_FIXTURE_SOURCES,
+    crate_name = "yolo_coverage_optimized_pipeline_probe",
+    crate_root = "test_support/optimized_probe.rs",
+    edition = "2024",
+    rustc_flags = _OPTIMIZED_FLAGS,
+    target_compatible_with = ["@platforms//os:macos"],
+)
+
+cc_binary(
+    name = "mcdc_probe",
+    testonly = True,
+    srcs = ["test_support/mcdc_probe.c"],
+    copts = ["-O3", "-fprofile-instr-generate", "-fcoverage-mapping", "-fcoverage-mcdc"],
+    linkopts = ["-fprofile-instr-generate"] + [flag.removeprefix("-Clink-arg=") for flag in profile_link_flags(MACOS)],
+    target_compatible_with = ["@platforms//os:macos"],
+)
+
+rust_test(
+    name = "layout_unit_tests",
+    srcs = glob(["unit_tests/layout*.rs"]) + _MACHO_SUPPORT + [
+        "test_support/constants.rs",
+        "test_support/layout_constants.rs",
+        "test_support/layout_fixture.rs",
+    ],
+    crate_name = "yolo_coverage_layout_unit_tests",
+    crate_root = "unit_tests/layout.rs",
+    edition = "2024",
+)
+
+rust_test(
+    name = "layout_integration_tests",
+    srcs = _MACHO_SUPPORT + [
+        "integration_tests/layout.rs",
+        "test_support/layout_commands.rs",
+        "test_support/commands.rs",
+        "test_support/constants.rs",
+        "test_support/resources.rs",
+    ],
+    crate_name = "yolo_coverage_layout_integration_tests",
+    crate_root = "integration_tests/layout.rs",
+    edition = "2024",
+    data = [":optimized_probe", ":optimized_pipeline_probe", ":mcdc_probe", ":toolchain_fixture"],
+    env = {
+        "YOLO_COVERAGE_O3_PROBE": "$(rootpath :optimized_probe)",
+        "YOLO_COVERAGE_O3_PIPELINE": "$(rootpath :optimized_pipeline_probe)",
+        "YOLO_COVERAGE_MCDC_PROBE": "$(rootpath :mcdc_probe)",
+        "YOLO_COVERAGE_TOOLCHAIN_FIXTURE": "$(rootpath :toolchain_fixture)",
+        "RUST_TEST_THREADS": "1",
+    },
+    tags = ["exclusive"],
+    target_compatible_with = ["@platforms//os:macos"],
+    deps = [
+        "//core/crates/runtime/engine/process:yolo_process",
+        "@crates//:libc",
+        "@crates//:serde_json",
+        "@crates//:tempfile",
+        "@crates//:tokio",
+        "@rules_rust//rust/runfiles",
+    ],
+)

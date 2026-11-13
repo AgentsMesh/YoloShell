@@ -1,0 +1,23 @@
+package(default_visibility = ["//visibility:public"])
+
+PERSISTENCE_COMPONENT_ARCHITECTURE_DATA = [
+    "//core/crates/persistence/acl:architecture_check_data",
+    "//core/crates/persistence/catalog:architecture_check_data",
+    "//core/crates/persistence/coordination/core:architecture_check_data",
+    "//core/crates/persistence/custody:architecture_check_data",
+    "//core/crates/persistence/durable/reboot:architecture_check_data",
+    "//core/crates/persistence/identity/durable:architecture_check_data",
+    "//core/crates/persistence/journal:architecture_check_data",
+    "//core/crates/persistence/lease:architecture_check_data",
+    "//core/crates/persistence/maintenance:architecture_check_data",
+    "//core/crates/persistence/maintenance/contract:architecture_check_data",
+    "//core/crates/persistence/paths:architecture_check_data",
+    "//core/crates/persistence/paths/core:architecture_check_data",
+]
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = PERSISTENCE_COMPONENT_ARCHITECTURE_DATA + [
+        "BUILD.bazel",
+    ],
+)

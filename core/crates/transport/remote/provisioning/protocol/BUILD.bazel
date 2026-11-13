@@ -1,0 +1,8 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+load("//build_system/bazel:version.bzl", "YOLO_MARKETING_VERSION")
+package(default_visibility = ["//visibility:public"])
+_DEPS = ["//core/crates/crypto:yolo_crypto", "//core/crates/distribution/bundle:yolo_distribution_bundle", "//core/crates/distribution/publication/protocol:yolo_distribution_publication_protocol", "//core/crates/hub/build/protocol:yolo_hub_build_protocol", "//core/crates/hub/delegation:yolo_hub_delegation", "//core/crates/hub/routing:yolo_hub_routing", "//core/crates/transport/broker/hub/protocol:yolo_broker_hub_protocol", "@crates//:anyhow", "@crates//:serde", "@crates//:thiserror", "@crates//:uuid"]
+rust_library(name = "yolo_remote_provisioning_protocol", srcs = glob(["src/**/*.rs"]), crate_root = "src/lib.rs", crate_name = "yolo_remote_provisioning_protocol", edition = "2024", version = YOLO_MARKETING_VERSION, deps = _DEPS)
+rust_test(name = "unit_tests", srcs = glob(["unit_tests/**/*.rs", "test_support/**/*.rs"]), crate_root = "unit_tests/lib.rs", crate_name = "yolo_remote_provisioning_protocol_unit_tests", edition = "2024", deps = _DEPS + [":yolo_remote_provisioning_protocol", "//core/crates/build_image:yolo_build_image", "//core/crates/hub/identity:yolo_hub_identity", "//core/crates/hub/remote/startup/protocol:test_support", "@crates//:serde_json"])
+rust_library(name = "test_support", testonly = True, srcs = glob(["test_support/**/*.rs"]), crate_root = "test_support/lib.rs", crate_name = "yolo_remote_provisioning_protocol_test_support", edition = "2024", deps = _DEPS + [":yolo_remote_provisioning_protocol", "//core/crates/hub/remote/startup/protocol:test_support"])
+filegroup(name = "architecture_check_data", srcs = glob(["**/*.rs"]) + ["BUILD.bazel"])

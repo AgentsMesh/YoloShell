@@ -1,0 +1,14 @@
+pub(crate) const RECORD_VERSION: u16 = yolo_remote_broker::BROKER_SUPERVISION_RECORD_VERSION;
+pub(crate) const RECORD_VERSION_DETAIL: &str = "unsupported broker supervision record version";
+pub(crate) const RECORD_LAUNCH_DETAIL: &str = "broker supervision launch identity mismatch";
+pub(crate) const RECORD_GENERATION_DETAIL: &str = "broker supervision generation mismatch";
+pub(crate) const RECORD_BOOT_DETAIL: &str = "broker supervision boot identity mismatch";
+pub(crate) const RECORD_LAUNCHER_DETAIL: &str = "broker supervision launcher identity mismatch";
+pub(crate) const RECORD_PHASE_DETAIL: &str = "broker supervision phase shape is invalid";
+pub(crate) const RECORD_SUPERVISOR_DETAIL: &str = "broker supervision process identity mismatch";
+pub(crate) const RECORD_TRANSITION_DETAIL: &str = "broker supervision phase transition is invalid";
+pub(crate) const RECORD_READINESS_DETAIL: &str = "broker supervision readiness identity is invalid";
+pub(crate) const RECORD_PREFIX: &str = "broker-supervision-";
+pub(crate) const RECORD_SUFFIX: &str = ".json";
+pub(crate) const TERMINATION_SUFFIX: &str = ".terminate.json";
+pub(crate) const ADOPTION_SUFFIX: &str = ".adopt.json";

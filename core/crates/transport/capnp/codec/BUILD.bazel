@@ -1,0 +1,29 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+
+package(default_visibility = ["//visibility:public"])
+
+_DEPS = [
+    "//core/crates/transport/capnp/schema",
+    "//core/crates/transport/capnp/value",
+    "@crates//:capnp",
+    "@crates//:serde",
+]
+
+rust_library(
+    name = "codec",
+    crate_name = "yolo_capnp_codec",
+    crate_root = "src/lib.rs",
+    srcs = glob(["src/**/*.rs"]),
+    edition = "2024",
+    deps = _DEPS,
+)
+
+rust_test(
+    name = "unit_tests",
+    crate_root = "unit_tests/lib.rs",
+    srcs = glob(["unit_tests/**/*.rs"]),
+    edition = "2024",
+    deps = _DEPS + [":codec", "@crates//:serde_bytes"],
+)
+
+filegroup(name = "architecture_check_data", srcs = glob(["**/*"]))

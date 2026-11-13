@@ -1,0 +1,147 @@
+.terminal,
+.browser {
+  --bg-soft: #101410;
+  --panel: #191e18;
+  --panel-2: #20261f;
+  --ink: #f2ead6;
+  --muted: #b9b19d;
+  --faint: #8e897b;
+  --line: #343b32;
+  --line-soft: #272d26;
+  --amber: #f0b64b;
+  --green: #9ec97a;
+  --cyan: #8cc8c0;
+  --red: #f0735f;
+  color: var(--ink);
+}
+
+.terminal {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel);
+  box-shadow: var(--shadow);
+  font-size: clamp(0.68rem, 1.2vw, 0.8rem);
+  line-height: 1.6;
+}
+
+.term-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.7rem 0.9rem;
+  border-bottom: 1px solid var(--line-soft);
+  background: var(--panel-2);
+  color: var(--faint);
+  font-size: 0.72rem;
+}
+
+.dots {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.dots span {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  background: var(--line);
+}
+
+.term-body {
+  min-height: 330px;
+  padding: 1rem;
+  background: var(--bg-soft);
+}
+
+.term-body p {
+  margin-bottom: 0.35rem;
+  white-space: pre-wrap;
+}
+
+.dim {
+  color: var(--faint);
+}
+
+.green {
+  color: var(--green);
+}
+
+.amber {
+  color: var(--amber);
+}
+
+.cyan {
+  color: var(--cyan);
+}
+
+.red {
+  color: var(--red);
+}
+
+.rule {
+  height: 1px;
+  margin: 0.8rem 0;
+  background: var(--line-soft);
+}
+
+.cursor {
+  display: inline-block;
+  width: 0.55em;
+  height: 1.05em;
+  margin-left: 0.2em;
+  vertical-align: -0.15em;
+  background: var(--amber);
+  animation: blink 1.1s steps(1) infinite;
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+.browser {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel);
+}
+
+.browser-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.65rem 0.9rem;
+  border-bottom: 1px solid var(--line-soft);
+  background: var(--panel-2);
+  color: var(--faint);
+  font-size: 0.7rem;
+}
+
+.browser-body {
+  display: grid;
+  grid-template-columns: 0.75fr 1.25fr;
+  min-height: 280px;
+}
+
+.browser-rail {
+  padding: 0.8rem;
+  border-right: 1px solid var(--line-soft);
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.browser-main {
+  padding: 0.9rem;
+  font-size: 0.76rem;
+}
+
+.bubble {
+  margin-bottom: 0.7rem;
+  padding: 0.6rem 0.7rem;
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  background: var(--bg-soft);
+}
