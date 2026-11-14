@@ -1,0 +1,18 @@
+package(default_visibility = ["//visibility:public"])
+
+exports_files(glob(["*.bzl"]))
+
+filegroup(
+    name = "provider_table_sources",
+    srcs = ["providers.bzl"] + glob(["provider_rows/*.bzl"]),
+)
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = glob(["*.bzl", "provider_rows/*.bzl"]) + [
+        "BUILD.bazel",
+        "//build_system/bazel/rust/fixtures:architecture_check_data",
+        "//build_system/bazel/rust/dependencies/vt100:architecture_check_data",
+        "//build_system/bazel/rust/dependencies/vte:architecture_check_data",
+    ],
+)

@@ -1,0 +1,52 @@
+load("//build_system/bazel/rust:isolated_test.bzl", "isolated_rust_test")
+
+package(default_visibility = [
+    "//core:__pkg__",
+    "//integration_tests/runtime:__pkg__",
+])
+
+isolated_rust_test(
+    name = "startup_handoff_process_test",
+    coverage_objects = ["//core:yolo-adversarial"],
+    timeout = "long",
+    srcs = glob(["*.rs"]),
+    aliases = {
+        "//core/crates/runtime/engine/process:yolo_process_adversarial": "yolo_process_test_support",
+    },
+    crate_name = "startup_handoff_process_test",
+    crate_root = "startup_handoff_process.rs",
+    data = ["//core:yolo-adversarial"],
+    edition = "2024",
+    env = {
+        "RUST_TEST_THREADS": "1",
+        "YOLO_TEST_HOST_BINARY": "$(rootpath //core:yolo-adversarial)",
+    },
+    tags = [
+        "exclusive",
+        "no-sandbox",
+    ],
+    deps = [
+        "//core/crates/application/launch/contract:yolo_launch_contract",
+        "//core:yolo_runtime_adversarial",
+        "//core/crates/runtime/engine/process:yolo_process_adversarial",
+        "@crates//:anyhow",
+        "@crates//:libc",
+        "@crates//:serde_json",
+        "@crates//:tempfile",
+        "@crates//:uuid",
+    ],
+)
+
+test_suite(
+    name = "startup_handoff_process_tests",
+    tests = [":startup_handoff_process_test"],
+)
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = glob(
+        ["**/*"],
+        exclude = ["BUILD.bazel"],
+    ) + ["BUILD.bazel"],
+    visibility = ["//visibility:public"],
+)

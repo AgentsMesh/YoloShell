@@ -1,0 +1,77 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+load("//build_system/bazel:version.bzl", "YOLO_MARKETING_VERSION")
+load("//build_system/bazel/rust:test_features.bzl", "TEST_SUPPORT_FEATURE", "UNIT_TEST_FEATURES")
+
+package(default_visibility = ["//visibility:public"])
+
+_DEPS = [
+    "//core/crates/crypto:yolo_crypto",
+    "//core/crates/terminal/model:yolo_terminal_model",
+    "//core/crates/wire:yolo_wire",
+    "@crates//:serde",
+    "@crates//:serde_json",
+    "@crates//:sha2",
+    "@crates//:uuid",
+]
+
+filegroup(
+    name = "runtime_sources",
+    srcs = glob(
+        ["src/**/*.rs"],
+        allow_empty = True,
+    ),
+)
+
+filegroup(
+    name = "unit_test_sources",
+    testonly = True,
+    srcs = glob(
+        ["unit_tests/**/*.rs"],
+        allow_empty = True,
+    ),
+)
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = glob(
+        ["**/*"],
+        allow_empty = True,
+        exclude = ["BUILD.bazel"],
+    ) + [
+        "BUILD.bazel",
+    ],
+)
+
+rust_library(
+    name = "yolo_lease",
+    srcs = [":runtime_sources"],
+    crate_name = "yolo_lease",
+    crate_root = "src/mod.rs",
+    edition = "2024",
+    version = YOLO_MARKETING_VERSION,
+    deps = _DEPS,
+)
+
+rust_library(
+    name = "yolo_lease_test_support",
+    testonly = True,
+    srcs = [":runtime_sources"],
+    crate_features = [TEST_SUPPORT_FEATURE],
+    crate_name = "yolo_lease_test_support",
+    crate_root = "src/mod.rs",
+    edition = "2024",
+    deps = _DEPS,
+)
+
+rust_test(
+    name = "yolo_lease_unit_tests",
+    srcs = [
+        ":runtime_sources",
+        ":unit_test_sources",
+    ],
+    crate_features = UNIT_TEST_FEATURES,
+    crate_name = "yolo_lease_unit_test",
+    crate_root = "src/mod.rs",
+    edition = "2024",
+    deps = _DEPS,
+)

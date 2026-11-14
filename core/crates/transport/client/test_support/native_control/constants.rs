@@ -1,0 +1,15 @@
+pub const SOCKET_NAME: &str = "native-control.sock";
+pub const OPERATION_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(10);
+pub const COMMAND: &str = "interrupt-native-agent";
+pub const OTHER_COMMAND: &str = "different-native-control-command";
+pub const BOOT_ID: &str = "native-client-test-boot";
+pub const EXECUTABLE: &str = "/usr/local/bin/codex";
+pub const CWD: &str = "/tmp/yolo-native-client";
+pub const DATA_HOME: &str = "/tmp/yolo-native-client/.codex";
+pub const EVIDENCE_PATH: &str = "/tmp/yolo-native-client/.codex/sessions/fixture.jsonl";
+pub const AGENT_SESSION: &str = "native-client-agent-session";
+pub const PROCESS_PID: u32 = 41;
+pub const PROCESS_START: u64 = 43;
+pub const TIMESTAMP: i64 = 47;
+pub const GENERATION: u64 = 53;
+pub const REMOTE_DENIAL: &str = "test writer lease rejected";

@@ -1,0 +1,55 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+load("//build_system/bazel:version.bzl", "YOLO_MARKETING_VERSION")
+
+package(default_visibility = ["//visibility:public"])
+
+_DEPS = [
+    "//core/crates/hub/delegation:yolo_hub_delegation",
+    "//core/crates/hub/management/protocol:yolo_hub_management_protocol",
+    "//core/crates/persistence/paths:yolo_paths",
+    "@crates//:anyhow",
+    "@crates//:serde",
+]
+
+rust_library(
+    name = "yolo_hub_listener_binding",
+    srcs = glob(["src/**/*.rs"]),
+    crate_root = "src/lib.rs",
+    crate_name = "yolo_hub_listener_binding",
+    edition = "2024",
+    version = YOLO_MARKETING_VERSION,
+    deps = _DEPS,
+)
+
+rust_test(
+    name = "unit_tests",
+    srcs = glob(["src/**/*.rs", "unit_tests/**/*.rs", "test_support/constants.rs"]),
+    crate_root = "src/lib.rs",
+    crate_name = "yolo_hub_listener_binding_unit_tests",
+    edition = "2024",
+    deps = _DEPS + [
+        "//core/crates/hub/federation/settings:yolo_hub_federation_settings",
+        "//core/crates/hub/identity:yolo_hub_identity",
+        "@crates//:serde_json",
+        "@crates//:uuid",
+    ],
+)
+
+rust_test(
+    name = "integration_tests",
+    srcs = glob(["integration_tests/**/*.rs", "test_support/**/*.rs"]),
+    crate_root = "integration_tests/lib.rs",
+    crate_name = "yolo_hub_listener_binding_integration_tests",
+    edition = "2024",
+    deps = _DEPS + [
+        ":yolo_hub_listener_binding",
+        "//core/crates/hub/configuration/store:yolo_hub_configuration_store",
+        "//core/crates/hub/federation/settings:yolo_hub_federation_settings",
+        "//core/crates/hub/state:yolo_hub_state",
+        "@crates//:serde_json",
+        "@crates//:tempfile",
+        "@crates//:uuid",
+    ],
+)
+
+filegroup(name = "architecture_check_data", srcs = glob(["**/*"], exclude = ["BUILD.bazel"]) + ["BUILD.bazel"])
