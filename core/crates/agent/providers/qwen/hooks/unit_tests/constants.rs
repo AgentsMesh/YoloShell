@@ -1,0 +1,20 @@
+pub(super) const AGENT_ID: &str = "agent_id";
+pub(super) const CWD: &str = "cwd";
+pub(super) const HOOK_EVENT_NAME: &str = "hook_event_name";
+pub(super) const NOTIFICATION_TYPE: &str = "notification_type";
+pub(super) const PERMISSION_MODE: &str = "permission_mode";
+pub(super) const REASON: &str = "reason";
+pub(super) const SESSION_ID: &str = "session_id";
+pub(super) const SOURCE: &str = "source";
+pub(super) const TIMESTAMP: &str = "timestamp";
+pub(super) const TRANSCRIPT_PATH: &str = "transcript_path";
+pub(super) const UNKNOWN_REASON: &str = "delete";
+pub(super) const UNKNOWN_EVENT: &str = "FutureEvent";
+pub(super) const TEST_SESSION_ID: &str = "e524f9d8-8829-4858-b0a2-fb73a14cd53c";
+pub(super) const TEST_TRANSCRIPT_PATH: &str =
+    "/tmp/qwen/projects/p/chats/e524f9d8-8829-4858-b0a2-fb73a14cd53c.jsonl";
+pub(super) const TEST_CWD: &str = "/tmp/qwen/work";
+pub(super) const TEST_TIMESTAMP: &str = "2026-10-28T11:04:55.578Z";
+pub(super) const TEST_PERMISSION_MODE: &str = "auto";
+pub(super) const TEST_SUBAGENT: &str = "agent-1";
+pub(super) const RELATIVE_CWD: &str = "relative";

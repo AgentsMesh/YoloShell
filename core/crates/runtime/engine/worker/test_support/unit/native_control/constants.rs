@@ -1,0 +1,9 @@
+pub const WRITER: &str = "native-control-writer";
+pub const REPLACEMENT_WRITER: &str = "native-control-replacement-writer";
+pub const COMMAND: &str = "native-agent-interrupt";
+pub const OTHER_COMMAND: &str = "other-native-control-command";
+pub const STEP: u64 = 1;
+pub const ADMISSION_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(5);
+pub const NO_SIGNALS: usize = 0;
+pub const ONE_SIGNAL: usize = 1;
+pub const WRITER_TTL_MS: u64 = 30_000;

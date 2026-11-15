@@ -1,0 +1,68 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+load("//build_system/bazel:version.bzl", "YOLO_MARKETING_VERSION")
+load("//build_system/bazel/rust:isolated_test.bzl", "isolated_rust_test")
+load("//build_system/bazel/rust:test_features.bzl", "INTEGRATION_TEST_FEATURES", "SERIAL_TEST_ENVIRONMENT", "UNIT_TEST_FEATURES")
+
+package(default_visibility = ["//visibility:public"])
+
+_DEPS = [
+    "//core/crates/persistence/paths/core:yolo_paths_core",
+    "//core/crates/runtime/engine/process:yolo_process",
+    "//core/crates/transport/remote/broker:yolo_remote_broker",
+    "@crates//:anyhow",
+    "@crates//:serde",
+    "@crates//:uuid",
+]
+
+_TEST_DEPS = _DEPS + [
+    "//core/crates/application/cli:yolo_cli",
+    "//core/crates/application/support:yolo_application_test_fixtures",
+    "@crates//:libc",
+    "@crates//:serde_json",
+    "@crates//:tempfile",
+    "@crates//:tokio",
+]
+
+rust_library(
+    name = "yolo_broker_supervision_state",
+    srcs = glob(["src/**/*.rs"]),
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    version = YOLO_MARKETING_VERSION,
+    deps = _DEPS,
+)
+
+rust_test(
+    name = "unit_tests",
+    srcs = glob([
+        "src/**/*.rs",
+        "unit_tests/**/*.rs",
+        "test_support/**/*.rs",
+    ]),
+    crate_features = UNIT_TEST_FEATURES,
+    crate_name = "yolo_broker_supervision_state_unit_tests",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    env = SERIAL_TEST_ENVIRONMENT,
+    deps = _TEST_DEPS,
+)
+
+isolated_rust_test(
+    name = "integration_tests",
+    srcs = glob([
+        "src/**/*.rs",
+        "integration_tests/**/*.rs",
+        "test_support/**/*.rs",
+    ]),
+    crate_features = INTEGRATION_TEST_FEATURES,
+    crate_name = "yolo_broker_supervision_state_integration_tests",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    env = SERIAL_TEST_ENVIRONMENT,
+    deps = _TEST_DEPS,
+)
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = glob(["**/*.rs"]) + ["BUILD.bazel"],
+)
