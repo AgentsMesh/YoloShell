@@ -1,0 +1,34 @@
+stages:
+  - sync
+  - release
+
+workflow:
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^v[0-9]/'
+    - if: '$CI_PIPELINE_SOURCE == "schedule"'
+    - if: '$CI_PIPELINE_SOURCE == "web"'
+    - when: never
+
+default:
+  interruptible: true
+
+variables:
+  GIT_DEPTH: "0"
+  GITHUB_REPOSITORY: "AgentsMesh/YoloShell"
+
+sync-public:
+  stage: sync
+  tags: [linux]
+  script:
+    - sh scripts/release/sync-public.sh
+
+trigger-release:
+  stage: release
+  tags: [linux]
+  needs: [sync-public]
+  resource_group: github-release
+  interruptible: false
+  timeout: 2h
+  script:
+    - eval "$(sh scripts/release/variables.sh)"
+    - sh scripts/release/trigger-github.sh "$RELEASE_TAG" "$VERSION" "$RELEASE_NAME" "$PRERELEASE" "$CI_COMMIT_SHA"

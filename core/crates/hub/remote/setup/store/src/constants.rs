@@ -1,0 +1,11 @@
+pub const REMOTE_SETUP_DIRECTORY: &str = "remote-setup";
+pub const SETUP_PHASE_TAG: &str = "setup_phase";
+pub(crate) const RECORD_FILE: &str = "record.json";
+pub(crate) const LOCK_SUFFIX: &str = ".lock";
+pub(crate) const LOCK_BYTES: u64 = 128;
+pub(crate) const STORE_SCHEMA: u16 = 2;
+pub(crate) const PARENT: &str = "setup-parent";
+pub(crate) const ENTRY: &str = "setup-entry";
+pub(crate) const CONFLICT: &str = "remote setup request or journal identity conflicts";
+pub(crate) const BUSY: &str = "remote setup operation is already active";
+pub(crate) const LOST: &str = "remote setup journal owner lost storage identity";

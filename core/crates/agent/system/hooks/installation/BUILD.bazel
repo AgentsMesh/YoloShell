@@ -1,0 +1,66 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+
+package(default_visibility = ["//visibility:public"])
+
+_SOURCES = glob(["src/*.rs"])
+_DEPS = [
+    "//core/crates/agent/runtime:yolo_agent_runtime",
+    "//core/crates/agent/system/hooks/installation/contract:yolo_hook_installation_contract",
+    "//core/crates/application/cli:yolo_cli",
+    "//core/crates/persistence/paths:yolo_paths",
+    "@crates//:anyhow",
+    "@crates//:libc",
+    "@crates//:serde",
+    "@crates//:serde_json",
+    "@crates//:sha2",
+    "@crates//:uuid",
+]
+_TEST_DEPS = _DEPS + [
+    "//core/crates/agent/providers/claude/provider:yolo_claude_provider",
+    "//core/crates/agent/providers/codex/provider:yolo_codex_provider",
+    "//core/crates/agent/providers/gemini/provider:yolo_gemini_provider",
+    "//core/crates/agent/providers/grok/provider:yolo_grok_provider",
+    "//core/crates/agent/providers/qwen/provider:yolo_qwen_provider",
+    "@crates//:tempfile",
+]
+
+rust_library(
+    name = "yolo_hook_installation",
+    srcs = _SOURCES,
+    crate_name = "yolo_hook_installation",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    deps = _DEPS,
+)
+
+rust_test(
+    name = "unit_tests",
+    srcs = _SOURCES + glob(["unit_tests/*.rs", "test_support/filesystem.rs"]),
+    crate_name = "yolo_hook_installation_unit_tests",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    deps = _TEST_DEPS,
+)
+
+rust_test(
+    name = "integration_tests",
+    srcs = glob(["integration_tests/*.rs", "test_support/*.rs"]),
+    crate_root = "integration_tests/installation.rs",
+    crate_name = "yolo_hook_installation_integration_tests",
+    edition = "2024",
+    deps = [
+        ":yolo_hook_installation",
+        "//core/crates/agent/providers/claude/provider:yolo_claude_provider",
+    "//core/crates/agent/providers/codex/provider:yolo_codex_provider",
+    "//core/crates/agent/providers/gemini/provider:yolo_gemini_provider",
+    "//core/crates/agent/providers/grok/provider:yolo_grok_provider",
+    "//core/crates/agent/providers/qwen/provider:yolo_qwen_provider",
+        "@crates//:serde_json",
+        "@crates//:tempfile",
+    ],
+)
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = glob(["**/*"], exclude = ["BUILD.bazel"]) + ["BUILD.bazel"],
+)

@@ -1,0 +1,14 @@
+pub const FILE_ROOTS: &str = "File Roots";
+pub const ADD_FILE_ROOT: &str = "Add File Root";
+pub const EDIT_FILE_ROOT: &str = "Edit File Root";
+pub const REMOVE_FILE_ROOT: &str = "Remove File Root";
+pub const REJECTED: &str = "Hub configuration request was rejected";
+pub const ROOT_NAME: &str = "Workspace ";
+pub const DIRECTORY: &str = "workspace ";
+pub const CHANGED_DIRECTORY: &str = "workspace-next ";
+pub const CONTENTS: &[u8] = b"root-editor-data";
+pub const FILE_NAME: &str = "probe.txt";
+pub const CLEAR_FIELD: &[u8] = b"\x15";
+pub const ROOT_FILES_INDEX: usize = 3;
+pub const ROOT_RELOAD_INDEX: usize = 5;
+pub const REMOVE_FROM_NAME_STEPS: usize = 4;

@@ -1,0 +1,45 @@
+diff --git a/src/grid.rs b/src/grid.rs
+--- a/src/grid.rs
++++ b/src/grid.rs
+@@ -102,6 +102,18 @@ impl Grid {
+     pub fn pos(&self) -> Pos {
+         self.pos
+     }
+ 
++    pub fn report_pos(&self) -> Pos {
++        Pos {
++            row: if self.origin_mode {
++                self.pos.row.saturating_sub(self.scroll_top)
++            } else {
++                self.pos.row
++            },
++            // A full row retains a one-past-the-end wrap-pending cursor.
++            col: self.pos.col.min(self.size.cols - 1),
++        }
++    }
++
+     pub fn set_pos(&mut self, mut pos: Pos) {
+         if self.origin_mode {
+diff --git a/src/screen.rs b/src/screen.rs
+--- a/src/screen.rs
++++ b/src/screen.rs
+@@ -491,6 +491,19 @@ impl Screen {
+         (pos.row, pos.col)
+     }
+ 
++    /// Returns the one-based (row, column) for a cursor position report.
++    ///
++    /// In DEC origin mode the row is relative to the top scrolling margin;
++    /// otherwise it is relative to the screen. A pending line wrap reports
++    /// the last column, never a column outside the terminal. The active grid
++    /// is used regardless of the displayed scrollback offset.
++    /// This does not change the cursor or consume a pending line wrap.
++    #[must_use]
++    pub fn report_cursor_position(&self) -> (u16, u16) {
++        let pos = self.grid().report_pos();
++        (pos.row + 1, pos.col + 1)
++    }
++
+     /// Returns terminal escape sequences sufficient to set the current
+     /// cursor state of the terminal.
+     ///

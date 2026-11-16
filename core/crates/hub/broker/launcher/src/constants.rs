@@ -1,0 +1,16 @@
+pub(crate) const NO_LAUNCH_SOURCE: &str = "SSH profile has no broker launch configuration";
+pub(crate) const SOURCE_CHANGED: &str = "SSH broker launch source differs from registered content";
+pub(crate) const WRONG_BROKER: &str = "SSH broker startup returned a different profile or instance";
+pub(crate) const DEADLINE: &str = "SSH broker launch deadline expired";
+pub(crate) const VALIDATE_REGISTRATION: &str = "validate SSH broker launch registration";
+pub(crate) const VERIFY_REGISTRATION: &str = "verify current SSH broker registration";
+pub(crate) const PREPARE_STATE: &str = "prepare SSH broker state directory";
+pub(crate) const VERIFY_STATE: &str = "verify SSH broker state directory";
+pub(crate) const CAPTURE_SCOPE: &str = "capture SSH broker launch scope";
+pub(crate) const ISSUE_AUTHORITY: &str = "issue SSH broker launch authority";
+pub(crate) const SPAWN_LAUNCHER: &str = "spawn SSH broker start-hub launcher";
+pub(crate) const BIND_LAUNCHER: &str = "bind SSH broker authority to launcher child";
+pub(crate) const AUTHORITY_HANDOFF: &str = "complete SSH broker authority and supervisor handoff";
+pub(crate) const WAIT_LAUNCHER: &str = "wait for SSH broker launcher clean exit";
+pub(crate) const VALIDATE_READINESS: &str = "validate SSH broker readiness result";
+pub(crate) const PREPARE_TRANSPORT: &str = "prepare SSH broker transport after launcher handoff";

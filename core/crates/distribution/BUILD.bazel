@@ -1,0 +1,25 @@
+package(default_visibility = ["//visibility:public"])
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = [
+        "//core/crates/distribution/bundle/source:architecture_check_data",
+        "BUILD.bazel",
+        "//core/crates/distribution/bundle:architecture_check_data",
+        "//core/crates/distribution/publication/protocol:architecture_check_data",
+        "//core/crates/distribution/release/store:architecture_check_data",
+    ],
+)
+
+test_suite(
+    name = "tests",
+    tests = [
+        "//core/crates/distribution/bundle/source:integration_tests",
+        "//core/crates/distribution/bundle:unit_tests",
+        "//core/crates/distribution/bundle:integration_tests",
+        "//core/crates/distribution/publication/protocol:unit_tests",
+        "//core/crates/distribution/publication/protocol:integration_tests",
+        "//core/crates/distribution/release/store:unit_tests",
+        "//core/crates/distribution/release/store:integration_tests",
+    ],
+)

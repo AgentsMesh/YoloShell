@@ -1,0 +1,22 @@
+pub const HEADER_FILE: &str = "control-anchor.json";
+pub const JOURNAL_FILE: &str = "control-receipts.json";
+pub const MAX_RECEIPTS: usize = 4_096;
+pub(crate) const SCHEMA_VERSION: u16 = 2;
+pub(crate) const LOCK_FILE: &str = "control-journal.lock";
+pub(crate) const LOCK_BYTES: u64 = 4_096;
+pub(crate) const NAMESPACE: &str = "Agent control journal";
+pub(crate) const INVALID_SCOPE: &str = "Agent control journal scope must use non-nil identifiers";
+pub(crate) const INVALID_RECORD: &str = "Agent control journal history is invalid";
+pub(crate) const WRONG_ANCHOR: &str = "Agent control journal anchor or scope changed";
+pub(crate) const REPLACED_HEADER: &str = "Agent control journal header identity changed";
+pub(crate) const REPLACED_RECORD: &str = "Agent control journal receipt identity changed";
+pub(crate) const INVALID_REQUEST: &str = "Agent control request ID must not be nil";
+pub(crate) const CONFLICT: &str = "Agent control request conflicts with durable history";
+pub(crate) const CAPACITY: &str = "Agent control journal capacity is exhausted";
+pub(crate) const FOREIGN_RESERVATION: &str =
+    "Agent control reservation belongs to another journal owner";
+pub(crate) const ALREADY_EXISTS: &str = "Agent control journal already has initialization evidence";
+pub(crate) const BUSY: &str = "Agent control journal is already owned";
+pub(crate) const UNAVAILABLE: &str = "Agent control journal authority is unavailable";
+pub(crate) const OUTCOME_UNKNOWN: &str = "Agent control journal commit outcome is unknown";
+pub(crate) const POISONED: &str = "Agent control journal must be reopened before further use";
