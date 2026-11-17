@@ -1,0 +1,51 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+
+package(default_visibility = ["//visibility:public"])
+
+SOURCES = ["src/lib.rs"]
+
+UNIT_TEST_SOURCES = ["unit_tests/delegation_tests.rs"]
+
+COMPONENTS = [
+    "//build_system/architecture/checks/runtime/safety/boundary:library",
+    "//build_system/architecture/checks/runtime/safety/process:library",
+    "//build_system/architecture/checks/runtime/safety/pty:library",
+]
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = SOURCES + UNIT_TEST_SOURCES + [
+        "BUILD.bazel",
+        "//build_system/architecture/checks/runtime/safety/boundary:architecture_check_data",
+        "//build_system/architecture/checks/runtime/safety/process:architecture_check_data",
+        "//build_system/architecture/checks/runtime/safety/pty:architecture_check_data",
+    ],
+)
+
+rust_library(
+    name = "library",
+    srcs = SOURCES,
+    crate_name = "yolo_architecture_runtime_safety_policy",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    deps = COMPONENTS + ["//build_system/architecture/foundation:library"],
+)
+
+rust_test(
+    name = "facade_unit_tests",
+    srcs = SOURCES + UNIT_TEST_SOURCES,
+    crate_name = "yolo_architecture_runtime_safety_facade_tests",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    deps = COMPONENTS + ["//build_system/architecture/foundation:library"],
+)
+
+test_suite(
+    name = "unit_tests",
+    tests = [
+        ":facade_unit_tests",
+        "//build_system/architecture/checks/runtime/safety/boundary:unit_tests",
+        "//build_system/architecture/checks/runtime/safety/process:unit_tests",
+        "//build_system/architecture/checks/runtime/safety/pty:unit_tests",
+    ],
+)
