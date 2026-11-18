@@ -1,0 +1,9 @@
+pub const SESSION_META: &str = "session_meta";
+pub const EVENT_MESSAGE: &str = "event_msg";
+pub const RESPONSE_ITEM: &str = "response_item";
+pub const OUTPUT_TEXT: &str = "output_text";
+pub const CONTEXT_CLEARED: &str = "context_cleared";
+pub const MULTI_ENTRY_PAGE: u32 = 2;
+pub const SINGLE_ENTRY_PAGE: u32 = 1;
+pub const ESCAPED_PAGE_BYTE_LIMIT: u32 = 500;
+pub const EXCLUDING_PAGE_BYTE_LIMIT: u32 = 1;

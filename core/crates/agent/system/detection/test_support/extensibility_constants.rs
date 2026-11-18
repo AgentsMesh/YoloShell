@@ -1,0 +1,16 @@
+pub const FUTURE_KIND: &str = "future_agent";
+pub const FUTURE_EXECUTABLE: &str = "future-agent";
+pub const FUTURE_DATA_HOME_ENV: &str = "FUTURE_AGENT_HOME";
+pub const FUTURE_DEFAULT_DATA_HOME: &str = ".future-agent";
+pub const FUTURE_EVIDENCE_FILE: &str = "future-session.jsonl";
+pub const FUTURE_SESSION_ID: &str = "future-session";
+pub const PROVIDER_SESSION_FIELD: &str = "session_id";
+pub const FUTURE_RESUME_ARGUMENT: &str = "--continue";
+pub const FUTURE_RESERVED_ENV: &str = "YOLO_FAKE_OVERRIDE";
+pub const FUTURE_PROJECT_DIRECTORY: &str = "project";
+pub const FUTURE_DATA_HOME_DIRECTORY: &str = "future-home";
+pub const FUTURE_WORKER_SOCKET_FILE: &str = "worker.sock";
+pub const FUTURE_AUTH_TOKEN: &str = "future-token";
+pub const FUTURE_SHELL: &str = "/bin/sh";
+pub const FUTURE_KIND_MISMATCH: &str = "future adapter kind mismatch";
+pub const FUTURE_DETECTION_FAILURE: &str = "future adapter was not detected";

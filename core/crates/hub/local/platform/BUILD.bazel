@@ -1,0 +1,58 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+load("//build_system/bazel:version.bzl", "YOLO_MARKETING_VERSION")
+
+package(default_visibility = ["//visibility:public"])
+
+_DEPS = [
+    "//core/crates/agent/contract:yolo_agent_contract",
+    "//core/crates/agent/system/provider/contract:yolo_agent_provider_contract",
+    "//core/crates/hub/agent/protocol:yolo_hub_agent_protocol",
+    "//core/crates/hub/agent/run/protocol:yolo_hub_agent_run_protocol",
+    "//core/crates/hub/agent/run/store:yolo_hub_agent_run_store",
+    "//core/crates/hub/events/bus:yolo_hub_events_bus",
+    "//core/crates/hub/identity:yolo_hub_identity",
+    "//core/crates/hub/local/errors:yolo_hub_local_errors",
+    "//core/crates/hub/local/terminal/text:yolo_hub_local_terminal_text",
+    "//core/crates/hub/rpc/protocol:yolo_hub_rpc_protocol",
+    "//core/crates/hub/terminal/protocol:yolo_hub_terminal_protocol",
+    "//core/crates/hub/workspace/protocol:yolo_hub_workspace_protocol",
+    "//core/crates/hub/workspace/store:yolo_hub_workspace_store",
+    "//core/crates/persistence/paths:yolo_paths",
+    "//core/crates/runtime/engine/protocol:yolo_runtime_protocol",
+    "//core/crates/terminal/model:yolo_terminal_model",
+    "//core/crates/transport/client:yolo_client",
+    "//core/crates/wire:yolo_wire",
+    "@crates//:tokio",
+    "@crates//:uuid",
+]
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = glob(
+        ["src/**/*.rs", "unit_tests/**/*.rs"],
+        allow_empty = True,
+    ) + ["BUILD.bazel"],
+)
+
+rust_library(
+    name = "yolo_hub_local_platform",
+    srcs = glob(["src/**/*.rs"]),
+    crate_name = "yolo_hub_local_platform",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    version = YOLO_MARKETING_VERSION,
+    deps = _DEPS,
+)
+
+rust_test(
+    name = "unit_tests",
+    srcs = glob(["src/**/*.rs", "unit_tests/**/*.rs"]),
+    crate_name = "yolo_hub_local_platform_unit_tests",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    deps = _DEPS + [
+        "//core/crates/presentation/protocol:yolo_presentation_protocol",
+        "@crates//:serde_json",
+        "@crates//:tempfile",
+    ],
+)

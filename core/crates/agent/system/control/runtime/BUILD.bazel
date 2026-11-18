@@ -1,0 +1,61 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+load("//build_system/bazel:version.bzl", "YOLO_MARKETING_VERSION")
+load("//build_system/bazel/rust:component_test_graph.bzl", "COMPONENT_TEST_FEATURES", "component_test_aliases", "component_test_dependencies")
+
+package(default_visibility = ["//visibility:public"])
+
+_DEPS = [
+    "//core/crates/agent/system/control/journal:yolo_agent_control_journal",
+    "//core/crates/application/support:yolo_application_support",
+    "//core/crates/crypto:yolo_crypto",
+    "//core/crates/persistence/paths:yolo_paths",
+    "//core/crates/runtime/engine/startup/checkpoint/contract:yolo_startup_checkpoint_contract",
+    "//core/crates/terminal/model:yolo_terminal_model",
+    "@crates//:anyhow",
+    "@crates//:serde",
+    "@crates//:uuid",
+]
+_TEST_DEPS = ["@crates//:serde_json", "@crates//:tempfile"]
+
+rust_library(
+    name = "yolo_agent_control_runtime",
+    srcs = glob(["src/**/*.rs"]),
+    crate_name = "yolo_agent_control_runtime",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    version = YOLO_MARKETING_VERSION,
+    deps = _DEPS,
+)
+
+rust_library(
+    name = "yolo_agent_control_runtime_component_test_support",
+    testonly = True,
+    srcs = glob(["src/**/*.rs"]),
+    aliases = component_test_aliases(_DEPS),
+    crate_features = COMPONENT_TEST_FEATURES,
+    crate_name = "yolo_agent_control_runtime",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    version = YOLO_MARKETING_VERSION,
+    deps = component_test_dependencies(_DEPS),
+)
+
+rust_test(
+    name = "unit_tests",
+    srcs = glob(["src/**/*.rs", "unit_tests/**/*.rs", "test_support/**/*.rs"]),
+    crate_name = "yolo_agent_control_runtime_unit_tests",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    deps = _DEPS + _TEST_DEPS,
+)
+
+rust_test(
+    name = "integration_tests",
+    srcs = glob(["integration_tests/**/*.rs", "test_support/**/*.rs"]),
+    crate_name = "yolo_agent_control_runtime_integration_tests",
+    crate_root = "integration_tests/lib.rs",
+    edition = "2024",
+    deps = _DEPS + _TEST_DEPS + [":yolo_agent_control_runtime"],
+)
+
+filegroup(name = "architecture_check_data", srcs = glob(["**/*.rs"]) + ["BUILD.bazel"])

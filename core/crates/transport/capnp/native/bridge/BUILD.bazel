@@ -1,0 +1,7 @@
+load("@rules_rust//rust:defs.bzl", "rust_static_library", "rust_test")
+package(default_visibility = ["//visibility:public"])
+_DEPS = ["//core/crates/transport/capnp/codec", "//core/crates/transport/capnp/sensitive", "@crates//:zeroize"]
+rust_static_library(name = "native", srcs = glob(["src/**/*.rs"]), crate_name = "yolo_native_value_bridge", crate_root = "src/lib.rs", edition = "2024", deps = _DEPS)
+cc_library(name = "YoloNativeValue", hdrs = ["include/yolo_native_value.h", "include/module.modulemap"], includes = ["include"], tags = ["swift_module=YoloNativeValue"], deps = [":native"])
+rust_test(name = "unit_tests", srcs = glob(["src/**/*.rs", "unit_tests/**/*.rs"]), crate_name = "yolo_native_value_bridge_tests", crate_root = "src/lib.rs", edition = "2024", deps = _DEPS)
+filegroup(name = "architecture_check_data", srcs = glob(["src/**/*.rs", "unit_tests/**/*.rs", "include/*"]) + ["BUILD.bazel"])
