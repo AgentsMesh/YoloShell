@@ -1,0 +1,17 @@
+pub const PROFILE_ID: &str = "setup-profile";
+pub const SOURCE_ROOT: &str = "/srv/bundle-source";
+pub const INSTALL_ROOT: &str = "/srv/yolo-install";
+pub const REMOTE_STATE: &str = "/srv/yolo-state";
+pub const REMOTE_HOME: &str = "/srv/yolo-home";
+pub const FIRST_REVISION: u64 = 1;
+pub const NEXT_REVISION: u64 = 2;
+pub const RECORD_NAME: &str = "record.json";
+pub const SETUP_NAME: &str = "setup";
+pub const BROKER_NAME: &str = "broker";
+pub const MOVED_NAME: &str = "retained";
+pub const FOREIGN_NAME: &str = "other";
+pub const PRIVATE_MODE: u32 = 0o600;
+pub const THREADS: usize = 4;
+pub const ONE_OWNER: usize = 1;
+pub const EXTRA_FIELD: &str = "unexpected";
+pub const PHASE_FIELD: &str = "phase";

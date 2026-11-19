@@ -1,0 +1,10 @@
+pub const ED25519_PUBLIC_KEY_BYTES: usize = 32;
+pub const ED25519_SIGNATURE_BYTES: usize = 64;
+pub const MAX_DELEGATION_DEPTH: u8 = 8;
+pub const FIRST_POLICY_EPOCH: u64 = 1;
+pub const FIRST_CHAIN_LINK: usize = 1;
+pub const NO_REEXPORTS: u8 = 0;
+pub const MAX_GRANT_LIFETIME_MS: u64 = 86_400_000;
+pub(crate) const GRANT_SIGNATURE_DOMAIN: &str = "yolo.hub.capnp.delegation.v1";
+pub(crate) const GRANT_DIGEST_DOMAIN: &[u8] = b"yolo.hub.capnp.delegation.digest.v1";
+pub(crate) const DELEGATION_SCHEMA: u16 = 1;

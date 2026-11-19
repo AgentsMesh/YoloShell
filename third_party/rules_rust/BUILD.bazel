@@ -1,0 +1,12 @@
+package(default_visibility = ["//visibility:public"])
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = [
+        "BUILD.bazel",
+        "coverage_collector.patch",
+        "darwin_continuous_coverage.patch",
+    ],
+)
+
+exports_files(["coverage_collector.patch", "darwin_continuous_coverage.patch"])

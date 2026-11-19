@@ -1,0 +1,17 @@
+use std::time::Duration;
+pub const HUB_DIRECTORY: &str = "hub";
+pub const HOST_DIRECTORY: &str = "host";
+pub const ORIGIN_DIRECTORY: &str = "origin";
+pub const ORIGIN_HOST_DIRECTORY: &str = "origin-host";
+pub const BROKER_DIRECTORY: &str = "broker";
+pub const PROFILE_ID: &str = "remote-machine";
+pub const DIGEST_CHARACTER: &str = "a";
+pub const DIGEST_BYTES: usize = 64;
+pub const GENERATION: u64 = 1;
+pub const CHANNEL: u64 = 1;
+pub const SOCKET_MODE: u32 = 0o600;
+pub const DIRECTORY_MODE: u32 = 0o700;
+pub const REPLACED_REGISTRY: &str = "replaced-registry";
+pub const ENDPOINT: &str = "127.0.0.1:4242";
+pub const PAYLOAD: &[u8] = b"hub-tunnel-payload";
+pub const TIMEOUT: Duration = Duration::from_secs(5);

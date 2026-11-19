@@ -1,0 +1,13 @@
+use std::time::Duration;
+pub use yolo_hub_connector_protocol::CONNECTOR_SOCKET_FILE;
+pub(crate) const MAX_CLIENTS: usize = 256;
+pub(crate) const OPERATION_TIMEOUT: Duration = Duration::from_secs(10);
+pub(crate) const IDLE_TIMEOUT: Duration = Duration::from_secs(120);
+pub(crate) const VERIFY_INTERVAL: Duration = Duration::from_secs(5);
+pub(crate) const PROBE_TIMEOUT: Duration = Duration::from_secs(1);
+pub(crate) const WRONG_OWNER: &str = "connector client does not belong to this user";
+pub(crate) const WRONG_HUB: &str = "connector request names another Hub";
+pub(crate) const EXPECTED_HELLO: &str = "connector channel must begin with Hello";
+pub(crate) const LIVE_SOCKET: &str = "connector service is already running";
+pub(crate) const INVALID_BACKEND: &str = "connector backend and Hub identity differ";
+pub(crate) const INVALID_FRAME: &str = "invalid connector protocol frame";

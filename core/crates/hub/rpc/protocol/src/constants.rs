@@ -1,0 +1,12 @@
+pub const HUB_PROTOCOL_VERSION: u16 = 18;
+pub const MAX_CATALOG_PAGE_TERMINALS: usize = 128;
+pub const MAX_CATALOG_PAGE_AGENTS: usize = 128;
+pub const MAX_CATALOG_PAGE_HUBS: usize = 128;
+pub const MAX_AUDIT_EXPORT_LIMIT: u16 = 256;
+pub const HUB_ID_FIELD: &str = "hub_id";
+pub const HUB_REACHABLE_FIELD: &str = "reachable";
+pub const RPC_METHOD_TAG: &str = "method";
+pub const RPC_RESULT_TAG: &str = "result";
+pub const RPC_REQUEST_ID_FIELD: &str = "request_id";
+pub const RPC_VERSION_FIELD: &str = "version";
+pub const INSPECT_REMOTE_SETUP_METHOD: &str = "inspect_remote_setup";
