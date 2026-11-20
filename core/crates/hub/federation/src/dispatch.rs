@@ -1,10 +1,8 @@
 use crate::forward_diagnostics::ForwardStage;
 use crate::{Federation, node::now_ms, remote_source::RemoteSource};
 use std::sync::atomic::Ordering;
-use std::time::Duration;
 use yolo_hub_agent_protocol::{
-    Activity, AgentLifecycleState, AgentPromptOutcome, AgentPromptResult, AgentPromptWait,
-    AgentSnapshot, AgentWaitCondition, AgentWaitRequest, CommandOutcome, MAX_AGENT_WAIT_MS,
+    AgentPromptOutcome, AgentPromptResult, AgentPromptWait, CommandOutcome,
 };
 use yolo_hub_dispatch::{Dispatcher, Operation, OperationFuture};
 use yolo_hub_identity::HubId;

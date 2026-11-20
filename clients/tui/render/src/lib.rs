@@ -4,6 +4,7 @@ mod overlay;
 mod screen;
 mod selection;
 mod status_line;
+mod tab_strip;
 mod terminal;
 mod wrap;
 
@@ -15,4 +16,5 @@ pub use selection::{PaneSelection, highlight_selection};
 pub use terminal::{PaneViewport, TerminalPane, render_terminal, terminal_inner};
 
 pub use status_line::{draw as draw_status_line, elide};
+pub use tab_strip::{TabHit, TabStripItem, draw as draw_tab_strip};
 pub use wrap::wrap;

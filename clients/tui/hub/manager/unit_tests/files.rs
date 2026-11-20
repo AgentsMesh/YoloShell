@@ -82,7 +82,7 @@ fn invalid_paths_can_be_corrected_without_creating_another_identity() {
 fn editing_and_removal_preserve_other_configuration_and_require_confirmation() {
     let mut manager = manager();
     let root = files_support::add(&mut manager);
-    let listen = manager.draft.as_ref().unwrap().listen;
+    let peers = manager.draft.as_ref().unwrap().peers.len();
     activate(&mut manager, Action::EditFileRoot(root.fields().root_id));
     field(&mut manager, FieldId::RootPath, CHANGED_PATH);
     save(&mut manager);
@@ -106,7 +106,7 @@ fn editing_and_removal_preserve_other_configuration_and_require_confirmation() {
     key(&mut manager, KeyCode::Tab);
     key(&mut manager, KeyCode::Enter);
     assert!(manager.draft.as_ref().unwrap().file_roots.is_empty());
-    assert_eq!(manager.draft.as_ref().unwrap().listen, listen);
+    assert_eq!(manager.draft.as_ref().unwrap().peers.len(), peers);
     assert_eq!(manager.page, Page::FileRoots);
     assert!(!manager.pending());
 }
@@ -120,7 +120,7 @@ fn directory_fields_accept_long_paths_but_keep_their_own_protocol_bounds() {
         "/{}",
         vec![COMPONENT.repeat(COMPONENT_BYTES); DEEP_COMPONENTS].join("/")
     );
-    assert!(path.len() > yolo_hub_federation_settings::MAX_HOST_BYTES);
+    assert!(path.len() > yolo_hub_federation_settings::MAX_SOCKET_PATH_BYTES);
     field(&mut manager, FieldId::RootPath, &path);
     assert_eq!(
         crate::wire_fields::raw_text(&manager.form.as_ref().unwrap().fields, FieldId::RootPath)

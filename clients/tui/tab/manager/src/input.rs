@@ -57,7 +57,7 @@ impl Manager {
     }
 
     fn move_selection(&mut self, tabs: &TabCatalog, forward: bool) {
-        let entries = tabs.entries();
+        let entries = tabs.machine_entries();
         let index = entries
             .iter()
             .position(|entry| entry.id == self.selected)

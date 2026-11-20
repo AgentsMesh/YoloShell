@@ -76,7 +76,7 @@ fn unavailable_agent_opens_details_without_dispatching_control() {
         .terminals
         .insert(terminal, TerminalSummary::new(session).unwrap());
     state.inventory.history = true;
-    state.inventory.view = View::Agents;
+    state.inventory.view = View::Tree;
     state.inventory.selected_agent = Some(address);
     let (jobs, mut received) = mpsc::channel(QUEUE_CAPACITY);
     assert!(!key(&mut state, &jobs, KeyCode::Enter));
@@ -96,7 +96,7 @@ fn details_r_only_navigates_to_matching_terminal_history_without_control_job() {
     state.terminals = BTreeMap::from([(terminal, TerminalSummary::new(replaced).unwrap())]);
     state.inventory.history = true;
     state.inventory.details = Some(agent);
-    state.inventory.view = View::Agents;
+    state.inventory.view = View::Tree;
     let (jobs, mut received) = mpsc::channel(QUEUE_CAPACITY);
     assert!(!key(&mut state, &jobs, KeyCode::Char('R')));
     assert_eq!(state.inventory.details, None);
@@ -114,7 +114,7 @@ fn details_r_with_missing_terminal_keeps_details_and_esc_closes_it() {
     state.terminals.clear();
     state.inventory.history = true;
     state.inventory.details = Some(agent);
-    state.inventory.view = View::Agents;
+    state.inventory.view = View::Tree;
     let (jobs, mut received) = mpsc::channel(QUEUE_CAPACITY);
     assert!(!key(&mut state, &jobs, KeyCode::Char('R')));
     assert_eq!(state.inventory.details, Some(agent));
@@ -129,7 +129,7 @@ fn details_render_when_the_layout_has_no_terminal_pane() {
     let mut state = state();
     let agent = state.inventory.selected_agent.unwrap();
     state.inventory.details = Some(agent);
-    state.inventory.view = View::Agents;
+    state.inventory.view = View::Tree;
     state.mode = Mode::Inventory;
     assert!(
         state

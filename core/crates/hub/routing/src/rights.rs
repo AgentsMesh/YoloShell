@@ -23,6 +23,26 @@ pub enum Right {
 pub struct Rights(BTreeSet<Right>);
 
 impl Rights {
+    /// Every right a peer can hold. Local sharing policies may grant this set
+    /// when the SSH account already has equivalent local authority.
+    pub fn all() -> Self {
+        [
+            Right::Observe,
+            Right::TerminalRead,
+            Right::TerminalWrite,
+            Right::Lifecycle,
+            Right::FileRead,
+            Right::AgentControl,
+            Right::ConversationRead,
+            Right::PresentationRead,
+            Right::PresentationWrite,
+            Right::WorkspaceRead,
+            Right::WorkspaceWrite,
+        ]
+        .into_iter()
+        .collect()
+    }
+
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
     }

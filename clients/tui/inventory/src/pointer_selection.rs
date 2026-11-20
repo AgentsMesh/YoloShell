@@ -1,4 +1,4 @@
-use crate::{Inventory, View};
+use crate::{Inventory, TreeSelection, View};
 use std::collections::BTreeMap;
 use yolo_hub_identity::{AgentTarget, HubId, TerminalAddress};
 use yolo_hub_terminal_protocol::TerminalSummary;
@@ -7,7 +7,7 @@ use yolo_hub_terminal_protocol::TerminalSummary;
 pub enum InventorySelection {
     Terminal(TerminalAddress),
     Agent(AgentTarget),
-    Hub(HubId),
+    Machine(HubId),
 }
 
 impl Inventory {
@@ -22,24 +22,17 @@ impl Inventory {
                 .into_iter()
                 .map(InventorySelection::Terminal)
                 .collect(),
-            View::Agents => self
-                .visible_agents(filter, terminals)
-                .into_iter()
-                .map(InventorySelection::Agent)
-                .collect(),
-            View::Hubs => self
-                .visible_hubs(filter)
-                .into_iter()
-                .map(InventorySelection::Hub)
-                .collect(),
+            View::Tree => self.tree_selections(filter, terminals),
         }
     }
 
     pub fn selected(&self, session: Option<TerminalAddress>) -> Option<InventorySelection> {
         match self.view {
             View::Terminals => session.map(InventorySelection::Terminal),
-            View::Agents => self.selected_agent.map(InventorySelection::Agent),
-            View::Hubs => self.selected_hub.map(InventorySelection::Hub),
+            View::Tree => self.tree_selected.map(|selection| match selection {
+                TreeSelection::Machine(hub) => InventorySelection::Machine(hub),
+                TreeSelection::Agent(target) => InventorySelection::Agent(target),
+            }),
         }
     }
 
@@ -55,13 +48,17 @@ impl Inventory {
             return false;
         }
         match (self.view, value) {
-            (View::Terminals, InventorySelection::Terminal(address)) => *session = Some(address),
-            (View::Agents, InventorySelection::Agent(address)) => {
-                self.selected_agent = Some(address)
+            (View::Terminals, InventorySelection::Terminal(address)) => {
+                *session = Some(address);
+                true
             }
-            (View::Hubs, InventorySelection::Hub(hub)) => self.selected_hub = Some(hub),
+            (View::Tree, InventorySelection::Agent(target)) => {
+                self.select_tree(TreeSelection::Agent(target), filter, terminals)
+            }
+            (View::Tree, InventorySelection::Machine(hub)) => {
+                self.select_tree(TreeSelection::Machine(hub), filter, terminals)
+            }
             _ => return false,
         }
-        true
     }
 }

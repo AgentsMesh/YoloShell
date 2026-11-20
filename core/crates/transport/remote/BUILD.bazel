@@ -132,7 +132,6 @@ isolated_rust_test(
         "//core/crates/distribution/publication/protocol:yolo_distribution_publication_protocol",
         "//core/crates/hub/delegation:yolo_hub_delegation",
         "//core/crates/hub/identity:yolo_hub_identity",
-        "//core/crates/hub/peer/transport:yolo_hub_peer_transport",
         "//core/crates/crypto:yolo_crypto",
         "//core/crates/persistence/acl:yolo_private_acl",
         "//core/crates/transport/local/unix:yolo_local_unix_test_support",

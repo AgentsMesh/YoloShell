@@ -20,11 +20,7 @@ pub fn handle(state: &mut State, jobs: &mpsc::Sender<Job>, key: KeyCode) -> bool
                 return false;
             }
             KeyCode::Char(c @ '1'..='9') => {
-                crate::respond_actions::choose(
-                    state,
-                    jobs,
-                    usize::from(c as u8 - b'1'),
-                );
+                crate::respond_actions::choose(state, jobs, usize::from(c as u8 - b'1'));
                 return false;
             }
             KeyCode::Char('q') | KeyCode::Char(HISTORY_KEY) => {}
@@ -35,30 +31,17 @@ pub fn handle(state: &mut State, jobs: &mpsc::Sender<Job>, key: KeyCode) -> bool
         KeyCode::Char('q') => return true,
         KeyCode::Down | KeyCode::Char('j') => state.move_selection(true),
         KeyCode::Up | KeyCode::Char('k') => state.move_selection(false),
-        KeyCode::Tab | KeyCode::BackTab => {
-            if state.terminal_picker.is_some() {
-                return false;
-            }
-            state.inventory.view = if state.inventory.view == View::Agents {
-                View::Hubs
-            } else {
-                View::Agents
-            };
-            state.reconcile_selection();
-        }
+        KeyCode::Left => collapse_or_parent(state),
+        KeyCode::Right | KeyCode::Char(' ') => toggle_selected_machine(state),
         KeyCode::Esc => {
             if state.terminal_picker.is_some() {
                 crate::tabs::terminal_picker::close(state);
                 return false;
             }
-            if state.filter.is_empty()
-                && state.inventory.scope.is_none()
-                && !state.inventory.history
-            {
+            if state.filter.is_empty() && !state.inventory.history {
                 state.mode = Mode::Terminal;
                 return false;
             }
-            state.inventory.scope = None;
             state.inventory.history = false;
             state.filter.clear();
             state.reconcile_selection();
@@ -76,16 +59,14 @@ pub fn handle(state: &mut State, jobs: &mpsc::Sender<Job>, key: KeyCode) -> bool
             state.mode = Mode::Search;
             crate::form_input::reset(state);
         }
-        KeyCode::Char(crate::tabs::DETAILS_KEY) if state.inventory.view == View::Agents => {
-            state.inventory.details = state.inventory.selected_agent;
+        KeyCode::Char(crate::tabs::DETAILS_KEY) => {
+            if let Some(target) = state.inventory.selected_agent {
+                state.inventory.details = Some(target);
+            }
         }
         KeyCode::Char('n') => {
-            if state.inventory.view == View::Hubs {
-                let Some(hub) = state.inventory.selected_hub else {
-                    state.status = HUB_UNAVAILABLE_LABEL.into();
-                    return false;
-                };
-                state.inventory.scope = Some(hub);
+            if let Some(hub) = state.inventory.selected_machine {
+                crate::machine_activation::select_machine(state, hub);
             }
             state.mode = Mode::Directory;
             state.entry = DEFAULT_DIRECTORY.into();
@@ -115,33 +96,58 @@ pub fn handle(state: &mut State, jobs: &mpsc::Sender<Job>, key: KeyCode) -> bool
 }
 
 pub(crate) fn open(state: &mut State, jobs: &mpsc::Sender<Job>) {
-    let address = match state.inventory.view {
-        View::Hubs => {
-            if let Some(hub) = state.inventory.selected_hub {
-                state.inventory.scope = Some(hub);
-                state.inventory.view = View::Agents;
-                state.filter.clear();
-                state.reconcile_selection();
-            }
-            return;
-        }
-        View::Agents => {
-            let Some(target) = state.inventory.terminal_for_selected(&state.terminals) else {
-                state.inventory.details = state.inventory.selected_agent;
-                state.status = AGENT_HISTORY_DETAILS_LABEL.into();
-                return;
-            };
-            target.address
-        }
+    match state.inventory.view {
         View::Terminals => {
             let Some(address) = state.selected else {
                 return;
             };
-            address
+            crate::tabs::terminal_picker::close(state);
+            crate::tabs::open(state, jobs, address);
         }
-    };
-    crate::tabs::terminal_picker::close(state);
-    crate::tabs::open(state, jobs, address);
+        View::Tree => match state.inventory.selected_tree() {
+            Some(yolo_tui_inventory::TreeSelection::Machine(hub)) => {
+                crate::machine_activation::activate(state, jobs, hub);
+            }
+            Some(yolo_tui_inventory::TreeSelection::Agent(target)) => {
+                crate::machine_activation::select_machine_workspace(state, target.address.hub_id);
+                state.sidebar_visible = true;
+                state.inventory.select_tree(
+                    yolo_tui_inventory::TreeSelection::Agent(target),
+                    &state.filter,
+                    &state.terminals,
+                );
+                match state
+                    .inventory
+                    .terminal_for_selected(&state.terminals)
+                {
+                    Some(target) => crate::tabs::open(state, jobs, target.address),
+                    None => {
+                        state.inventory.details = Some(target);
+                        state.status = AGENT_HISTORY_DETAILS_LABEL.into();
+                    }
+                }
+            }
+            None => {}
+        },
+    }
+}
+
+fn collapse_or_parent(state: &mut State) {
+    match state.inventory.selected_tree() {
+        Some(yolo_tui_inventory::TreeSelection::Machine(hub)) => {
+            state.inventory.toggle_machine(hub)
+        }
+        Some(yolo_tui_inventory::TreeSelection::Agent(target)) => {
+            crate::machine_activation::select_machine(state, target.address.hub_id)
+        }
+        None => {}
+    }
+}
+
+fn toggle_selected_machine(state: &mut State) {
+    if let Some(yolo_tui_inventory::TreeSelection::Machine(hub)) = state.inventory.selected_tree() {
+        state.inventory.toggle_machine(hub);
+    }
 }
 
 fn view_agent_terminal(state: &mut State) {

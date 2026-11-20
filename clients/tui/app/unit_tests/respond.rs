@@ -39,7 +39,7 @@ fn pending() -> State {
     state.control_generation = Some(uuid::Uuid::new_v4());
     state.inventory.replace(Some(vec![agent]), Some(vec![]));
     state.inventory.current = true;
-    state.inventory.view = yolo_tui_inventory::View::Agents;
+    state.inventory.view = yolo_tui_inventory::View::Tree;
     state.inventory.selected_agent = state.inventory.agents.keys().next().copied();
     state.inventory.details = state.inventory.selected_agent;
     state.replace_terminals(vec![session.clone()]);

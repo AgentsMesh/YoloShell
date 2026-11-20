@@ -87,6 +87,7 @@ pub(crate) fn dispatch(
     if !state.client_capability_enabled(ClientCapability::TerminalControl) {
         return;
     }
+    if crate::constants::is_self_terminal(target.address.terminal_id.as_uuid()) { return; }
     let Some(generation) = state.control_generation else {
         return;
     };

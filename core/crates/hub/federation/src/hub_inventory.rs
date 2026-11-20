@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 use yolo_hub_federation_directory::OriginBook;
-use yolo_hub_federation_settings::{Configuration, DialTransport};
+use yolo_hub_federation_settings::Configuration;
 use yolo_hub_identity::HubId;
 use yolo_hub_rpc_protocol::{HubSummary, MAX_CATALOG_PAGE_HUBS, Reply};
 use yolo_hub_terminal_protocol::PublicError;
@@ -24,11 +24,13 @@ pub(crate) fn labels(config: &Configuration) -> BTreeMap<HubId, String> {
         .iter()
         .filter_map(|peer| {
             let dial = peer.dial.as_ref()?;
-            let label = match &dial.transport {
-                DialTransport::Ssh { profile } => profile.profile_id().to_owned(),
-                DialTransport::Tcp => dial.host.clone(),
-            };
-            Some((peer.identity.hub(), label))
+            Some((
+                peer.identity.hub(),
+                dial.ssh_target()
+                    .or_else(|| dial.profile_id())
+                    .unwrap_or_default()
+                    .to_owned(),
+            ))
         })
         .collect()
 }

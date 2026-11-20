@@ -1,6 +1,6 @@
 use super::{
     federation_agents::launch,
-    federation_support::{POLL, RunningNode, TEMP_ROOT, deadline, exports, listener, peer},
+    federation_support::{POLL, RunningNode, TEMP_ROOT, deadline, exports, peer},
     local_startup_support::retain_fixture_host,
     multipath::{io, observe},
     relay_crash::process,
@@ -36,10 +36,8 @@ async fn real_hub_starts_detached_ssh_broker_and_reuses_it_after_entry_restart()
     let origin_state =
         Arc::new(HubState::open(&base.join(ORIGIN_DIRECTORY), origin_host.home.path()).unwrap());
     let origin_peer = origin_state.peer_identity();
-    let origin_listener = listener().await;
-    let origin_address = origin_listener.local_addr().unwrap();
+    let origin_peer_socket = origin_state.peer_socket().unwrap();
     let origin_config = Configuration {
-        listen: Some(origin_address),
         peers: vec![peer(
             entry_peer,
             None,
@@ -49,7 +47,7 @@ async fn real_hub_starts_detached_ssh_broker_and_reuses_it_after_entry_restart()
         ..Default::default()
     };
     let origin =
-        RunningNode::start(&origin_host, origin_state, origin_config, origin_listener).await;
+        RunningNode::start(&origin_host, origin_state, origin_config).await;
     let target = launch(&origin, &origin_host, ORIGIN_AGENT).await;
     let expected_agent = *origin
         .wait_origins(&[origin_peer.hub()])
@@ -66,7 +64,11 @@ async fn real_hub_starts_detached_ssh_broker_and_reuses_it_after_entry_restart()
         peers: vec![Peer {
             identity: origin_peer,
             dial: Some(
-                PeerAddress::ssh(broker.registration.profile.clone(), origin_address).unwrap(),
+                PeerAddress::profile(
+                    broker.registration.profile.profile_id().to_owned(),
+                    origin_peer_socket.clone(),
+                )
+                .unwrap(),
             ),
             consume: true,
             exports: vec![],

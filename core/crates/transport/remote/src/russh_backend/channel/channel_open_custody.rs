@@ -1,5 +1,4 @@
 use super::channel_open_cleanup::{cleanup_opening_task, close_session_channel};
-use super::hub_peer::{HUB_PEER_ORIGINATOR_ADDRESS, HUB_PEER_ORIGINATOR_PORT};
 use super::{HostKeyHandler, RusshConnection, ssh_error};
 use crate::remote::HubPeerEndpoint;
 use crate::remote::constants::{CHANNEL_OPEN_TASK_FAILURE_CONTEXT, OPERATION_TIMEOUT_MESSAGE};
@@ -60,7 +59,7 @@ impl RusshConnection {
             Arc::clone(&self.session),
             reservation,
             self.operation_timeout,
-            Some(endpoint),
+            Some(endpoint.into_path()),
         )
         .wait_until(deadline)
         .await
@@ -72,23 +71,15 @@ impl OpeningSessionChannel {
         session: Arc<Handle<HostKeyHandler>>,
         reservation: RemoteCleanupReservation,
         cleanup_timeout: Duration,
-        endpoint: Option<HubPeerEndpoint>,
+        endpoint: Option<std::path::PathBuf>,
     ) -> Self {
         let opening_session = Arc::clone(&session);
         let task = tokio::spawn(async move {
             match endpoint {
-                Some(endpoint) => {
-                    let address = endpoint.address();
-                    opening_session
-                        .channel_open_direct_tcpip(
-                            address.ip().to_string(),
-                            u32::from(address.port()),
-                            HUB_PEER_ORIGINATOR_ADDRESS,
-                            HUB_PEER_ORIGINATOR_PORT,
-                        )
-                        .await
-                        .map_err(super::hub_peer::open_error)
-                }
+                Some(path) => opening_session
+                    .channel_open_direct_streamlocal(path.to_string_lossy())
+                    .await
+                    .map_err(super::hub_peer::open_error),
                 None => opening_session
                     .channel_open_session()
                     .await

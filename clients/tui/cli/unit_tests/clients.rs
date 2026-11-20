@@ -1,6 +1,8 @@
 use super::constants::*;
 use crate::constants::{CLIENT_HEADER, CLIENT_KIND_CLIENT, CLIENT_KIND_PRIMARY};
 use crate::detach::{client_rows, clients_output};
+use crate::client::ClientCommand;
+use crate::terminal::TerminalCommand;
 use crate::{arguments::Arguments, command::Command};
 use clap::Parser;
 use std::path::PathBuf;
@@ -57,32 +59,48 @@ fn client_ids_remain_addressable_from_the_printed_table() {
 }
 
 #[test]
-fn list_and_clients_expose_history_and_machine_readable_modes() {
+fn terminal_and_client_commands_expose_history_and_machine_readable_modes() {
+    let parsed = Arguments::try_parse_from([
+        PROGRAM,
+        "terminal",
+        LIST_COMMAND,
+        ALL_ARGUMENT,
+        JSON_ARGUMENT,
+    ])
+    .unwrap();
+    assert!(matches!(
+        parsed.command,
+        Some(Command::Terminal {
+            command: TerminalCommand::List {
+                json: true,
+                all: true
+            }
+        })
+    ));
     let parsed =
-        Arguments::try_parse_from([PROGRAM, LIST_COMMAND, ALL_ARGUMENT, JSON_ARGUMENT]).unwrap();
+        Arguments::try_parse_from([PROGRAM, "terminal", LIST_COMMAND]).unwrap();
     assert!(matches!(
         parsed.command,
-        Some(Command::List {
-            json: true,
-            all: true
+        Some(Command::Terminal {
+            command: TerminalCommand::List {
+                json: false,
+                all: false
+            }
         })
     ));
-    let parsed = Arguments::try_parse_from([PROGRAM, LIST_COMMAND]).unwrap();
+    let parsed =
+        Arguments::try_parse_from([PROGRAM, "client", LIST_COMMAND, JSON_ARGUMENT]).unwrap();
     assert!(matches!(
         parsed.command,
-        Some(Command::List {
-            json: false,
-            all: false
+        Some(Command::Client {
+            command: ClientCommand::List { json: true }
         })
     ));
-    let parsed = Arguments::try_parse_from([PROGRAM, CLIENTS_COMMAND, JSON_ARGUMENT]).unwrap();
+    let parsed = Arguments::try_parse_from([PROGRAM, "client", LIST_COMMAND]).unwrap();
     assert!(matches!(
         parsed.command,
-        Some(Command::Clients { json: true })
-    ));
-    let parsed = Arguments::try_parse_from([PROGRAM, CLIENTS_COMMAND]).unwrap();
-    assert!(matches!(
-        parsed.command,
-        Some(Command::Clients { json: false })
+        Some(Command::Client {
+            command: ClientCommand::List { json: false }
+        })
     ));
 }

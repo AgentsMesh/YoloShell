@@ -26,7 +26,7 @@ async fn historical_completion_does_not_hide_a_changed_live_peer_key_or_unapplie
                 .unwrap();
             } else {
                 state.snapshot.applied = false;
-                state.snapshot.listen_address = None;
+                state.snapshot.peer_socket = None;
             }
         }
         assert!(matches!(

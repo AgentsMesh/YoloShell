@@ -13,7 +13,7 @@ pub struct Presentation {
     pub(crate) help: Option<crate::help::Viewport>,
     pub zoomed: bool,
     pub inventory: Option<yolo_tui_inventory::InventoryViewport>,
-    pub(crate) tab_strip: Vec<crate::tabs::strip::Tab>,
+    pub(crate) tab_strip: Vec<yolo_tui_render::TabHit>,
     pub(crate) tab_ids: Vec<uuid::Uuid>,
 }
 impl Default for Presentation {

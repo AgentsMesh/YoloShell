@@ -29,20 +29,18 @@ async fn revoking_at_the_origin_or_relay_withholds_in_flight_file_bytes_without_
             c_state.peer_identity(),
         );
         let b_config = Configuration {
-            listen: Some(SocketAddr::new(Ipv4Addr::LOCALHOST.into(), 0)),
             peers: vec![
                 peer(a, None, false, vec![file_export(c.hub(), false)]),
-                peer(c, None, true, vec![]),
+                peer(c, Some(&c_state), true, vec![]),
             ],
             ..Configuration::default()
         };
         let b_node = ManagedNode::start(&b_host, b_state, b_config.clone()).await;
         let c_root = configure_root(&path, C_FILES, FileRootId::new(), C_CONTENT);
         let c_config = Configuration {
-            listen: Some(SocketAddr::new(Ipv4Addr::LOCALHOST.into(), 0)),
-            peers: vec![peer(
+            peers: vec![peer_at_socket(
                 b,
-                Some(b_node.address),
+                b_node.peer_socket.clone(),
                 false,
                 vec![file_export(c.hub(), true)],
             )],
@@ -57,8 +55,7 @@ async fn revoking_at_the_origin_or_relay_withholds_in_flight_file_bytes_without_
         )
         .await;
         let a_config = Configuration {
-            listen: Some(SocketAddr::new(Ipv4Addr::LOCALHOST.into(), 0)),
-            peers: vec![peer(b, Some(b_node.address), true, vec![])],
+            peers: vec![peer_at_socket(b, b_node.peer_socket.clone(), true, vec![])],
             trusted_origins: vec![c],
             file_roots: vec![],
         };

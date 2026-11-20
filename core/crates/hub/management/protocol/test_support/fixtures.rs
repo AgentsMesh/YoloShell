@@ -26,11 +26,10 @@ pub fn other_identity() -> PeerIdentity {
 }
 pub fn configuration() -> Configuration {
     Configuration {
-        listen: None,
         peers: vec![Peer {
             identity: other_identity(),
             dial: None,
-            consume: true,
+            consume: false,
             exports: vec![],
         }],
         trusted_origins: vec![],

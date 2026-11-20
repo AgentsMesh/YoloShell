@@ -31,6 +31,20 @@ pub async fn ensure_running(launch: Launch, deadline: Instant) -> Result<Connect
     ensure_running_with_peer(launch, None, deadline).await
 }
 
+/// Proves this process can launch a new Host. Reusing an already running Host
+/// does not need custody, but a restart stops that Host first, so callers that
+/// stop services must pass this gate before mutating anything.
+pub fn require_host_custody() -> Result<()> {
+    #[cfg(target_os = "linux")]
+    {
+        host::require_custody()
+    }
+    #[cfg(not(target_os = "linux"))]
+    {
+        Ok(())
+    }
+}
+
 pub async fn ensure_running_with_peer(
     launch: Launch,
     expected_peer: Option<PeerIdentity>,

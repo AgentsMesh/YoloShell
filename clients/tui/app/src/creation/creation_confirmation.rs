@@ -92,7 +92,7 @@ fn confirm(
         bound && present && crate::initial_control::arm(state, &pending, creation.address, now);
     if bound && present {
         state.selected = Some(creation.address);
-        state.inventory.view = yolo_tui_inventory::View::Agents;
+        state.inventory.view = yolo_tui_inventory::View::Tree;
         state.filter.clear();
     }
     if initial {

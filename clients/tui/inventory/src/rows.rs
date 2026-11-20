@@ -36,7 +36,7 @@ pub(crate) fn terminal(
         Line::from(title),
         muted(elide(&fields.cwd, row_width)),
         muted(format!(
-            "{HUB_LABEL} {} · {TERMINAL_LABEL} {}",
+            "{MACHINE_LABEL} {} · {TERMINAL_LABEL} {}",
             compact_id(&fields.address.hub_id.to_string()),
             compact_id(&fields.address.terminal_id.to_string())
         )),
@@ -53,10 +53,14 @@ pub(crate) fn agent(
     control: Option<ControlBadge>,
     animation_phase: u8,
     width: u16,
+    depth: u8,
 ) -> ListItem<'static> {
     let fields = snapshot.fields();
-    let row_width = usize::from(width).saturating_sub(Line::raw(SELECTION_MARKER).width());
-    let marker = marker(attention);
+    let indent = usize::from(depth) * TREE_INDENT_COLUMNS;
+    let row_width = usize::from(width)
+        .saturating_sub(Line::raw(SELECTION_MARKER).width())
+        .saturating_sub(indent);
+    let marker = format!("{}{}", " ".repeat(indent), marker(attention));
     let warning = !current
         || fields.freshness == Freshness::Stale
         || fields.reachability == Reachability::Unreachable;
@@ -81,7 +85,7 @@ pub(crate) fn agent(
     let warning_text = warning.then(|| format!("  {HEALTH_WARNING_GLYPH}"));
     let badge_text = badge.map(|badge| format!("  {}", badge.glyph()));
     let activity_text = activity.map(|activity| format!(" {activity}"));
-    let fixed = Line::raw(marker).width()
+    let fixed = Line::raw(&marker).width()
         + warning_text
             .as_deref()
             .map_or(0, |text| Line::raw(text).width())
@@ -127,7 +131,7 @@ pub(crate) fn agent(
     ListItem::new(Line::from(spans))
 }
 
-pub(crate) fn hub(
+pub(crate) fn machine(
     hub: &HubSummary,
     current: bool,
     local_name: Option<&str>,
@@ -144,7 +148,11 @@ pub(crate) fn hub(
     let name = local_name
         .or(hub.label.as_deref())
         .map_or_else(|| compact_id(&hub.hub_id.to_string()).to_owned(), str::to_owned);
-    let prefix = format!("{HUB_LABEL} ");
+    let prefix = if local_name.is_some() {
+        format!("{THIS_MACHINE_LABEL} ")
+    } else {
+        format!("{MACHINE_LABEL} ")
+    };
     let suffix = format!(" {glyph}");
     let fixed = Line::raw(&prefix).width() + Line::raw(&suffix).width();
     let name = elide(&name, row_width.saturating_sub(fixed));
@@ -153,6 +161,8 @@ pub(crate) fn hub(
         Span::styled(suffix, style),
     ]))
 }
+
+const TREE_INDENT_COLUMNS: usize = 2;
 
 fn muted(value: String) -> Line<'static> {
     Line::from(value).style(Style::default().fg(MUTED_COLOR))

@@ -23,8 +23,8 @@ pub fn render(frame: &mut Frame<'_>, manager: &Manager, area: Rect) -> View {
                 base.state.identity.hub(),
                 key_text(base.state.identity)
             );
-            match base.listen_address {
-                Some(address) => format!("{identity}\n{LISTENING}: {address}"),
+            match &base.peer_socket {
+                Some(path) => format!("{identity}\n{LISTENING}: {}", path.display()),
                 None => identity,
             }
         })
@@ -86,6 +86,7 @@ fn menu(frame: &mut Frame<'_>, manager: &Manager, area: Rect) -> View {
         Page::Peers => CONNECTIONS.into(),
         Page::Origins => ORIGINS.into(),
         Page::FileRoots => FILE_ROOTS.into(),
+        Page::Consumers => CONSUMERS.into(),
         Page::Peer(hub) => format!("{CONNECTIONS}: {hub}"),
         Page::Exports(hub) => format!("{EXPORTS}: {hub}"),
     };

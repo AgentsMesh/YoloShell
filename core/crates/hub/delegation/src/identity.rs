@@ -1,4 +1,5 @@
 use crate::{DelegationError, ED25519_PUBLIC_KEY_BYTES, ED25519_SIGNATURE_BYTES};
+use ring::signature;
 use serde::{Deserialize, Serialize};
 use yolo_hub_identity::HubId;
 
@@ -25,6 +26,16 @@ impl PeerIdentity {
     }
     pub fn key(&self) -> &[u8; ED25519_PUBLIC_KEY_BYTES] {
         &self.0.public_key
+    }
+
+    /// Verifies a signature made by the Hub key bound to this identity.
+    pub fn verify(&self, message: &[u8], signature: &[u8]) -> Result<(), DelegationError> {
+        if signature.len() != ED25519_SIGNATURE_BYTES {
+            return Err(DelegationError::Signature);
+        }
+        signature::UnparsedPublicKey::new(&signature::ED25519, self.key())
+            .verify(message, signature)
+            .map_err(|_| DelegationError::Signature)
     }
 }
 

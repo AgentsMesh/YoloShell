@@ -1,6 +1,8 @@
-use crate::{LayoutCheckpoint, LocalTabView, TabDocument, TabCatalog, constants::*};
-use anyhow::{Context, Result, ensure};
-use serde_json::Error as JsonError;
+use crate::{
+    LayoutCheckpoint, LocalTabView, TabCatalog, TabDocument, constants::*, migration,
+};
+use anyhow::{Context, Result, anyhow, ensure};
+use serde_json::{Error as JsonError, Value};
 use std::path::{Path, PathBuf};
 use yolo_hub_identity::HubId;
 use yolo_paths::{
@@ -39,7 +41,7 @@ impl TabStore {
         };
         directory.verify_path()?;
         let namespace = NamespaceLease::from_directories(vec![(NAMESPACE, directory)])?;
-        let (document, identity) = if namespace.file_is_missing(&path)? {
+        let (mut document, mut identity) = if namespace.file_is_missing(&path)? {
             let document = TabDocument {
                 schema_version: TAB_SCHEMA_VERSION,
                 entry_hub: entry,
@@ -49,7 +51,7 @@ impl TabStore {
                 },
                 shared: None,
                 revision: FIRST_TAB_REVISION,
-                tabs: TabCatalog::default(),
+                tabs: TabCatalog::new(entry, LocalTabView::default()),
             };
             let identity =
                 namespace.write_json_expected_with_commit_fence(&path, None, &document, || {
@@ -57,7 +59,24 @@ impl TabStore {
                 })?;
             (document, identity)
         } else {
-            namespace.read_json_with_identity::<TabDocument>(&path)?
+            let (value, identity) = namespace.read_json_with_identity::<Value>(&path)?;
+            match migration::schema_version(&value) {
+                Some(version) if version == TAB_SCHEMA_VERSION => {
+                    (serde_json::from_value::<TabDocument>(value)?, identity)
+                }
+                Some(version) if version == migration::LEGACY_SCHEMA_VERSION => {
+                    let document = migration::migrate_v5(value, entry)?;
+                    document.validate(entry)?;
+                    let identity = namespace.write_json_expected_with_commit_fence(
+                        &path,
+                        Some(identity),
+                        &document,
+                        || lock.verify(),
+                    )?;
+                    (document, identity)
+                }
+                _ => return Err(anyhow!(SCHEMA_ERROR)),
+            }
         };
         document.validate(entry)?;
         Ok(Some(Self {

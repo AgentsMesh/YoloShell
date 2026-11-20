@@ -185,7 +185,7 @@ pub fn handle(state: &mut State, jobs: &mpsc::Sender<Job>, hub: HubId, event: Ev
         }
         return false;
     }
-    if state.inventory.view == yolo_tui_inventory::View::Agents
+    if state.inventory.view == yolo_tui_inventory::View::Tree
         && key.code == KeyCode::Char(crate::interrupt_constants::KEY)
         && key.modifiers.is_empty()
     {

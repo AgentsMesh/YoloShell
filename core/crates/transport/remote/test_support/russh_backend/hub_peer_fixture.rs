@@ -4,13 +4,10 @@ use super::{
     memory_fs::MemoryFilesystem,
 };
 use crate::remote::*;
-use std::{
-    net::{Ipv4Addr, SocketAddr},
-    sync::Arc,
-};
-use tokio::{net::TcpListener, time::Instant};
 use yolo_hub_delegation::PeerIdentity;
 use yolo_hub_identity::HubId;
+use std::path::PathBuf;
+use tokio::time::Instant;
 #[path = "hub_peer_evidence.rs"]
 mod evidence;
 pub use evidence::diagnostic as peer_diagnostic;
@@ -18,17 +15,35 @@ pub use evidence::{
     Phase, assert_exact_peer_close, incoming_burst, observe_phase, wait_peer_close,
 };
 
-pub const DYNAMIC_PORT: u16 = 0;
 pub const PAYLOAD: &[u8] = b"inner-Hub\0opaque-binary\r\n";
 pub const LARGE_PAYLOAD_BYTES: usize = 1_048_576;
 pub const PAYLOAD_FILL: u8 = b'P';
 pub const EXPECTED_HUB_PEER_CHANNELS: usize = 1;
+const TARGET_SOCKET: &str = "hub.sock";
+
+pub struct PeerTarget {
+    _root: tempfile::TempDir,
+    pub listener: tokio::net::UnixListener,
+    pub path: PathBuf,
+}
+
+impl PeerTarget {
+    pub fn new() -> Self {
+        let root = tempfile::tempdir().unwrap();
+        let path = root.path().join(TARGET_SOCKET);
+        let listener = tokio::net::UnixListener::bind(&path).unwrap();
+        Self {
+            _root: root,
+            listener,
+            path,
+        }
+    }
+}
 
 pub struct PeerFixture {
     pub ssh: MemoryConnection,
-    pub listener: TcpListener,
+    pub target: PeerTarget,
     pub request: HubPeerRequest,
-    pub key: Arc<russh::keys::PrivateKey>,
 }
 
 impl PeerFixture {
@@ -36,38 +51,31 @@ impl PeerFixture {
         Self::with_timeout(NORMAL_OPERATION_TIMEOUT).await
     }
     pub async fn with_timeout(timeout: std::time::Duration) -> Self {
-        let listener = TcpListener::bind(SocketAddr::new(Ipv4Addr::LOCALHOST.into(), DYNAMIC_PORT))
-            .await
-            .unwrap();
-        let target = listener.local_addr().unwrap();
+        let target = PeerTarget::new();
         let filesystem = MemoryFilesystem::default();
-        filesystem.set_hub_peer_target(target);
+        filesystem.set_hub_peer_target(target.path.clone());
         let ssh = super::fixture::connect_memory_with_timeout(false, filesystem, timeout)
             .await
             .unwrap();
-        let (identity, key) = peer_keys();
+        let identity = identity();
         let request = HubPeerRequest::new(
             ssh.connection.info().connection_id,
-            HubPeerEndpoint::new(target).unwrap(),
+            HubPeerEndpoint::new(target.path.clone()).unwrap(),
             identity,
         )
         .unwrap();
         Self {
             ssh,
-            listener,
+            target,
             request,
-            key,
         }
     }
 }
 
-pub fn peer_keys() -> (PeerIdentity, Arc<russh::keys::PrivateKey>) {
-    let (key, _) = keys();
+fn identity() -> PeerIdentity {
+    let (key, _) = super::fixture::keys();
     let bytes = key.public_key().key_data().ed25519().unwrap().0;
-    (
-        PeerIdentity::new(HubId::new(), bytes).unwrap(),
-        Arc::new(key),
-    )
+    PeerIdentity::new(HubId::new(), bytes).unwrap()
 }
 
 pub fn command() -> AuthorizedCommand {

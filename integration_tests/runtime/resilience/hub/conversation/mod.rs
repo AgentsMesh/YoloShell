@@ -33,34 +33,29 @@ async fn real_three_hub_conversation_reads_preserve_origin_and_revocation_keeps_
         c_state.peer_identity(),
     );
     let mut b_config = Configuration {
-        listen: Some(SocketAddr::new(Ipv4Addr::LOCALHOST.into(), DYNAMIC_PORT)),
         peers: vec![
             peer(a, None, false, vec![support::export(c.hub(), false)]),
-            peer(c, None, true, vec![]),
+            peer(c, Some(&c_state), true, vec![]),
         ],
         ..Configuration::default()
     };
     let b_node = ManagedNode::start(&b_host, b_state, b_config.clone()).await;
-    let a_listener = listener().await;
-    let c_listener = listener().await;
     let a_config = Configuration {
-        listen: Some(a_listener.local_addr().unwrap()),
-        peers: vec![peer(b, Some(b_node.address), true, vec![])],
+        peers: vec![peer_at_socket(b, b_node.peer_socket.clone(), true, vec![])],
         trusted_origins: vec![c],
         file_roots: vec![],
     };
     let c_config = Configuration {
-        listen: Some(c_listener.local_addr().unwrap()),
-        peers: vec![peer(
+        peers: vec![peer_at_socket(
             b,
-            Some(b_node.address),
+            b_node.peer_socket.clone(),
             false,
             vec![support::export(c.hub(), true)],
         )],
         ..Configuration::default()
     };
-    let a_node = RunningNode::start(&a_host, a_state, a_config, a_listener).await;
-    let c_node = RunningNode::start(&c_host, c_state, c_config, c_listener).await;
+    let a_node = RunningNode::start(&a_host, a_state, a_config).await;
+    let c_node = RunningNode::start(&c_host, c_state, c_config).await;
     let target = launch(&c_node, &c_host, NAME_C).await;
     a_node.wait_origins(&[c.hub()]).await;
     let before = c_host

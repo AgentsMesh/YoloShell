@@ -140,6 +140,7 @@ pub enum Command {
         creation: CreateShellResult,
     },
     GetConfiguration {},
+    ListConsumers {},
     Configure {
         change: ConfigurationChange,
     },

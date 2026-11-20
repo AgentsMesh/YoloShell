@@ -28,11 +28,13 @@ Cancelling an in-flight refresh retires its protocol connection.
 
 ## Native TUI
 
-Sessions, Agents and Hubs are separate inventory tabs. Agent rows display the
+The sidebar is a machine tree: machine roots are authenticated Hub origins and
+Agent rows are grouped beneath the machine that runs them. Agent rows display the
 reported lifecycle, activity, source, recovery availability, reachability and
-freshness. Search covers stable addresses, providers, associated session names,
-working directories and reported states. A Hub scope filters Sessions and Agents
-but never hides the other Hub choices.
+freshness. Search covers stable addresses, providers, associated terminal names,
+working directories and reported states. Machines without a catalogue row but
+with agent, terminal or tab origins are synthesized so no workspace is hidden;
+the `g` picker still lists terminals across machines.
 Agent directories are independent observed origin metadata; see
 [Agent working directories](hub-agent-directory.md) for freshness and upgrade rules.
 Refresh failure retains the last observations but marks them Stale; current
@@ -44,12 +46,13 @@ Agent cannot redirect selection into a replacement process. The terminal still
 uses the existing origin-authorized writer lease; the inventory owns no process
 custody and contains no PTY parsing or provider launch logic.
 
-Shell creation respects the selected Hub scope. Shell terminate/archive/resume
-commands remain in the Sessions view; the Agent view does not reinterpret these
-as semantic Agent control. Unsupported semantic controls remain unavailable.
-Existing durable workspaces continue to store pane layout and terminal bindings;
-catalogue tabs, search and temporary Hub scopes are transient view state.
+Shell creation targets the active machine workspace. Terminal
+terminate/archive/resume commands remain in the terminal picker; the machine tree
+does not reinterpret these as semantic Agent control. Unsupported semantic
+controls remain unavailable. Existing durable workspaces continue to store pane
+layout and terminal bindings; catalogue tabs and search are transient view state.
 
-Developer key bindings: Tab/Shift-Tab switches tabs; Enter on a Hub selects its
-scope; Escape clears scope and filter; Enter on an Agent opens its bound terminal;
-`n` creates a Shell on the selected scope, or on the entry Hub when unscoped.
+Developer key bindings: Up/Down moves the tree selection; Enter activates the
+selected machine or Agent; Left/Right or Space collapse and expand a machine;
+Escape clears the filter; `/` filters; `n` creates a Shell on the selected
+machine.

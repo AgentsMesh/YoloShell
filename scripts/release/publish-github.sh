@@ -28,12 +28,18 @@ Install:
 
 Update:
 
-    yolo update --check-release
-    yolo update --install-release
+    yolo update
+    yolo update --check
+
+Machines:
+
+    yolo machine add <user@host>
+
+Both machines must run 0.3.0 or later; the SSH login must be non-interactive (key or agent).
 
 Nightly channel:
 
-    yolo update --install-release --channel nightly
+    yolo update --channel nightly
 
 Commit: ${CI_COMMIT_SHA:-local}
 EOF2

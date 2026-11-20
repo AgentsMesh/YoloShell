@@ -1,4 +1,5 @@
 use super::constants::*;
+use crate::layouts::LayoutCommand;
 use crate::{arguments::Arguments, command::Command, selection::Selection};
 use clap::Parser;
 
@@ -33,9 +34,17 @@ fn explicit_layout_is_carried_through_local_and_explicit_connections() {
 
 #[test]
 fn shared_layout_discovery_is_a_noninteractive_command() {
-    let parsed = Arguments::try_parse_from([PROGRAM, LAYOUTS_COMMAND, JSON_ARGUMENT]).unwrap();
+    let parsed = Arguments::try_parse_from([
+        PROGRAM,
+        "layout",
+        LIST_COMMAND,
+        JSON_ARGUMENT,
+    ])
+    .unwrap();
     assert!(matches!(
         parsed.command,
-        Some(Command::Layouts { json: true })
+        Some(Command::Layout {
+            command: LayoutCommand::List { json: true }
+        })
     ));
 }

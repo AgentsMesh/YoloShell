@@ -1,14 +1,26 @@
-use crate::{TabCatalogDocument, TabEntry, TabViewMode, LocalTabView, TabCatalog};
-use anyhow::Result;
-use std::collections::BTreeSet;
+use crate::{
+    DEFAULT_TAB_NAME, LocalTabView, TabCatalog, TabCatalogDocument, TabEntry, TabViewMode,
+    constants::*,
+};
+use anyhow::{Result, ensure};
+use std::collections::{BTreeMap, BTreeSet};
+use uuid::Uuid;
+use yolo_hub_identity::HubId;
 use yolo_presentation_layout::{Layout, PaneLayoutDocument as PaneView};
 use yolo_presentation_protocol::{SharedLayoutDocument, SharedTab};
 
 impl TabCatalog {
-    /// Export topology and terminal bindings without publishing this client's focus or view mode.
-    pub fn shared_tabs(&self) -> Result<Vec<SharedTab>> {
-        self.entries()
+    /// Export one machine's topology and bindings. Remote machine workspaces
+    /// are client-local and never enter the entry Hub's shared layout.
+    pub fn shared_tabs(&self, machine: HubId) -> Result<Vec<SharedTab>> {
+        let entries = self
+            .entries()
             .iter()
+            .filter(|entry| entry.machine == machine)
+            .collect::<Vec<_>>();
+        ensure!(!entries.is_empty(), SHARED_TABS_EMPTY);
+        entries
+            .into_iter()
             .map(|entry| {
                 Ok(SharedTab::new(
                     entry.id,
@@ -19,24 +31,41 @@ impl TabCatalog {
             .collect()
     }
 
-    /// Reconcile a shared document while retaining every surviving client-local selection.
-    /// Empty documents show a local placeholder; they do not create a terminal or shared tab.
-    pub fn from_shared(document: &SharedLayoutDocument, previous: &Self) -> Result<Self> {
+    /// Reconcile the entry machine's shared document while preserving every
+    /// other machine workspace and the client-local selection.
+    pub fn from_shared(
+        document: &SharedLayoutDocument,
+        previous: &Self,
+        entry_hub: HubId,
+    ) -> Result<Self> {
         document.validate()?;
+        let old_active = previous.active_by_machine().get(&entry_hub).copied();
+        let mut shared = Vec::new();
         if document.tabs.is_empty() {
-            return Ok(Self::default());
-        }
-        let entries = document
-            .tabs
-            .iter()
-            .map(|tab| {
-                let old = previous.entries().iter().find(|entry| entry.id == tab.id);
+            let id = previous
+                .entries()
+                .iter()
+                .find(|entry| entry.machine == entry_hub)
+                .map(|entry| entry.id)
+                .unwrap_or_else(Uuid::new_v4);
+            shared.push(TabEntry {
+                id,
+                name: DEFAULT_TAB_NAME.into(),
+                view: LocalTabView::default(),
+                machine: entry_hub,
+            });
+        } else {
+            for tab in &document.tabs {
+                let old = previous
+                    .entries()
+                    .iter()
+                    .find(|entry| entry.id == tab.id && entry.machine == entry_hub);
                 let panes = tab.root.panes();
                 let focused = old
                     .map(|entry| entry.view.layout.focused())
                     .filter(|id| panes.iter().any(|pane| pane.id == *id))
                     .unwrap_or(panes[0].id);
-                Ok(TabEntry {
+                shared.push(TabEntry {
                     id: tab.id,
                     name: tab.title.clone(),
                     view: LocalTabView {
@@ -46,19 +75,57 @@ impl TabCatalog {
                         })?,
                         view: old.map_or(TabViewMode::Terminal, |entry| entry.view.view),
                     },
-                })
-            })
-            .collect::<Result<Vec<_>>>()?;
-        let active = previous.active().id;
-        let active = entries
+                    machine: entry_hub,
+                });
+            }
+        }
+        let incoming = shared.iter().map(|entry| entry.id).collect::<BTreeSet<_>>();
+        let mut entries = shared;
+        entries.extend(
+            previous
+                .entries()
+                .iter()
+                .filter(|entry| entry.machine != entry_hub && !incoming.contains(&entry.id))
+                .cloned(),
+        );
+        let mut active_by_machine = BTreeMap::new();
+        for (machine, id) in previous.active_by_machine() {
+            if *machine == entry_hub {
+                continue;
+            }
+            let chosen = entries
+                .iter()
+                .find(|entry| entry.machine == *machine && entry.id == *id)
+                .map(|entry| entry.id)
+                .or_else(|| {
+                    entries
+                        .iter()
+                        .find(|entry| entry.machine == *machine)
+                        .map(|entry| entry.id)
+                });
+            if let Some(chosen) = chosen {
+                active_by_machine.insert(*machine, chosen);
+            }
+        }
+        let entry_active = entries
             .iter()
-            .find(|entry| entry.id == active)
-            .unwrap_or(&entries[0])
-            .id;
-        let ids = entries
-            .iter()
+            .find(|entry| entry.machine == entry_hub && Some(entry.id) == old_active)
             .map(|entry| entry.id)
-            .collect::<BTreeSet<_>>();
+            .unwrap_or(entries[0].id);
+        active_by_machine.insert(entry_hub, entry_active);
+        for entry in &entries {
+            active_by_machine.entry(entry.machine).or_insert(entry.id);
+        }
+        let machine = if entries
+            .iter()
+            .any(|entry| entry.machine == previous.machine())
+        {
+            previous.machine()
+        } else {
+            entry_hub
+        };
+        let active = active_by_machine[&machine];
+        let ids = entries.iter().map(|entry| entry.id).collect::<BTreeSet<_>>();
         let documents = previous
             .0
             .documents
@@ -68,6 +135,8 @@ impl TabCatalog {
             .collect();
         Self::try_from(TabCatalogDocument {
             active,
+            machine,
+            active_by_machine,
             entries,
             documents,
         })

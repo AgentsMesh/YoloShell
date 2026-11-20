@@ -8,8 +8,12 @@ use crate::arguments::{Arguments, Command as RootCommand, PluginCommand};
 
 pub(crate) fn run(arguments: Arguments) -> Result<()> {
     let RootCommand::Plugin(options) = arguments.command;
+    run_command(options.command)
+}
+
+pub(crate) fn run_command(command: PluginCommand) -> Result<()> {
     let paths = crate::paths::registry_paths()?;
-    match options.command {
+    match command {
         PluginCommand::List { json } => list(&paths, json),
         PluginCommand::Describe { id, json } => describe(&paths, &id, json),
         PluginCommand::Link { dir, trust, json } => link(&paths, &dir, trust, json),

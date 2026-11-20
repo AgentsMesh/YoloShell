@@ -58,16 +58,15 @@ Local configuration conflicts remain visible and cannot overwrite another edit.
 The configured peer retains its original Hub identity and uses explicit SSH
 transport; imported Agents do not acquire the entry Hub's identity.
 
-An enrolled loopback listener configured with port zero retains its assigned
-address across Hub restart. Its binding has current and pending configuration
-slots, while the private configuration record durably distinguishes unfinished
-first initialization from loss of an established binding. The service exposes
-an applied configuration only after both records and the actual socket agree.
-An occupied saved port fails startup instead of silently changing the endpoint.
-Only the current configuration schema is admitted. A record without binding
-evidence remains unavailable until an explicit current-schema configuration is
-committed; startup never migrates an old record or assigns it a replacement
-endpoint automatically.
+The remote Hub publishes its peer entry point at `<hub-state>/peer.sock`; the
+bootstrap receipt returns that absolute path. Remote setup writes the entry
+Hub's dial with the selected SSH profile id and that path, and the remote
+configuration pins the consumer identity with its export policy. The socket is
+derived from Hub state and republished for the service lifetime, so it has no
+ephemeral port or binding-record exchange. An occupied or foreign socket fails
+startup instead of silently moving the endpoint. Legacy configuration records
+that still carry listener evidence are read without it; the retired `listen`
+field and TCP dials are dropped from peer entries on migration.
 
 ## Client operations
 
@@ -95,8 +94,8 @@ through peer resource grants.
 
 The Mac and TUI setup wizard, complete operation-history presentation, Linux native
 recovery and release-package gates remain tracked in the project roadmap.
-The existing peer editors preserve SSH bindings, but that is not a replacement
-for the complete onboarding interface.
+The existing peer editors preserve SSH profile and socket dials, but that is not
+a replacement for the complete onboarding interface.
 
 Runtime catalog schema 2 packages the single `yolo` image and its role descriptor
 for each Linux architecture; see [bundle catalog](runtime-bundle-catalog.md). An actual Linux artifact build

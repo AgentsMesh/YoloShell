@@ -51,8 +51,6 @@ fn every_form_and_action_row_renders_within_compact_and_wide_viewports() {
         Form::peer(None),
         Form::peer(Some(&peer)),
         Form::origin(),
-        Form::listener(None),
-        Form::listener(Some("127.0.0.1:0".parse().unwrap())),
         Form::export(pin.hub(), manager.entry, None),
         Form::export(pin.hub(), manager.entry, Some(&policy)),
         Form::file_root(None),
@@ -86,9 +84,9 @@ fn mouse_focus_checkbox_cancel_and_confirmation_have_scoped_actions() {
     add_peer(&mut manager, pin);
     manager.page(Page::Peer(pin.hub()));
     activate(&mut manager, Action::EditPeer(pin.hub()));
-    let host = manager.form.as_ref().unwrap().focused;
+    let profile = manager.form.as_ref().unwrap().focused;
     click(&mut manager, 0);
-    assert_eq!(manager.form.as_ref().unwrap().focused, host);
+    assert_eq!(manager.form.as_ref().unwrap().focused, profile);
     let import = manager
         .form
         .as_ref()
@@ -100,10 +98,10 @@ fn mouse_focus_checkbox_cancel_and_confirmation_have_scoped_actions() {
     click(&mut manager, import);
     assert!(matches!(
         manager.form.as_ref().unwrap().fields[import].value,
-        Value::Toggle(false)
+        Value::Toggle(true)
     ));
-    click(&mut manager, host);
-    assert_eq!(manager.form.as_ref().unwrap().focused, host);
+    click(&mut manager, profile);
+    assert_eq!(manager.form.as_ref().unwrap().focused, profile);
     let cancel = manager.form.as_ref().unwrap().fields.len() + 1;
     click(&mut manager, cancel);
     assert!(manager.form.is_none());
@@ -169,7 +167,7 @@ fn loading_failure_all_pages_and_confirmation_are_rendered_without_fake_configur
     manager.not_sent(request.token);
     view(&manager);
     let request = manager.query(false);
-    manager.complete(request.token, Ok(snapshot));
+    manager.complete(request.token, Ok(configuration(snapshot)));
     let pin = peer_identity();
     add_peer(&mut manager, pin);
     manager.draft.as_mut().unwrap().trusted_origins.push(pin);
@@ -179,6 +177,7 @@ fn loading_failure_all_pages_and_confirmation_are_rendered_without_fake_configur
         Page::Peer(pin.hub()),
         Page::Origins,
         Page::Exports(pin.hub()),
+        Page::Consumers,
     ] {
         manager.page(page);
         view(&manager);

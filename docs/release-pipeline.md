@@ -74,10 +74,9 @@ The release body and README point at:
 curl -fsSL https://raw.githubusercontent.com/AgentsMesh/YoloShell/main/scripts/install.sh | sh
 ```
 
-`yolo update --check-release` reads the GitHub release API;
-`yolo update --install-release` downloads the matching archive, verifies
-`SHA256SUMS`, installs an immutable image under `~/.local/lib/yolo/<sha>/yolo`
-and atomically updates `~/.local/bin/yolo`. `--channel nightly` selects the
-newest prerelease. The updater never restarts Host/Hub services; run
-`yolo update` for the existing live-service admission check before restarting
-them.
+`yolo update` reads the GitHub release API, downloads the matching archive and
+verifies `SHA256SUMS`, installs a newer immutable image under
+`~/.local/lib/yolo/<sha>/yolo`, atomically updates `~/.local/bin/yolo`, restarts
+the local Host and Hub when needed, and probes live service admission.
+`--check` is read-only, `--no-restart` installs without activating, and
+`--channel nightly` selects the newest prerelease.

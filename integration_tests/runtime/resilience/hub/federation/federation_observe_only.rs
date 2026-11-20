@@ -30,21 +30,12 @@ async fn real_three_hubs_attenuate_origin_observe_only_grant_without_granting_co
         b_state.peer_identity(),
         c_state.peer_identity(),
     );
-    let (a_listener, b_listener, c_listener) =
-        (listener().await, listener().await, listener().await);
-    let (a_addr, b_addr, c_addr) = (
-        a_listener.local_addr().unwrap(),
-        b_listener.local_addr().unwrap(),
-        c_listener.local_addr().unwrap(),
-    );
     let a_config = Configuration {
-        listen: Some(a_addr),
         trusted_origins: vec![c],
         file_roots: vec![],
-        peers: vec![peer(b, Some(b_addr), true, vec![])],
+        peers: vec![peer(b, Some(&b_state), true, vec![])],
     };
     let b_config = Configuration {
-        listen: Some(b_addr),
         trusted_origins: vec![],
         file_roots: vec![],
         peers: vec![
@@ -54,20 +45,19 @@ async fn real_three_hubs_attenuate_origin_observe_only_grant_without_granting_co
                 false,
                 vec![exports(b.hub(), false), exports(c.hub(), false)],
             ),
-            peer(c, None, true, vec![]),
+            peer(c, Some(&c_state), true, vec![]),
         ],
     };
     let mut origin_policy = exports(c.hub(), true);
     origin_policy.rights = [Right::Observe].into_iter().collect();
     let c_config = Configuration {
-        listen: Some(c_addr),
         trusted_origins: vec![],
         file_roots: vec![],
-        peers: vec![peer(b, Some(b_addr), false, vec![origin_policy])],
+        peers: vec![peer(b, Some(&b_state), false, vec![origin_policy])],
     };
-    let a_node = RunningNode::start(&a_host, a_state, a_config, a_listener).await;
-    let b_node = RunningNode::start(&b_host, b_state, b_config, b_listener).await;
-    let c_node = RunningNode::start(&c_host, c_state, c_config, c_listener).await;
+    let a_node = RunningNode::start(&a_host, a_state, a_config).await;
+    let b_node = RunningNode::start(&b_host, b_state, b_config).await;
+    let c_node = RunningNode::start(&c_host, c_state, c_config).await;
     let created = launch_queryable(&c_node, &c_host, AGENT_NAME).await;
     let from_a = a_node.wait_origins(&[c.hub()]).await;
     let from_b = b_node.wait_origins(&[c.hub()]).await;

@@ -7,15 +7,15 @@ use yolo_tui_inventory::{Inventory, View};
 #[test]
 fn default_is_empty_agent_inventory_without_asserting_current_capabilities() {
     let inventory = Inventory::default();
-    assert_eq!(inventory.view, View::Agents);
+    assert_eq!(inventory.view, View::Tree);
     assert_eq!(inventory.scope, None);
     assert!(inventory.agents.is_empty());
-    assert!(inventory.hubs.is_empty());
+    assert!(inventory.machines.is_empty());
     assert!(!inventory.agents_supported);
-    assert!(!inventory.hubs_supported);
+    assert!(!inventory.machines_supported);
     assert!(!inventory.current);
     assert_eq!(inventory.selected_agent, None);
-    assert_eq!(inventory.selected_hub, None);
+    assert_eq!(inventory.selected_machine, None);
 }
 
 #[test]
@@ -24,21 +24,21 @@ fn replacement_does_not_rewrite_view_scope_selection_or_freshness() {
     let mut inventory = fixture.inventory();
     inventory.scope = Some(HubId::new());
     let selected_agent = inventory.selected_agent;
-    let selected_hub = inventory.selected_hub;
+    let selected_machine = inventory.selected_machine;
     inventory.current = false;
     inventory.replace(Some(Vec::new()), Some(Vec::new()));
     assert!(inventory.agents_supported);
-    assert!(inventory.hubs_supported);
+    assert!(inventory.machines_supported);
     assert!(inventory.agents.is_empty());
-    assert!(inventory.hubs.is_empty());
+    assert!(inventory.machines.is_empty());
     assert_eq!(inventory.selected_agent, selected_agent);
-    assert_eq!(inventory.selected_hub, selected_hub);
-    assert_eq!(inventory.view, View::Agents);
+    assert_eq!(inventory.selected_machine, selected_machine);
+    assert_eq!(inventory.view, View::Tree);
     assert!(inventory.scope.is_some());
     assert!(!inventory.current);
     inventory.replace(None, None);
     assert!(!inventory.agents_supported);
-    assert!(!inventory.hubs_supported);
+    assert!(!inventory.machines_supported);
     assert!(
         inventory
             .terminal_for_selected(&fixture.terminals())
@@ -49,7 +49,7 @@ fn replacement_does_not_rewrite_view_scope_selection_or_freshness() {
         Some(vec![fixture.hub.clone()]),
     );
     assert_eq!(inventory.agents.len(), 1);
-    assert_eq!(inventory.hubs.len(), 1);
+    assert_eq!(inventory.machines.len(), 1);
 }
 
 #[test]
@@ -63,8 +63,8 @@ fn duplicate_stable_keys_replace_their_previous_observation() {
         Some(vec![fixture.hub.clone(), hub]),
     );
     assert_eq!(inventory.agents.len(), 1);
-    assert_eq!(inventory.hubs.len(), 1);
-    assert!(!inventory.hubs[&fixture.hub.hub_id].reachable);
+    assert_eq!(inventory.machines.len(), 1);
+    assert!(!inventory.machines[&fixture.hub.hub_id].reachable);
 }
 
 #[test]

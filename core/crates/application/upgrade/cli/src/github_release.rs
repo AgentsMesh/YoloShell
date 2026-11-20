@@ -8,7 +8,7 @@ pub(crate) const DEFAULT_REPOSITORY: &str = "AgentsMesh/YoloShell";
 pub(crate) const CHECKSUMS_ASSET: &str = "SHA256SUMS";
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, ValueEnum)]
-pub(crate) enum Channel {
+pub enum Channel {
     Stable,
     Nightly,
 }

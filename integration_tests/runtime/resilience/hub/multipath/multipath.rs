@@ -31,34 +31,24 @@ async fn real_direct_and_relay_paths_deduplicate_and_fail_over_without_replacing
         b_state.peer_identity(),
         c_state.peer_identity(),
     );
-    let (a_listener, b_listener, c_listener) =
-        (listener().await, listener().await, listener().await);
-    let (a_addr, b_addr, c_addr) = (
-        a_listener.local_addr().unwrap(),
-        b_listener.local_addr().unwrap(),
-        c_listener.local_addr().unwrap(),
-    );
-    let proxy = proxy::RouteProxy::start(c_addr).await;
+    let proxy = proxy::RouteProxy::start(c_state.peer_socket().unwrap()).await;
     let a_config = Configuration {
-        listen: Some(a_addr),
         trusted_origins: vec![],
         file_roots: vec![],
         peers: vec![
-            peer(b, Some(b_addr), true, vec![]),
-            peer(c, Some(proxy.address), true, vec![]),
+            peer(b, Some(&b_state), true, vec![]),
+            peer_at_socket(c, proxy.path.clone(), true, vec![]),
         ],
     };
     let b_config = Configuration {
-        listen: Some(b_addr),
         trusted_origins: vec![],
         file_roots: vec![],
         peers: vec![
             peer(a, None, false, vec![exports(c.hub(), false)]),
-            peer(c, Some(c_addr), true, vec![]),
+            peer(c, Some(&c_state), true, vec![]),
         ],
     };
     let c_config = Configuration {
-        listen: Some(c_addr),
         trusted_origins: vec![],
         file_roots: vec![],
         peers: vec![
@@ -66,8 +56,8 @@ async fn real_direct_and_relay_paths_deduplicate_and_fail_over_without_replacing
             peer(b, None, false, vec![exports(c.hub(), true)]),
         ],
     };
-    let c_node = RunningNode::start(&c_host, c_state, c_config, c_listener).await;
-    let a_node = RunningNode::start(&a_host, a_state, a_config, a_listener).await;
+    let c_node = RunningNode::start(&c_host, c_state, c_config).await;
+    let a_node = RunningNode::start(&a_host, a_state, a_config).await;
     let target = launch(&c_node, &c_host, AGENT_NAME).await;
     let expected = c_node.wait_origins(&[c.hub()]).await;
     assert_eq!(a_node.wait_origins(&[c.hub()]).await, expected);
@@ -80,7 +70,7 @@ async fn real_direct_and_relay_paths_deduplicate_and_fail_over_without_replacing
     // B is not running yet, so this channel and exchange prove the direct path.
     let mut direct = io::attach(&a_node, target, None).await;
     let cursor = io::exchange(&a_node, target, &mut direct).await;
-    let b_node = RunningNode::start(&b_host, b_state, b_config, b_listener).await;
+    let b_node = RunningNode::start(&b_host, b_state, b_config).await;
     assert_eq!(b_node.wait_origins(&[c.hub()]).await, expected);
     observe::connections(&a_node, &[b.hub(), c.hub()]).await;
     observe::stable_inventory(&a_node, agent, target).await;

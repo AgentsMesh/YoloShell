@@ -1,17 +1,20 @@
-use crate::command::Command;
+use crate::terminal::TerminalCommand as CliTerminalCommand;
 use crate::constants::*;
 use anyhow::{Context, Result, ensure};
 use std::io::{self, Write};
 use yolo_hub_rpc_protocol::{Command as HubCommand, Reply};
 use yolo_hub_terminal_protocol::{
-    RuntimeStatus, TerminalAction, TerminalCommand, TerminalSelection, TerminalSummary,
+    RuntimeStatus, TerminalAction, TerminalCommand as HubTerminalCommand, TerminalSelection,
+    TerminalSummary,
 };
 use yolo_tui_app::Options;
 
-pub(crate) async fn run(options: &Options, command: Command) -> Result<()> {
+pub(crate) async fn run(options: &Options, command: CliTerminalCommand) -> Result<()> {
     let (selector, action, json) = match command {
-        Command::Archive { terminal, json } => (terminal, TerminalAction::Archive {}, json),
-        Command::Terminate {
+        CliTerminalCommand::Archive { terminal, json } => {
+            (terminal, TerminalAction::Archive {}, json)
+        }
+        CliTerminalCommand::Terminate {
             terminal,
             force,
             json,
@@ -25,7 +28,7 @@ pub(crate) async fn run(options: &Options, command: Command) -> Result<()> {
     let session = select(&catalog.terminals, &selector)?;
     let fields = session.fields();
     let command = HubCommand::Terminal {
-        command: TerminalCommand {
+        command: HubTerminalCommand {
             request_id: uuid::Uuid::new_v4(),
             selection: TerminalSelection {
                 address: fields.address,

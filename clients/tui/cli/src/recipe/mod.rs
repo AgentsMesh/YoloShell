@@ -33,17 +33,21 @@ pub(crate) enum RecipeCommand {
 
 #[derive(Debug, Args)]
 pub(crate) struct StartArgs {
+    /// Recipe JSON file to start.
     pub file: PathBuf,
     /// Stop already-started agents if a later start fails.
     #[arg(long)]
     pub stop_on_failure: bool,
+    /// Print one JSON document.
     #[arg(long)]
     pub json: bool,
 }
 
 #[derive(Debug, Args)]
 pub(crate) struct ShowArgs {
+    /// Recipe JSON file to validate and print.
     pub file: PathBuf,
+    /// Print one JSON document.
     #[arg(long)]
     pub json: bool,
 }

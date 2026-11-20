@@ -1,14 +1,25 @@
+use crate::client::ClientCommand;
 use crate::constants::*;
-use crate::platform::PlatformCommand;
+use crate::layouts::LayoutCommand;
+use yolo_tui_cli_platform::PlatformCommand;
 use crate::recipe::RecipeCommand;
+use crate::server::ServerCommand;
+use crate::terminal::TerminalCommand;
 use clap::Subcommand;
+use yolo_command_cli::{
+    AgentCommand, ConversationAction, PluginCommand, ProtocolCommand, UpdateArgs, WorkspaceCommand,
+    WorktreeCommand,
+};
 use yolo_tui_app::StartupAction;
 
+/// The single root command tree. Daily shell entry stays first; every other
+/// command is grouped by the noun it operates on.
 #[derive(Debug, Subcommand)]
 pub(crate) enum Command {
     /// Open a new tab with a normal shell. Run agents directly in that shell.
     #[command(group(crate::arguments::connection_group()))]
     New {
+        /// Working directory for the new shell; defaults to the current directory.
         #[arg(long)]
         cwd: Option<String>,
         /// Label for the terminal; selectors need the label to be unambiguous.
@@ -17,60 +28,53 @@ pub(crate) enum Command {
     },
     /// Attach an existing terminal by ID, address, or unique name; never creates a shell.
     #[command(group(crate::arguments::connection_group()))]
-    Attach { terminal: Option<String> },
-    /// Disconnect a local terminal client; keep its shells and agents running.
-    #[command(group(crate::arguments::connection_group()))]
-    Detach { client: Option<uuid::Uuid> },
-    /// List terminals visible from the selected Hub.
-    #[command(group(crate::arguments::connection_group()))]
-    List {
-        #[arg(long)]
-        json: bool,
-        /// Include archived terminals from history.
-        #[arg(long)]
-        all: bool,
-    },
-    /// List local terminal clients connected to the selected Hub.
-    #[command(group(crate::arguments::connection_group()))]
-    Clients {
-        #[arg(long)]
-        json: bool,
-    },
-    /// Archive an exited terminal; its history keeps the row.
-    #[command(group(crate::arguments::connection_group()))]
-    Archive {
+    Attach {
         /// Terminal id, address, or unique name.
-        terminal: String,
-        #[arg(long)]
-        json: bool,
-    },
-    /// End a terminal and every program running in it.
-    #[command(group(crate::arguments::connection_group()))]
-    Terminate {
-        /// Terminal id, address, or unique name.
-        terminal: String,
-        /// Kill programs that do not exit after a graceful request.
-        #[arg(long)]
-        force: bool,
-        #[arg(long)]
-        json: bool,
-    },
-    /// List shared layout IDs; use --layout to open one in an independent client.
-    #[command(group(crate::arguments::connection_group()))]
-    Layouts {
-        #[arg(long)]
-        json: bool,
+        terminal: Option<String>,
     },
     /// Open the terminal picker to attach an existing shell without creating one.
     #[command(name = TERMINALS_COMMAND, group(crate::arguments::connection_group()))]
     Terminals,
-    /// Print the visible screen text of a terminal (non-authoritative).
+    /// List, read, archive or terminate Hub-owned terminals.
     #[command(group(crate::arguments::connection_group()))]
-    Screen {
-        /// Terminal id, address, or unique name.
-        terminal: String,
-        #[arg(long)]
-        json: bool,
+    Terminal {
+        #[command(subcommand)]
+        command: TerminalCommand,
+    },
+    /// List or detach local terminal clients.
+    #[command(group(crate::arguments::connection_group()))]
+    Client {
+        #[command(subcommand)]
+        command: ClientCommand,
+    },
+    /// List shared layouts.
+    #[command(group(crate::arguments::connection_group()))]
+    Layout {
+        #[command(subcommand)]
+        command: LayoutCommand,
+    },
+    /// Manage machines and import their agents; print this machine's Hub identity.
+    #[command(group(crate::arguments::connection_group()))]
+    Machine {
+        #[command(subcommand)]
+        command: yolo_tui_hub_cli::MachineCommand,
+    },
+    /// Inspect and control agents through the public Hub protocol.
+    #[command(group(crate::arguments::connection_group()))]
+    Agent {
+        #[command(subcommand)]
+        command: AgentCommand,
+    },
+    /// Install the hooks that let Yolo observe terminal agents.
+    Hook {
+        #[command(subcommand)]
+        command: yolo_tui_cli_hook::HookCommand,
+    },
+    /// Start, stop, restart or inspect the local Host and Hub.
+    #[command(group(crate::arguments::connection_group()))]
+    Server {
+        #[command(subcommand)]
+        command: ServerCommand,
     },
     /// Inspect the platform snapshot or its sequenced events.
     #[command(group(crate::arguments::connection_group()))]
@@ -80,37 +84,46 @@ pub(crate) enum Command {
     },
     /// Read the local Hub's durable authority audit log, or merge exported logs.
     #[command(group(crate::arguments::connection_group()))]
-    Audit {
-        /// Only records after this sequence.
-        #[arg(long)]
-        after: Option<u64>,
-        /// Maximum records to print.
-        #[arg(long, default_value_t = crate::constants::DEFAULT_AUDIT_LIMIT)]
-        limit: u16,
-        /// Merge one or more audit JSONL files instead of reading the profile.
-        #[arg(long = "merge", value_name = "FILE")]
-        merge: Vec<std::path::PathBuf>,
-        /// Trusted Hub identity for an authenticated merge: HUB_ID=PUBLIC_KEY.
-        #[arg(long, value_name = "HUB_ID=PUBLIC_KEY")]
-        trust: Vec<String>,
-        /// Print this profile's Hub signing identity and exit.
-        #[arg(long)]
-        identity: bool,
-        /// Pull signed audit lines from this peer through the local entry Hub.
-        #[arg(long, value_name = "HUB_ID")]
-        pull: Option<yolo_hub_identity::HubId>,
-        /// Write pulled lines to this file instead of stdout.
-        #[arg(long, value_name = "FILE", requires = "pull")]
-        output: Option<std::path::PathBuf>,
-        #[arg(long)]
-        json: bool,
-    },
+    Audit(crate::audit::AuditArgs),
     /// Validate or start a bounded multi-agent recipe file.
     #[command(group(crate::arguments::connection_group()))]
     Recipe {
         #[command(subcommand)]
         command: RecipeCommand,
     },
+    /// Read native agent conversations through the public Hub protocol.
+    #[command(group(crate::arguments::connection_group()))]
+    Conversation {
+        #[command(subcommand)]
+        action: ConversationAction,
+    },
+    /// Manage durable workspace metadata through the public Hub.
+    #[command(group(crate::arguments::connection_group()))]
+    Workspace {
+        #[command(subcommand)]
+        command: WorkspaceCommand,
+    },
+    /// Manage git worktrees through the public Hub.
+    #[command(group(crate::arguments::connection_group()))]
+    Worktree {
+        #[command(subcommand)]
+        command: WorktreeCommand,
+    },
+    /// Inspect the public Yolo protocol contract.
+    #[command(group(crate::arguments::connection_group()))]
+    Protocol {
+        #[command(subcommand)]
+        command: ProtocolCommand,
+    },
+    /// Manage trusted user-level plugins.
+    #[command(group(crate::arguments::connection_group()))]
+    Plugin {
+        #[command(subcommand)]
+        command: PluginCommand,
+    },
+    /// Check, install and activate Yolo releases.
+    #[command(group(crate::arguments::connection_group()))]
+    Update(UpdateArgs),
 }
 
 pub(crate) fn startup(command: Option<Command>, remote: bool) -> anyhow::Result<StartupAction> {

@@ -4,7 +4,7 @@ use crate::hub::tui_creation_recovery::constants::*;
 use std::path::Path;
 use yolo_process_test_support::{LiveProcessIdentity, ProcessIdentity as FixtureProcessIdentity};
 use yolo_runtime::{
-    agent::{FencedDescendants, ProcessSource, SystemProcessSource},
+    agent::{FencedDescendants, ProcessSource, RuntimeProcessSource},
     process::{ProcessIdentity, ProcessIdentityObservation},
 };
 
@@ -32,7 +32,7 @@ impl Driver {
             hub.hub.to_string(),
         ];
         let FencedDescendants::Stable(descendants) =
-            SystemProcessSource.fenced_descendants(root).unwrap()
+            RuntimeProcessSource::new([]).fenced_descendants(root).unwrap()
         else {
             panic!("owned outer PTY shell identity changed");
         };

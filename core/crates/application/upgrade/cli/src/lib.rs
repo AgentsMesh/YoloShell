@@ -1,10 +1,15 @@
+mod candidate;
 mod check;
 mod constants;
 mod github;
 mod github_release;
 mod install;
+mod probe;
 mod report;
 mod service;
+
+pub use check::{Options, run};
+pub use github_release::Channel;
 
 use anyhow::Result;
 use clap::{Args, Parser, Subcommand};
@@ -18,7 +23,8 @@ struct Cli {
 }
 
 #[derive(Debug, Subcommand)]
-enum Command {
+pub enum Command {
+    /// Check, install and activate Yolo releases.
     Update(check::Options),
 }
 

@@ -15,14 +15,15 @@ pub(crate) fn create(
     ensure!(prepared.applied_to(ready), CONFIGURATION_UNKNOWN);
     let request = &prepared.request;
     configuration::verify_images(&build, request)?;
-    let endpoint = ready
-        .listen_address
-        .ok_or_else(|| anyhow::anyhow!(LISTENER_UNAVAILABLE))?;
+    let peer_socket = ready
+        .peer_socket
+        .clone()
+        .ok_or_else(|| anyhow::anyhow!(PEER_SOCKET_UNAVAILABLE))?;
     let receipt = RemoteBootstrapReceipt::new(RemoteBootstrapReceiptFields {
         schema_version: REMOTE_BOOTSTRAP_SCHEMA_VERSION,
         request_id: request.fields().request_id,
         peer: prepared.peer,
-        endpoint,
+        peer_socket,
         configuration_revision: ready.state.revision,
         bundle_id: request.fields().bundle.build_id().into(),
         build,

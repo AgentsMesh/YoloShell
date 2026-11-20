@@ -27,7 +27,6 @@ struct Report {
 async fn native_configuration_enrollment_and_conflict_preserve_remote_agent_without_focus() {
     const ENTRY: &str = "entry";
     const ORIGIN: &str = "origin";
-    const DYNAMIC_PORT: u16 = 0;
     let a_host = crate::agent_recovery::federation_harness().await;
     let b_host = crate::agent_recovery::federation_harness().await;
     let root = tempfile::tempdir_in(TEMP_ROOT).unwrap();
@@ -35,19 +34,15 @@ async fn native_configuration_enrollment_and_conflict_preserve_remote_agent_with
     let b_state = Arc::new(HubState::open(&root.path().join(ORIGIN), b_host.home.path()).unwrap());
     let (a, b) = (a_state.peer_identity(), b_state.peer_identity());
     let a_configuration = Configuration {
-        listen: Some(SocketAddr::new(Ipv4Addr::LOCALHOST.into(), DYNAMIC_PORT)),
         ..Configuration::default()
     };
     let a_node = ManagedNode::start(&a_host, a_state, a_configuration).await;
-    let listener = listener().await;
-    let b_address = listener.local_addr().unwrap();
     let b_configuration = Configuration {
-        listen: Some(b_address),
         peers: vec![peer(a, None, false, vec![exports(b.hub(), false)])],
         trusted_origins: vec![],
         file_roots: vec![],
     };
-    let b_node = RunningNode::start(&b_host, b_state, b_configuration, listener).await;
+    let b_node = RunningNode::start(&b_host, b_state.clone(), b_configuration).await;
     let target = launch(&b_node, &b_host, NAME_B).await;
     let before = b_host
         .client()
@@ -57,7 +52,7 @@ async fn native_configuration_enrollment_and_conflict_preserve_remote_agent_with
     native_management_support::run(
         &a_node,
         root.path(),
-        peer(b, Some(b_address), true, vec![]),
+        peer(b, Some(&b_state), true, vec![]),
         target.address,
     )
     .await;

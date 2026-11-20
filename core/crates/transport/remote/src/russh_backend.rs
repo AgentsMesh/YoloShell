@@ -102,7 +102,7 @@ mod broker_command_support;
     feature = "broker-test-support"
 ))]
 pub use broker_command_support::{
-    BROKER_COMMAND_CANCELLATION_PROGRAM, BrokerCommandCleanupFixture,
+    BROKER_COMMAND_CANCELLATION_PROGRAM, BrokerCommandCleanupFixture, HubPeerTarget,
 };
 
 use super::constants::{

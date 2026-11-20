@@ -20,7 +20,7 @@ async fn cancelled_readback_closes_only_its_sftp_channel_and_keeps_sibling_hub_p
         .open_hub_peer(&fixture.request)
         .await
         .unwrap();
-    let (mut socket, _) = timeout_at(hub_peer_fixture::deadline(), fixture.listener.accept())
+    let (mut socket, _) = timeout_at(hub_peer_fixture::deadline(), fixture.target.listener.accept())
         .await
         .unwrap()
         .unwrap();

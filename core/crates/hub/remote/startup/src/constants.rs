@@ -4,7 +4,7 @@ pub(crate) const DEADLINE: &str = "remote Hub bootstrap deadline expired";
 pub(crate) const BUNDLE_MISSING: &str = "remote runtime bundle is not completely installed";
 pub(crate) const PIN_MISMATCH: &str =
     "persistent remote Hub identity does not match its enrollment pin";
-pub(crate) const LISTENER_UNAVAILABLE: &str = "remote Hub loopback listener is not applied";
+pub(crate) const PEER_SOCKET_UNAVAILABLE: &str = "remote Hub peer socket is not published";
 pub(crate) const CONFIGURATION_CONFLICT: &str =
     "remote Hub configuration conflicts with the enrollment request";
 pub(crate) const CONFIGURATION_UNKNOWN: &str =
