@@ -30,12 +30,11 @@ impl LocalBackend {
         }
         let snapshots = self
             .observe_agents_locked(
-                Some(&mut *projection),
-                Some(ObservationContext {
+                &mut *projection,
+                ObservationContext {
                     request,
                     terminal: grant.fields().target,
-                }),
-                Some(grant.fields().target.address.terminal_id),
+                },
             )
             .await;
         // A lost call may arrive while refresh is awaited; inspect the receipt again.

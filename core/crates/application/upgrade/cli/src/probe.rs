@@ -1,13 +1,18 @@
 use crate::{check::Options, constants::*, report::CheckReport, service::ServiceUnit};
 use anyhow::Result;
-use std::{path::PathBuf, time::Duration};
+use std::time::Duration;
 use tokio::time::Instant;
 use yolo_build_image::BuildImage;
 use yolo_hub_client::Client;
 use yolo_hub_rpc_protocol::{Command, HUB_PROTOCOL_VERSION, Reply};
 use yolo_hub_state::validate_runtime_contract;
+use yolo_local_profile::LocalProfile;
 
-pub(crate) async fn probe(options: &Options, candidate: BuildImage) -> Result<CheckReport> {
+pub(crate) async fn probe(
+    options: &Options,
+    profile: &LocalProfile,
+    candidate: BuildImage,
+) -> Result<CheckReport> {
     let mut report = CheckReport::new(candidate.clone());
     report.push(
         CHECK_CANDIDATE,
@@ -29,7 +34,7 @@ pub(crate) async fn probe(options: &Options, candidate: BuildImage) -> Result<Ch
                 false,
                 format!("cannot contact running Hub: {error}"),
             );
-            check_state_and_units(options, candidate, &mut report);
+            check_state_and_units(options, profile, &candidate, &mut report).await;
             return Ok(report);
         }
     };
@@ -74,11 +79,16 @@ pub(crate) async fn probe(options: &Options, candidate: BuildImage) -> Result<Ch
             format!("cannot read live service images: {error}"),
         ),
     }
-    check_state_and_units(options, candidate, &mut report);
+    check_state_and_units(options, profile, &candidate, &mut report).await;
     Ok(report)
 }
 
-fn check_state_and_units(options: &Options, candidate: BuildImage, report: &mut CheckReport) {
+async fn check_state_and_units(
+    options: &Options,
+    profile: &LocalProfile,
+    candidate: &BuildImage,
+    report: &mut CheckReport,
+) {
     let state = validate_runtime_contract(options.state.as_ref().unwrap());
     report.push(
         CHECK_STATE,
@@ -88,18 +98,14 @@ fn check_state_and_units(options: &Options, candidate: BuildImage, report: &mut 
             .map_or_else(|| CONTRACT_MATCH.into(), |error| error.to_string()),
     );
     if options.service_units.is_empty() {
-        report.push(
-            CHECK_SERVICE_UNITS,
-            !cfg!(target_os = "linux"),
-            NO_SERVICE_UNITS.to_owned(),
-        );
+        check_supervised_units(profile, candidate, report).await;
     }
     for path in &options.service_units {
         let name = format!("{CHECK_SERVICE_PREFIX}{}", path.display());
         match ServiceUnit::read(path) {
             Ok(unit) => report.push(
                 name,
-                unit.image == candidate,
+                &unit.image == candidate,
                 format!("{}", unit.executable.display()),
             ),
             Err(error) => report.push(name, false, error.to_string()),
@@ -107,10 +113,36 @@ fn check_state_and_units(options: &Options, candidate: BuildImage, report: &mut 
     }
 }
 
-pub(crate) fn default_units() -> Vec<PathBuf> {
-    [HOST_RUNNER_UNIT, HUB_UNIT]
-        .into_iter()
-        .map(PathBuf::from)
-        .filter(|path| path.exists())
-        .collect()
+async fn check_supervised_units(
+    profile: &LocalProfile,
+    candidate: &BuildImage,
+    report: &mut CheckReport,
+) {
+    let units = match yolo_local_lifecycle::service_units(profile).await {
+        Ok(units) => units,
+        Err(error) => {
+            report.push(CHECK_SERVICE_UNITS, false, error.to_string());
+            return;
+        }
+    };
+    if units.is_empty() {
+        report.push(
+            CHECK_SERVICE_UNITS,
+            true,
+            "profile uses independently launched services",
+        );
+    }
+    for unit in units {
+        let observed = async {
+            let path = unit.image_path().await?;
+            crate::service::verify_pin(&path, candidate)?;
+            Ok::<_, anyhow::Error>(path)
+        }
+        .await;
+        let name = format!("{CHECK_SERVICE_PREFIX}{}", unit.name);
+        match observed {
+            Ok(path) => report.push(name, true, path.display().to_string()),
+            Err(error) => report.push(name, false, error.to_string()),
+        }
+    }
 }

@@ -3,6 +3,13 @@
 All notable changes to Yolo are recorded here. The project follows semantic
 versioning once a stable release exists.
 
+## 0.5.2 — Alpha
+
+- Codex conversations can be read and prompted after a verified turn end.
+- Agent runs track terminal exits, recovery into a new runtime and archival. Repeated stops preserve the run revision.
+- The machine sidebar shows hook setup guidance when empty and opens a running terminal on the selected machine.
+- On Linux, upgrade checks inspect the systemd units that own the selected profile and verify their effective image paths.
+
 ## 0.5.1 — Alpha
 
 ### Added

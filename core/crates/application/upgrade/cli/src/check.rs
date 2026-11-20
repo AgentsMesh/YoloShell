@@ -115,7 +115,7 @@ fn admit(
         None => std::env::current_exe()?.canonicalize()?,
     };
     let candidate = yolo_local_lifecycle::image(&candidate_path)?;
-    let report = runtime.block_on(probe::probe(&options, candidate))?;
+    let report = runtime.block_on(probe::probe(&options, profile, candidate))?;
     if options.json {
         println!("{}", report.to_json()?);
     } else {
@@ -140,14 +140,8 @@ fn local_options(mut options: Options, profile: &LocalProfile) -> Result<Options
         .context(
             "local Hub identity is unavailable; run `yolo server start` to initialize the profile, or pass --local-profile",
         )?;
-    let service_units = if options.service_units.is_empty() {
-        probe::default_units()
-    } else {
-        options.service_units.clone()
-    };
     options.socket = Some(socket);
     options.hub = Some(hub);
     options.state = Some(state);
-    options.service_units = service_units;
     Ok(options)
 }

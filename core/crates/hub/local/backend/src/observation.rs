@@ -1,7 +1,5 @@
 use crate::{
-    LocalBackend,
-    connector_catalogue::ObservationScope,
-    native_diagnostics::ObservationStage,
+    LocalBackend, connector_catalogue::ObservationScope, native_diagnostics::ObservationStage,
 };
 use futures::StreamExt;
 use std::future::Future;
@@ -11,7 +9,6 @@ use yolo_agent_control_contract::NativeControlObservation;
 use yolo_hub_agent_protocol::AgentSnapshot;
 use yolo_hub_connector_registry::Catalogue;
 use yolo_hub_identity::TerminalId;
-use yolo_hub_rpc_protocol::Reply;
 use yolo_terminal_model::TerminalView;
 
 /// A Worker that cannot answer within this budget contributes no capability:
@@ -50,26 +47,25 @@ pub(crate) struct AppliedCatalogue {
 }
 
 impl LocalBackend {
-    /// `current` is advisory; an unavailable projection degrades to no
-    /// annotation instead of failing the durable run read.
-    pub(crate) async fn annotate_run_reply(&self, mut reply: Reply) -> Result<Reply, yolo_hub_terminal_protocol::PublicError> {
-        if matches!(&reply, Reply::AgentRun { .. } | Reply::AgentRuns { .. }) {
-            reply.annotate_run_current(&self.observed_targets().await);
-        }
-        Ok(reply)
-    }
-
     /// Live terminal-to-execution joins from the projection and connectors.
-    pub(crate) async fn observed_targets(&self) -> Vec<(TerminalId, yolo_hub_identity::AgentTarget)> {
+    pub(crate) async fn observed_targets(
+        &self,
+    ) -> Vec<(TerminalId, yolo_hub_identity::AgentTarget)> {
         let mut targets = match &self.agents {
             Some(projection) => projection.lock().await.active_targets().unwrap_or_default(),
             None => Vec::new(),
         };
-        let native: std::collections::BTreeSet<_> = targets.iter().map(|(terminal, _)| *terminal).collect();
+        let native: std::collections::BTreeSet<_> =
+            targets.iter().map(|(terminal, _)| *terminal).collect();
         if let Some(registry) = &self.connectors
             && let Ok(catalogue) = registry.lock().await.catalogue()
         {
-            targets.extend(catalogue.active_targets().into_iter().filter(|(terminal, _)| !native.contains(terminal)));
+            targets.extend(
+                catalogue
+                    .active_targets()
+                    .into_iter()
+                    .filter(|(terminal, _)| !native.contains(terminal)),
+            );
         }
         targets
     }
@@ -115,9 +111,7 @@ impl LocalBackend {
                     .await
                     .map(|view| vec![view]),
             };
-            let connectors = self
-                .connector_catalogue(views.as_deref().ok(), scope)
-                .await;
+            let connectors = self.connector_catalogue(views.as_deref().ok(), scope).await;
             (views, connectors)
         };
         let native = match &views {
@@ -151,8 +145,8 @@ impl LocalBackend {
                 .map(|view| projection.reusable_idle_observation(view).ok().flatten())
                 .collect()
         };
-        let deadline = (tokio::time::Instant::now() + NATIVE_OBSERVATION_TIMEOUT)
-            .min(sweep_deadline);
+        let deadline =
+            (tokio::time::Instant::now() + NATIVE_OBSERVATION_TIMEOUT).min(sweep_deadline);
         let captures = views
             .iter()
             .cloned()

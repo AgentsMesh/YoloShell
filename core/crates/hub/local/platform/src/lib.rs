@@ -65,6 +65,17 @@ impl PlatformServices {
         &self.runs
     }
 
+    pub async fn observe_run_terminals(
+        &self,
+        hub: yolo_hub_identity::HubId,
+        views: &[yolo_terminal_model::TerminalView],
+        includes_archived: bool,
+    ) -> Result<(), yolo_hub_terminal_protocol::PublicError> {
+        self.runs
+            .observe_catalogue(&self.client, hub, views, includes_archived)
+            .await
+    }
+
     pub fn workspaces(&self) -> &WorkspaceService {
         &self.workspaces
     }

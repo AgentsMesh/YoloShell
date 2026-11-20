@@ -4,8 +4,10 @@ mod control;
 mod image;
 mod process;
 mod status;
+mod supervision;
 
 pub use control::{restart, start, stop, validate_state};
 pub use image::image;
 pub use process::{ServiceStop, StopReport, service_pid};
 pub use status::{HostStatus, HubStatus, StatusReport, status};
+pub use supervision::{ServiceUnit, service_units};

@@ -50,14 +50,22 @@ pub(crate) fn activate(state: &mut State, jobs: &mpsc::Sender<Job>, hub: HubId) 
     }
 }
 fn live_terminal(state: &State, hub: HubId) -> Option<TerminalAddress> {
-    let live = |address: &TerminalAddress| {
-        address.hub_id == hub && !crate::terminal_lifecycle::gone(state, *address)
-    };
+    use yolo_tui_lifecycle::TerminalPhase;
     state
         .focused_terminal()
-        .filter(live)
-        .or_else(|| state.inventory.last_terminal_for(hub).filter(live))
-        .or_else(|| state.terminals.keys().copied().find(|address| live(address)))
+        .into_iter()
+        .chain(state.inventory.last_terminal_for(hub))
+        .chain(state.terminals.keys().copied())
+        .filter(|address| {
+            address.hub_id == hub && !crate::terminal_lifecycle::gone(state, *address)
+        })
+        .min_by_key(
+            |address| match crate::terminal_lifecycle::phase(state, *address) {
+                TerminalPhase::Running => 0,
+                TerminalPhase::Starting | TerminalPhase::OutputBlocked => 1,
+                _ => 2,
+            },
+        )
 }
 fn creation_pending(state: &State, hub: HubId) -> bool {
     state

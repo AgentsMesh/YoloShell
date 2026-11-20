@@ -4,12 +4,14 @@
 mod adopt;
 mod cancel;
 mod error;
+mod lifecycle;
 mod ops;
 mod quota;
 mod record;
 mod store;
 
 pub use error::StoreError;
+pub use lifecycle::TerminalObservation;
 pub use record::ReserveAgentRun;
 pub use store::AgentRunStore;
 

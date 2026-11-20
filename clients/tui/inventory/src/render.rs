@@ -23,17 +23,41 @@ pub fn render_viewport(
     active_machine: Option<HubId>,
     area: Rect,
 ) -> InventoryViewport {
-    let bands = Layout::vertical([Constraint::Length(CONTEXT_ROWS), Constraint::Min(0)]).split(area);
+    let bands =
+        Layout::vertical([Constraint::Length(CONTEXT_ROWS), Constraint::Min(0)]).split(area);
+    let tree = (inventory.view == View::Tree).then(|| inventory.tree_rows(filter, terminals));
+    let show_setup = tree
+        .as_ref()
+        .is_some_and(|rows| !rows.is_empty() && rows.iter().all(|row| row.count == 0))
+        && inventory.current
+        && inventory.agents_supported
+        && !inventory.history
+        && filter.trim().is_empty()
+        && inventory.machines.values().any(|machine| machine.reachable)
+        && bands[1].height >= 3;
+    let rows_area = Rect {
+        height: bands[1].height - if show_setup { 2 } else { 0 },
+        ..bands[1]
+    };
+    if show_setup {
+        empty(
+            frame,
+            "No managed agents\nyolo hook status",
+            Rect::new(rows_area.x, rows_area.bottom(), rows_area.width, 2),
+        );
+    }
     let mut viewport = InventoryViewport::new(
         area,
-        bands[1],
+        rows_area,
         inventory,
         terminals,
         session_selected,
         filter,
     );
-    let machine = active_machine
-        .map_or_else(|| ALL_MACHINES.to_owned(), |hub| inventory.machine_label(hub));
+    let machine = active_machine.map_or_else(
+        || ALL_MACHINES.to_owned(),
+        |hub| inventory.machine_label(hub),
+    );
     let machine = match inventory.view {
         View::Terminals => format!("{TERMINAL_PICKER_LABEL} | {machine}"),
         View::Tree => machine,
@@ -59,8 +83,8 @@ pub fn render_viewport(
         })),
         bands[0],
     );
-    let (items, selected, empty) = match inventory.view {
-        View::Terminals => {
+    let (items, selected, empty) = match tree {
+        None => {
             let visible = inventory.visible_terminals(filter, terminals);
             let selected = session_selected
                 .and_then(|selected| visible.iter().position(|address| *address == selected));
@@ -78,15 +102,14 @@ pub fn render_viewport(
                 .collect::<Vec<_>>();
             (items, selected, EMPTY_SESSIONS)
         }
-        View::Tree => {
-            let rows = inventory.tree_rows(filter, terminals);
+        Some(rows) => {
             if rows.is_empty() {
                 let label = if inventory.machines_supported {
                     EMPTY_MACHINES
                 } else {
                     MACHINES_UNSUPPORTED
                 };
-                empty(frame, label, bands[1]);
+                empty(frame, label, rows_area);
                 return viewport;
             }
             let selected = inventory.tree_selected.and_then(|selected| {
@@ -119,7 +142,7 @@ pub fn render_viewport(
         }
     };
     if items.is_empty() {
-        self::empty(frame, empty, bands[1]);
+        self::empty(frame, empty, rows_area);
         return viewport;
     }
     let mut selection = ListState::default().with_selected(selected);
@@ -130,7 +153,7 @@ pub fn render_viewport(
     if marker.width() <= usize::from(bands[1].width) {
         list = list.highlight_symbol(marker);
     }
-    frame.render_stateful_widget(list, bands[1], &mut selection);
+    frame.render_stateful_widget(list, rows_area, &mut selection);
     viewport.bind_rows(selection.offset(), &heights, inventory, terminals);
     viewport
 }

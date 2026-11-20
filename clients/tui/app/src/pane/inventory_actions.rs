@@ -65,11 +65,13 @@ pub fn handle(state: &mut State, jobs: &mpsc::Sender<Job>, key: KeyCode) -> bool
             }
         }
         KeyCode::Char('n') => {
-            if let Some(hub) = state.inventory.selected_machine {
+            if state.inventory.view == View::Tree
+                && let Some(hub) = state.inventory.selected_machine
+            {
                 crate::machine_activation::select_machine(state, hub);
             }
             state.mode = Mode::Directory;
-            state.entry = DEFAULT_DIRECTORY.into();
+            state.entry = crate::shell_actions::directory(state, state.tabs.machine());
             crate::form_input::reset(state);
         }
         KeyCode::Char('r') => crate::catalog_events::invalidate(state, jobs),
@@ -116,10 +118,7 @@ pub(crate) fn open(state: &mut State, jobs: &mpsc::Sender<Job>) {
                     &state.filter,
                     &state.terminals,
                 );
-                match state
-                    .inventory
-                    .terminal_for_selected(&state.terminals)
-                {
+                match state.inventory.terminal_for_selected(&state.terminals) {
                     Some(target) => crate::tabs::open(state, jobs, target.address),
                     None => {
                         state.inventory.details = Some(target);

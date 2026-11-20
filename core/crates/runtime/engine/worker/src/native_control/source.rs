@@ -12,7 +12,7 @@ pub(super) fn with_source<T>(
     state: &WorkerState,
     guard: &SessionDurableMutationGuard<'_>,
     expected: Option<&NativeControlWitness>,
-    operation: impl FnOnce(&AgentBinding, &NativeControlWitness, &dyn Fn() -> Result<()>) -> Result<T>,
+    operation: impl FnOnce(&AgentBinding, &NativeControlWitness, Option<&str>, &dyn Fn() -> Result<()>) -> Result<T>,
 ) -> Result<T> {
     let id = state.terminal_id();
     let path = state.paths.manifest(id);
@@ -30,10 +30,11 @@ pub(super) fn with_source<T>(
         state.paths.agent_binding(id),
         std::sync::Arc::clone(&state.provider_runtime),
     )
-        .read_raw_in_namespace(guard.namespace())?
-        .context(SOURCE_CHANGED)?;
+    .read_raw_in_namespace(guard.namespace())?
+    .context(SOURCE_CHANGED)?;
     let checked = |binding: &AgentBinding,
                    witness: &NativeControlWitness,
+                   stop_turn: Option<&str>,
                    provider: &dyn Fn() -> Result<()>| {
         let verify = || -> Result<()> {
             provider()?;
@@ -49,7 +50,7 @@ pub(super) fn with_source<T>(
             guard.namespace().verify()
         };
         verify()?;
-        operation(binding, witness, &verify)
+        operation(binding, witness, stop_turn, &verify)
     };
     let provider = state
         .provider_runtime
@@ -57,13 +58,20 @@ pub(super) fn with_source<T>(
         .context(UNAVAILABLE)?;
     match provider.descriptor().authority_kind() {
         yolo_agent_providers::AuthorityKind::ClaudeGeneration => {
-            claude_hook::with_control_source(state, guard, expected, checked)
+            claude_hook::with_control_source(state, guard, expected, |binding, witness, verify| {
+                checked(binding, witness, None, verify)
+            })
         }
         yolo_agent_providers::AuthorityKind::CodexOccurrence => {
             codex_hook::with_control_source(state, guard, expected, checked)
         }
         yolo_agent_providers::AuthorityKind::GenericHookGeneration => {
-            super::generic_hook_source::with_control_source(state, guard, expected, checked)
+            super::generic_hook_source::with_control_source(
+                state,
+                guard,
+                expected,
+                |binding, witness, verify| checked(binding, witness, None, verify),
+            )
         }
         yolo_agent_providers::AuthorityKind::None => anyhow::bail!(UNAVAILABLE),
     }

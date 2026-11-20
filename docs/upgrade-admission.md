@@ -16,8 +16,10 @@ The operational upgrade order is:
 2. Probe the running Host/Hub image, protocol and state contract.
 3. Keep the persistent custody domain and live Workers running while the result
    is compatible.
-4. Restart only the independently replaceable Host runner and Hub (`yolo server restart`
-   preserves the custody domain and live Workers).
+4. Restart only the independently replaceable Host runner and Hub. Detached
+   profiles use `yolo server restart`, while systemd-owned profiles restart the
+   selected Host runner and Hub units. Both paths preserve the custody domain
+   and live Workers.
 5. Recheck Hub identity, TerminalAddress, RuntimeEpoch, Worker identity and Agent
    execution identity before accepting the deployment.
 
@@ -32,9 +34,10 @@ each service has an explicit image owner. The link under `.local/bin` remains
 for interactive CLI selection only.
 
 If the probe reports incompatibility, `yolo update` exits nonzero with
-`upgrade admission refused` plus the failed checks. When the installed image is
-newer than the running services, activate it with `yolo server restart` or
-`yolo update --restart`; `yolo server stop` leaves the profile stopped for inspection.
+`upgrade admission refused` plus the failed checks. When the installed image is newer than the running services, activate a detached
+profile with `yolo server restart`. A systemd-owned profile must restart its
+selected Host runner and Hub units. `yolo server stop` leaves a detached profile
+stopped for inspection.
 Restarting preserves PTY custody: the Host closes ingress but Workers remain
 attached to their PTYs. A restart is refused before stopping anything when
 `runtime-contract.json` is incompatible with the installed image, or when the
@@ -42,8 +45,8 @@ caller cannot create a new Host (for example an un-delegated Linux shell). There
 is no force/apply subcommand: admission never retries an uncertain state mutation
 or deletes old state.
 
-`yolo update` checks the selected release, installs it when newer, restarts
-before probing, and then reports admission. `--check` is read-only, `--admit`
+`yolo update` checks the selected release, installs it when newer, activates
+through the profile owner when possible, and then reports admission. `--check` is read-only, `--admit`
 probes the installed image without the network, and `--no-restart` installs
 without activating. The probe always describes the image that will be left
 running. Before stopping services, `yolo update` asks the installed image to

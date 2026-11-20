@@ -55,3 +55,14 @@ fn field<'a>(text: &'a str, prefix: &str) -> Result<&'a str> {
 pub(crate) fn image(path: &Path) -> Result<BuildImage> {
     yolo_local_lifecycle::image(path)
 }
+
+pub(crate) fn verify_pin(path: &Path, candidate: &BuildImage) -> Result<()> {
+    let digest_directory = path.parent().and_then(Path::file_name);
+    ensure!(
+        digest_directory.is_some_and(|digest| digest == candidate.sha256()),
+        "effective service image must be pinned to the candidate digest"
+    );
+    ensure!(path.canonicalize()? == path, MUTABLE_EXECUTABLE);
+    ensure!(&image(path)? == candidate, DIGEST_MISMATCH);
+    Ok(())
+}

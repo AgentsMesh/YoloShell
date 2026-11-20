@@ -1,6 +1,6 @@
 use crate::constants::*;
 use crate::process::StopReport;
-use anyhow::{Context, Result};
+use anyhow::{Context, Result, ensure};
 use std::path::Path;
 use tokio::time::Instant;
 use yolo_hub_local_startup::Launch;
@@ -8,6 +8,25 @@ use yolo_hub_state::{HubState, validate_runtime_contract};
 use yolo_local_profile::LocalProfile;
 
 pub async fn stop(profile: &LocalProfile) -> Result<StopReport> {
+    require_detached_services(profile).await?;
+    stop_detached(profile).await
+}
+
+async fn require_detached_services(profile: &LocalProfile) -> Result<()> {
+    let units = crate::service_units(profile).await?;
+    ensure!(
+        units.is_empty(),
+        "the selected profile is managed by systemd ({}); use those units to stop or activate it",
+        units
+            .iter()
+            .map(|unit| unit.name.as_str())
+            .collect::<Vec<_>>()
+            .join(", ")
+    );
+    Ok(())
+}
+
+async fn stop_detached(profile: &LocalProfile) -> Result<StopReport> {
     let hub = crate::process::stop_socket(
         &HubState::socket_path_for(&profile.state)?,
         HUB_SERVICE,
@@ -50,8 +69,9 @@ pub fn validate_state(profile: &LocalProfile) -> Result<()> {
 /// preflight because only the image that will run may decide compatibility: an
 /// older updater must validate with its installed candidate, not itself.
 pub async fn restart(profile: &LocalProfile, executable: &Path) -> Result<StopReport> {
+    require_detached_services(profile).await?;
     yolo_hub_local_startup::require_host_custody()?;
-    let report = stop(profile).await?;
+    let report = stop_detached(profile).await?;
     start(profile, executable)
         .await
         .context(STOPPED_NOT_STARTED)?;

@@ -10,6 +10,41 @@ const CALLBACK_TIMEOUT: Duration = Duration::from_secs(5);
 mod candidate_tests;
 
 #[test]
+fn settled_stop_replays_without_overriding_other_lifecycle_states() {
+    use super::test_support::{FOURTH_SEQUENCE, THIRD_SEQUENCE, submit_event};
+    use crate::agent::AgentState;
+    use crate::agent::hooks::{EventKind, HookMetadata};
+
+    let source = ControlSource::new();
+    source.projection.stop();
+    source.persist_state(Some(AgentState::WaitingForInput));
+    source.run(|_, verify| verify()).unwrap();
+
+    let input = source.projection.authority.as_ref().unwrap();
+    submit_event(
+        input,
+        FOURTH_SEQUENCE,
+        EventKind::UserPromptSubmit,
+        HookMetadata::default(),
+        None,
+    );
+    source.persist_state(Some(AgentState::WaitingForInput));
+    assert!(source.run(|_, _| Ok(())).is_err());
+
+    let source = ControlSource::new();
+    let input = source.projection.authority.as_ref().unwrap();
+    submit_event(
+        input,
+        THIRD_SEQUENCE,
+        EventKind::PermissionRequest,
+        HookMetadata::default(),
+        None,
+    );
+    source.persist_state(Some(AgentState::WaitingForInput));
+    assert!(source.run(|_, _| Ok(())).is_err());
+}
+
+#[test]
 fn current_source_capture_repeats_and_reentrant_control_is_fenced() {
     let source = ControlSource::new();
     let first = source

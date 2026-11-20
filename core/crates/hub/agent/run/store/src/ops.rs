@@ -9,9 +9,7 @@ use yolo_hub_identity::TerminalAddress;
 use yolo_hub_terminal_protocol::PublicError;
 
 use crate::StoreError;
-use crate::record::{
-    ReserveAgentRun, StoredRun, matches_filter, now_ms, stored_run, summary,
-};
+use crate::record::{ReserveAgentRun, StoredRun, matches_filter, now_ms, stored_run, summary};
 use crate::store::AgentRunStore;
 
 impl AgentRunStore {
@@ -71,6 +69,9 @@ impl AgentRunStore {
             }
             return Err(PublicError::Conflict.into());
         }
+        if current.state != AgentRunState::Starting {
+            return Err(PublicError::Conflict.into());
+        }
         let next = StoredRun {
             revision: current.revision + 1,
             state: AgentRunState::Launched,
@@ -91,40 +92,24 @@ impl AgentRunStore {
         &self,
         selector: &AgentRunSelector,
     ) -> Result<Option<AgentRunSummary>, StoreError> {
-        self.check()?;
-        Ok(match selector {
-            AgentRunSelector::Address(address) => self.record.find(*address).map(summary),
-            AgentRunSelector::Name(name) => self.record.find_name(name).map(summary),
-        })
+        Ok(self.select(selector)?.map(summary))
     }
 
-    /// Record a stop after the terminal effect was observed. Idempotent: an
-    /// already-stopped run keeps its revision and timestamps.
-    pub fn mark_stopped(
-        &mut self,
-        address: AgentRunAddress,
-    ) -> Result<AgentRunSummary, StoreError> {
+    pub fn stop_target(
+        &self,
+        selector: &AgentRunSelector,
+    ) -> Result<Option<(AgentRunSummary, Option<uuid::Uuid>, Option<uuid::Uuid>)>, StoreError> {
+        Ok(self
+            .select(selector)?
+            .map(|run| (summary(run), run.ended_runtime, run.observed_runtime)))
+    }
+
+    fn select(&self, selector: &AgentRunSelector) -> Result<Option<&StoredRun>, StoreError> {
         self.check()?;
-        let current = self
-            .record
-            .find(address)
-            .cloned()
-            .ok_or(PublicError::NotFound)?;
-        if current.state == AgentRunState::Stopped {
-            return Ok(summary(&current));
-        }
-        if current.state == AgentRunState::Starting || current.terminal.is_none() {
-            return Err(PublicError::Conflict.into());
-        }
-        let next = StoredRun {
-            revision: current.revision + 1,
-            state: AgentRunState::Stopped,
-            updated_at_ms: now_ms(),
-            ..current
-        };
-        self.commit(next.clone())?;
-        self.active_starts.remove(&address);
-        Ok(summary(&next))
+        Ok(match selector {
+            AgentRunSelector::Address(address) => self.record.find(*address),
+            AgentRunSelector::Name(name) => self.record.find_name(name),
+        })
     }
 
     pub fn list(

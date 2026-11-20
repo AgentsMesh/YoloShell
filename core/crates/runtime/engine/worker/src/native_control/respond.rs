@@ -62,7 +62,7 @@ impl WorkerState {
                 self,
                 fence.durable(),
                 Some(&request.witness),
-                |_binding, witness, verify_source| {
+                |_binding, witness, _, verify_source| {
                     fence.verify()?;
                     verify_source()?;
                     self.authorize_control(

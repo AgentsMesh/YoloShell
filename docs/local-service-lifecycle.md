@@ -25,17 +25,19 @@ Host and Hub actually mapped.
 
 ## Stop and Restart
 
-`yolo server stop` resolves each service PID from its private Unix socket's peer
-credentials and sends SIGTERM to that exact PID; it never matches process names.
-It stops the Hub first and then the Host. Host shutdown closes ingress but leaves
-session Workers attached to their PTYs, so stopping services does not terminate
-running shells; a later `yolo server start` reconnects the Hub to the existing Host and
-Workers. If a service does not exit within the bound, the command fails with the
-exact PID instead of escalating to SIGKILL.
+For a detached profile, `yolo server stop` resolves each service PID from its
+private Unix socket's peer credentials and sends SIGTERM to that exact PID. It
+never matches process names. It stops the Hub first and then the Host. Host
+shutdown closes ingress but leaves session Workers attached to their PTYs, so
+stopping services does not terminate running shells. A later `yolo server start`
+reconnects the Hub to the existing Host and Workers. If a service does not exit
+within the bound, the command fails with the exact PID instead of escalating to
+SIGKILL.
 
-`yolo server restart` validates the runtime contract and, on Linux, delegated Host
-custody before stopping anything, so an incompatible state or an un-delegated
-shell leaves the running services untouched.
+For a detached profile, `yolo server restart` validates the runtime contract and,
+on Linux, delegated Host custody before stopping anything. An incompatible state
+or an un-delegated shell leaves the running services untouched. A profile owned
+by systemd must be restarted through its selected Host runner and Hub units.
 
 On Linux a new Host requires delegated cgroup v2 custody. `yolo server start` reports
 that requirement before launching anything; start the profile under a delegated
@@ -66,9 +68,11 @@ yolo update
 
 This checks the selected channel, installs a newer immutable image under
 `~/.local/lib/yolo/<sha>/yolo`, atomically points `~/.local/bin/yolo` at it,
-restarts the local Host and Hub when needed, and probes the live service images,
-Hub protocol, storage contract and managed unit pins. Admission must report
-`ready`; a failed check exits nonzero. If no services are running it reports the
+and probes the live service images, Hub protocol, storage contract and effective
+service owner. Detached services can be restarted by the command. Profiles
+owned by systemd units must be activated by restarting those units, so the
+command refuses to signal their socket owners. Admission must report `ready`,
+and a failed check exits nonzero. If no services are running it reports the
 install and leaves them stopped.
 
 Advanced modes:
@@ -83,8 +87,8 @@ yolo update --channel nightly    # select the nightly channel
 
 `--check` ends with `update available: <version>` or `yolo <version> is already
 current`, so callers do not compare the two printed versions themselves.
-`--no-restart` leaves the running services untouched and prints
-`run yolo server restart to activate it` when an installed image is not yet running.
+`--no-restart` leaves the running services untouched. It prints an activation
+hint when an installed image is not yet running.
 
 For a non-default profile, pass `--local-profile <file>` to `yolo update`.
 
