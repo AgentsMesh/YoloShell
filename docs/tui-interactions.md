@@ -92,6 +92,13 @@ directory field starts at `~`, which is valid for both local and remote Hosts.
 After the creation is confirmed, the new tab becomes the active terminal and
 its PTY is ready for any command, including `claude` and `codex`.
 
+`yolo agent start --provider codex` launches Codex with its background daemon
+disabled so the provider and its hook callbacks stay owned by the new Yolo
+terminal. A Codex process started by hand can reuse an existing app-server. A
+pre-existing app-server has no terminal-scoped Yolo identity, so its hooks stay
+unmanaged until an explicit terminal handshake is available. Yolo does not
+infer ownership from a working directory or a rollout file.
+
 While a terminal is focused, ordinary keys go to the PTY. `Ctrl-B d` and
 `Ctrl-B q` exit the client while leaving the shell and agent running.
 `Ctrl-B g` opens the picker; bare `q` exits from navigation views only.

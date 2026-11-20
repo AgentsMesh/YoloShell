@@ -16,12 +16,16 @@ pub fn provider_capabilities() -> Vec<String> {
 }
 
 fn executable_available(command: &str) -> bool {
-    if command.contains('/') {
-        return executable_file(Path::new(command));
+    // Launch policies are closed command lines. Availability probes the
+    // executable token while the terminal runner receives the full line.
+    let Some(executable) = command.split_whitespace().next() else {
+        return false;
+    };
+    if executable.contains('/') {
+        return executable_file(Path::new(executable));
     }
     std::env::var_os("PATH").is_some_and(|paths| {
-        std::env::split_paths(&paths)
-            .any(|directory| executable_file(&directory.join(command)))
+        std::env::split_paths(&paths).any(|directory| executable_file(&directory.join(executable)))
     })
 }
 

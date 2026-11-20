@@ -46,9 +46,15 @@ fn runtime_row_matches_the_identity_and_ports() {
         provider.install_spec().expect("install spec").provider,
         INSTALL_TOKEN
     );
-    let source = provider
-        .conversation_source()
-        .expect("conversation source");
+    let source = provider.conversation_source().expect("conversation source");
     assert_eq!(source.kind(), identity::kind());
     assert_eq!(source.conversation_token().as_str(), CONVERSATION_TOKEN);
+}
+
+#[test]
+fn managed_launch_owns_the_codex_app_server_boundary() {
+    assert_eq!(
+        runtime().launch_command(),
+        Some("codex --config features.daemon_auto_start=false")
+    );
 }

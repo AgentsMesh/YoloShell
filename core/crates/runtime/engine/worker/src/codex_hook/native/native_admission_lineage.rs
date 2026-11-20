@@ -10,14 +10,20 @@ use crate::codex_hooks::NATIVE_CALLBACK_SHELLS as CALLBACK_SHELLS;
 mod groups;
 
 #[cfg(all(test, feature = "yolo-unit-tests"))]
-#[cfg(any(feature = "yolo-integration-tests", feature = "yolo-worker-unit-runtime"))]
+#[cfg(any(
+    feature = "yolo-integration-tests",
+    feature = "yolo-worker-unit-runtime"
+))]
 #[path = "../../../unit_tests/codex_hook/native/native_admission_groups_tests.rs"]
 mod group_tests;
 #[cfg(all(test, feature = "yolo-test-support"))]
 #[path = "../../../test_support/unit/codex_hook/native/native_admission_lineage.rs"]
 mod test_support;
 #[cfg(all(test, feature = "yolo-unit-tests"))]
-#[cfg(any(feature = "yolo-integration-tests", feature = "yolo-worker-unit-runtime"))]
+#[cfg(any(
+    feature = "yolo-integration-tests",
+    feature = "yolo-worker-unit-runtime"
+))]
 #[path = "../../../unit_tests/codex_hook/native/native_admission_lineage_tests.rs"]
 mod tests;
 
@@ -56,11 +62,13 @@ fn capture_matching(
         ensure!(index.insert(process.pid, process).is_none(), NATIVE_PROCESS);
     }
     let callback = index.get(&peer.pid).copied().context(NATIVE_PROCESS)?;
+    let detached_callback = callback.foreground_group <= i32::default();
     ensure!(
         callback.identity_matches(peer.pid, peer.start_time)
             && Path::new(&callback.executable) == hook
             && callback.process_group > i32::default()
-            && callback.foreground_group > i32::default(),
+            && (!detached_callback
+                || i32::try_from(callback.pid).ok() == Some(callback.process_group)),
         NATIVE_PROCESS
     );
     let adapter = crate::agent::codex::CodexAdapter;
@@ -72,7 +80,7 @@ fn capture_matching(
         ensure!(
             chain.len() < crate::agent::constants::MAX_PROCESS_ANCESTOR_DEPTH
                 && visited.insert(current.pid)
-                && current.foreground_group == callback.foreground_group,
+                && foreground_valid(callback, current),
             NATIVE_PROCESS
         );
         if current.pid != peer.pid && agent.is_none() {
@@ -108,4 +116,13 @@ fn capture_matching(
             .context(NATIVE_PROCESS)?;
     }
     Ok((agent.context(NATIVE_PROCESS)?, chain))
+}
+
+fn foreground_valid(callback: &ObservedProcess, current: &ObservedProcess) -> bool {
+    if callback.foreground_group > i32::default() {
+        current.foreground_group == callback.foreground_group
+    } else {
+        (current.pid == callback.pid && current.foreground_group <= i32::default())
+            || current.foreground_group > i32::default()
+    }
 }

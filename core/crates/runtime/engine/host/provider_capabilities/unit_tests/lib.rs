@@ -5,6 +5,9 @@ fn executable_probe_uses_the_host_path() {
     assert!(executable_available("/bin/sh"));
     assert!(!executable_available("yolo-missing-provider-probe-xyz"));
     assert!(executable_available("sh"));
+    assert!(executable_available(
+        "sh --config features.daemon_auto_start=false"
+    ));
 }
 
 #[test]
@@ -14,8 +17,14 @@ fn provider_capabilities_are_prefixed_sorted_and_unique() {
     sorted.sort();
     sorted.dedup();
     assert_eq!(values, sorted);
-    assert!(values
-        .iter()
-        .all(|value| value.starts_with(PROVIDER_CAPABILITY_PREFIX)));
-    assert!(!values.iter().any(|value| value == PROVIDER_CAPABILITY_PREFIX));
+    assert!(
+        values
+            .iter()
+            .all(|value| value.starts_with(PROVIDER_CAPABILITY_PREFIX))
+    );
+    assert!(
+        !values
+            .iter()
+            .any(|value| value == PROVIDER_CAPABILITY_PREFIX)
+    );
 }
