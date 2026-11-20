@@ -1,8 +1,5 @@
-use crate::registry::Link;
 use anyhow::Result;
-use tokio::time::Instant;
-use yolo_hub_peer_rpc::{Client, RpcError};
-use yolo_hub_peer_transport::ChannelAdmissionError;
+use yolo_hub_peer_rpc::{Received, RpcError};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum DiscoveryRefresh {
@@ -10,25 +7,13 @@ pub(crate) enum DiscoveryRefresh {
     DeferredLocalAdmission,
 }
 
-/// Only failures proven local and preceding RPC dispatch defer discovery.
-/// A remote refusal, malformed reply or closed transport still retires the link.
-pub(crate) async fn open(link: &Link, deadline: Instant) -> Result<Option<Client>> {
-    let stream = match link.connection.open_channel(deadline).await {
-        Ok(stream) => stream,
-        Err(error)
-            if error.downcast_ref::<ChannelAdmissionError>()
-                == Some(&ChannelAdmissionError::AtCapacity) =>
-        {
-            return Ok(None);
-        }
-        Err(error) => return Err(error),
-    };
-    classify_connection(Client::connect(stream, deadline).await)
-}
-
-fn classify_connection(result: std::result::Result<Client, RpcError>) -> Result<Option<Client>> {
+/// Only a typed local capacity refusal defers discovery. A remote refusal,
+/// malformed reply or closed transport still retires the link.
+pub(crate) fn classify(
+    result: std::result::Result<Received, RpcError>,
+) -> Result<Option<Received>> {
     match result {
-        Ok(client) => Ok(Some(client)),
+        Ok(response) => Ok(Some(response)),
         Err(RpcError::Capacity) => Ok(None),
         Err(error) => Err(error.into()),
     }

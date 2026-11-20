@@ -1,5 +1,5 @@
 use crate::{
-    command::Command,
+    client::ClientCommand,
     constants::{CLIENT_HEADER, CLIENT_KIND_CLIENT, CLIENT_KIND_PRIMARY, NO_LOCAL_HUB},
     selection::Selection,
 };
@@ -10,10 +10,10 @@ use yolo_tui_tab::ClientDirectory;
 
 const NO_CLIENT: &str = "No attached terminal client was found";
 const MANY_CLIENTS: &str =
-    "Several terminal clients are attached; use yolo clients, then yolo detach <CLIENT_ID>";
+    "Several terminal clients are attached; use yolo client list, then yolo client detach <CLIENT_ID>";
 const DETACHED: &str = "Detached terminal client; shells and agents are still running";
 
-/// One attached client as `yolo clients` reports it. The Hub-bound client
+/// One attached client as `yolo client list` reports it. The Hub-bound client
 /// directory is addressed by the Hub id, so its kind makes that visible
 /// instead of presenting a Hub id as an ordinary client id.
 pub(crate) struct ClientRow {
@@ -21,7 +21,7 @@ pub(crate) struct ClientRow {
     pub(crate) kind: &'static str,
 }
 
-pub(crate) async fn run(selection: Selection, command: Command) -> Result<()> {
+pub(crate) async fn run(selection: Selection, command: ClientCommand) -> Result<()> {
     let hub = identity(selection)?;
     let mut active = Vec::new();
     let mut handles = std::collections::BTreeMap::new();
@@ -32,11 +32,11 @@ pub(crate) async fn run(selection: Selection, command: Command) -> Result<()> {
         }
     }
     match command {
-        Command::Clients { json } => {
+        ClientCommand::List { json } => {
             let rows = client_rows(&active, hub);
             print!("{}", clients_output(&rows, json));
         }
-        Command::Detach { client } => {
+        ClientCommand::Detach { client } => {
             let selected = choose(&active, client)?;
             handles
                 .remove(&selected.id)

@@ -51,7 +51,7 @@ fn stale_creation_failure_or_not_sent_preserves_the_current_presentation_status(
         },
         |fixture| fixture.state.mode = Mode::Search,
         |fixture| fixture.state.filter = CHANGED_FILTER.into(),
-        |fixture| fixture.state.inventory.view = yolo_tui_inventory::View::Hubs,
+        |fixture| fixture.state.inventory.view = yolo_tui_inventory::View::Tree,
         Fixture::select_other,
         |fixture| {
             let address = fixture.expected;

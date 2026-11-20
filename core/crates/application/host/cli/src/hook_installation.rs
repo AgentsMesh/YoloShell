@@ -3,13 +3,11 @@ use clap::{Args, Subcommand};
 use std::path::PathBuf;
 use yolo_hook_installation::{
     HookInstallSpec, HookProfile, IntegrationStatus, contains_managed_path, inspect,
-    install as install_hooks, remove_legacy_backups,
+    install as install_hooks, remove_legacy_backups, resolve_home,
 };
 use yolo_agent_providers::{builtin_install_spec, builtin_install_specs};
 
-const HOME_UNAVAILABLE: &str = "provider configuration home is unavailable";
 const PROVIDER_UNAVAILABLE: &str = "provider has no hook installation profile";
-const USER_HOME_ENV: &str = "HOME";
 
 #[derive(Debug, Args)]
 pub(super) struct Options {
@@ -104,22 +102,7 @@ fn provider(token: &str) -> Result<&'static HookInstallSpec> {
 }
 
 fn home(provider: &HookInstallSpec, explicit: Option<PathBuf>) -> Result<PathBuf> {
-    let path = explicit
-        .or_else(|| {
-            std::env::var_os(provider.environment_name)
-                .filter(|value| !value.is_empty())
-                .map(PathBuf::from)
-        })
-        .or_else(|| {
-            std::env::var_os(USER_HOME_ENV)
-                .map(|home| PathBuf::from(home).join(provider.directory_name))
-        })
-        .context(HOME_UNAVAILABLE)?;
-    let path = if provider.subdirectory.is_empty() {
-        path
-    } else {
-        path.join(provider.subdirectory)
-    };
+    let path = resolve_home(provider, explicit, |name| std::env::var_os(name))?;
     yolo_runtime::paths::validation::validate_absolute(&path)?;
     Ok(path)
 }

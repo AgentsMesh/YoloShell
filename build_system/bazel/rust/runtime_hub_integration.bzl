@@ -42,6 +42,7 @@ HUB_INTEGRATION_DEPS = [
     "//clients/tui/local/startup:yolo_tui_local_startup",
     "@crates//:tracing-subscriber",
     "//core/crates/hub/observation/store:yolo_hub_observation_store",
+    "//core/crates/hub/peer/dialer:yolo_hub_peer_dialer",
     "//core/crates/hub/peer/protocol:yolo_hub_peer_protocol",
     "//core/crates/hub/remote/setup/protocol:yolo_hub_remote_setup_protocol",
     YOLO_REMOTE_PROVISIONING_PROTOCOL,

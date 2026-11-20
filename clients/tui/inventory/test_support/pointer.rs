@@ -47,6 +47,7 @@ pub fn render(
                 filter,
                 &BTreeMap::new(),
                 0,
+                inventory.local_hub,
                 area,
             ))
         })

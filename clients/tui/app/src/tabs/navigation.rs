@@ -22,6 +22,7 @@ pub(crate) fn open(state: &mut State, jobs: &mpsc::Sender<Job>, address: Termina
         crate::startup::retained(state, Some(address));
         return;
     }
+    state.inventory.remember_terminal(address);
     if state.focused_terminal() == Some(address) {
         super::terminal_picker::close(state);
         state.mode = Mode::Terminal;

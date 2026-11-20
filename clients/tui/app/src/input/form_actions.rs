@@ -3,16 +3,15 @@ use crossterm::event::KeyCode;
 use tokio::sync::mpsc;
 use uuid::Uuid;
 use yolo_builtin_client_contract::ClientCapability;
-use yolo_hub_identity::HubId;
 use yolo_hub_rpc_protocol::Command;
 use yolo_hub_terminal_protocol::{TerminalAction, TerminalCommand, TerminalSelection};
 
-pub(crate) fn entry(state: &mut State, jobs: &mpsc::Sender<Job>, hub: HubId, key: KeyCode) {
+pub(crate) fn entry(state: &mut State, jobs: &mpsc::Sender<Job>, key: KeyCode) {
     match key {
         KeyCode::Esc => state.mode = Mode::Inventory,
         KeyCode::Enter => {
             if state.mode == Mode::Directory {
-                let origin = crate::shell_actions::destination(state, hub);
+                let origin = state.tabs.machine();
                 if !crate::shell_actions::create(state, jobs, origin, state.entry.clone(), None) {
                     let message = state.status.clone();
                     crate::form_input::fail(state, message);

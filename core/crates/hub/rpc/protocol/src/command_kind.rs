@@ -52,6 +52,7 @@ impl Command {
             Self::CleanupTerminate { .. } => Method::CleanupTerminate,
             Self::CleanupArchive { .. } => Method::CleanupArchive,
             Self::GetConfiguration {} => Method::GetConfiguration,
+            Self::ListConsumers {} => Method::ListConsumers,
             Self::Configure { .. } => Method::Configure,
             Self::ListFileRoots { .. } => Method::ListFileRoots,
             Self::ReadFile { .. } => Method::ReadFile,

@@ -44,6 +44,8 @@ mod deferred_input;
 mod document_view;
 #[path = "presentation/draw.rs"]
 mod draw;
+#[path = "presentation/draw_content.rs"]
+mod draw_content;
 #[path = "events/events.rs"]
 mod events;
 #[path = "finalization/finalization_actions.rs"]
@@ -86,6 +88,8 @@ mod interrupt_events;
 mod interrupt_state;
 #[path = "pane/inventory_actions.rs"]
 mod inventory_actions;
+#[path = "pane/machine_activation.rs"]
+mod machine_activation;
 #[path = "respond/respond_actions.rs"]
 mod respond_actions;
 #[path = "respond/respond_events.rs"]

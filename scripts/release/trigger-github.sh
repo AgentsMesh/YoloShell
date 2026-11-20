@@ -42,6 +42,7 @@ curl_https() {
 auth_header="Authorization: Bearer $token"
 accept_header="Accept: application/vnd.github+json"
 
+dispatch_epoch=$(date -u +%s)
 status=$(curl_https -o "$response" -w '%{http_code}' -X POST \
   -H "$auth_header" -H "$accept_header" -H 'Content-Type: application/json' \
   --data @"$payload" "$api/repos/$repo/dispatches")
@@ -56,16 +57,24 @@ for _ in $(seq 1 120); do
   runs="$work/runs.json"
   curl_https -o "$runs" -H "$auth_header" -H "$accept_header" \
     "$api/repos/$repo/actions/runs?event=repository_dispatch&per_page=20" || true
-  run_id=$(python3 - "$runs" "$tag" <<'PY'
-import json, sys
+  run_id=$(python3 - "$runs" "$tag" "$dispatch_epoch" <<'PY'
+import datetime, json, sys
 try:
     data = json.load(open(sys.argv[1]))
 except Exception:
     raise SystemExit
+threshold = float(sys.argv[3]) - 60
 for run in data.get("workflow_runs", []):
-    if run.get("display_title") == "Release " + sys.argv[2]:
-        print(run["id"])
-        break
+    if run.get("display_title") != "Release " + sys.argv[2]:
+        continue
+    created = run.get("created_at")
+    if not created:
+        continue
+    moment = datetime.datetime.fromisoformat(created.replace("Z", "+00:00")).timestamp()
+    if moment < threshold:
+        continue
+    print(run["id"])
+    break
 PY
 )
   [ -n "$run_id" ] && break

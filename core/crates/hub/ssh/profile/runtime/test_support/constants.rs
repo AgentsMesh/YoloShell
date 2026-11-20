@@ -12,6 +12,6 @@ pub const CHANNEL: u64 = 1;
 pub const SOCKET_MODE: u32 = 0o600;
 pub const DIRECTORY_MODE: u32 = 0o700;
 pub const REPLACED_REGISTRY: &str = "replaced-registry";
-pub const ENDPOINT: &str = "127.0.0.1:4242";
+pub const SOCKET: &str = "/run/user/1000/yolo/hub/peer.sock";
 pub const PAYLOAD: &[u8] = b"hub-tunnel-payload";
 pub const TIMEOUT: Duration = Duration::from_secs(5);

@@ -1,7 +1,7 @@
 # Direct and Relayed Hub Paths
 
 The live multipath test exercises A importing C both directly and through B.
-It uses production Hub/Federation services over real authenticated SSH channels,
+It uses Federation and Hub services over the production Unix peer-socket link,
 separate Host/Worker processes and a native-hook Agent fixture in a real PTY.
 The Hub services themselves run as separate tasks in the test process, not as
 three independently launched Hub executables.
@@ -12,7 +12,7 @@ three independently launched Hub executables.
    exchange, proving that the original attachment uses the direct path.
 2. Start B with an origin-authorized C export to A. Verify both authenticated
    connections, one C Agent address, and one matching Session/Runtime target.
-3. Cut the test proxy's owned A-to-C TCP forwarding streams and reject reconnects.
+3. Cut the test proxy's owned A-to-C forwarding streams and reject reconnects.
    The existing direct attachment must terminate without reporting process exit.
 4. Wait for the relay-only connection and reachable C inventory. Attach using the
    original output cursor, perform a new input once, and confirm the same runtime.

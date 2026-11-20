@@ -10,7 +10,7 @@ pub enum BootstrapError {
     SameIdentity,
     #[error("remote bootstrap authorization must include observation and bounded transit")]
     Authorization,
-    #[error("remote bootstrap listener must be a bound loopback endpoint")]
+    #[error("remote peer socket must be a canonical absolute Unix socket path")]
     Endpoint,
     #[error("invalid applied remote configuration revision")]
     Revision,

@@ -1,3 +1,4 @@
+use crate::origin_services::OriginServices;
 use crate::{constants, options::Options, services};
 use anyhow::{Context, ensure};
 use std::io::Write;
@@ -113,7 +114,10 @@ pub(crate) async fn run(options: Options) -> anyhow::Result<()> {
         backend,
         config,
         Some(build),
-        profiles.clone(),
+        Arc::new(yolo_hub_peer_dialer::CompositeDialer::new(
+            yolo_hub_peer_dialer::SystemSshDialer::default(),
+            profiles.clone(),
+        )),
         origin,
     )
     .await?;
@@ -169,31 +173,9 @@ pub(crate) async fn run(options: Options) -> anyhow::Result<()> {
         println!("Yolo Hub {hub}\n{}\n{public_identity}", socket.display());
         println!("{}", connectors.socket_path().display());
         println!("{}", public.socket_path().display());
-        if let Some(address) = service.listen_address()? {
-            println!("{address}");
+        if let Ok(peer_socket) = service.peer_socket() {
+            println!("{}", peer_socket.display());
         }
     }
     services::run(server, connectors, service, public, access, terminate).await
-}
-
-struct OriginServices {
-    hub: yolo_hub_identity::HubId,
-    host: yolo_client::Client,
-    providers: Vec<yolo_hub_rpc_protocol::ProviderSummary>,
-}
-
-impl yolo_hub_dispatch::OriginDecorator<LocalBackend> for OriginServices {
-    fn decorate(&self, backend: LocalBackend) -> Arc<dyn yolo_hub_dispatch::Dispatcher> {
-        let history = Arc::new(yolo_hub_local_terminal_history::HistoryDispatcher::new(
-            Arc::new(backend),
-            self.hub,
-            self.host.clone(),
-        ));
-        Arc::new(yolo_hub_local_providers::ProviderDispatcher::new(
-            history,
-            self.hub,
-            self.host.clone(),
-            self.providers.clone(),
-        ))
-    }
 }

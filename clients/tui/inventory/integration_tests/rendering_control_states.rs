@@ -21,21 +21,26 @@ fn unsupported_empty_stale_and_provider_specific_states_are_distinct() {
     let terminals = fixture.terminals();
     let mut inventory = Inventory::default();
     let mut terminal = Terminal::new(TestBackend::new(WIDTH, HEIGHT)).unwrap();
-    for (view, text) in [
-        (View::Agents, "Agent inventory unavailable"),
-        (View::Hubs, "Hub inventory unavailable"),
-    ] {
+    for (view, text) in [(View::Tree, "Machine inventory unavailable")] {
         inventory.view = view;
         terminal
-            .draw(|frame| render(frame, &inventory, &terminals, None, "", frame.area()))
+            .draw(|frame| {
+                render(
+                    frame,
+                    &inventory,
+                    &std::collections::BTreeMap::new(),
+                    None,
+                    "",
+                    frame.area(),
+                )
+            })
             .unwrap();
         assert!(contents(&terminal).contains(text));
     }
     inventory.replace(Some(Vec::new()), Some(Vec::new()));
     for (view, text) in [
         (View::Terminals, "No terminals"),
-        (View::Agents, "No agent runs"),
-        (View::Hubs, "No hubs"),
+        (View::Tree, "No machines"),
     ] {
         inventory.view = view;
         terminal

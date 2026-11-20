@@ -152,8 +152,7 @@ fn narrow_sidebar_exposes_only_agents_and_hubs_and_keeps_terminal_state() {
     let layout = state.tab_layout().clone();
     tabs::sidebar(&mut state);
     let (text, sidebar) = drawing_support::render(&state, NARROW_COLUMNS, panes::HEIGHT);
-    assert!(text.contains("Agent runs"));
-    assert!(text.contains("Hubs"));
+    assert!(!text.contains("Agent runs"));
     assert!(!text.contains("Terminals"));
     assert!(sidebar.panes.is_empty());
     state.mode = Mode::Terminal;

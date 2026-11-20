@@ -1,8 +1,5 @@
 use super::{federation_agents::launch, federation_support::*, management_support::ManagedNode};
-use std::{
-    net::{Ipv4Addr, SocketAddr},
-    sync::Arc,
-};
+use std::sync::Arc;
 use yolo_hub_agent_protocol::Reachability;
 use yolo_hub_federation_settings::Configuration;
 use yolo_hub_rpc_protocol::Command;
@@ -15,7 +12,6 @@ mod diagnostics;
 #[tokio::test(flavor = "multi_thread")]
 async fn online_relay_revocation_closes_old_streams_without_terminating_origin_agent() {
     diagnostics::initialize();
-    const DYNAMIC_PORT: u16 = 0;
     let a_host = crate::agent_recovery::federation_harness().await;
     let b_host = crate::agent_recovery::federation_harness().await;
     let c_host = crate::agent_recovery::federation_harness().await;
@@ -29,7 +25,6 @@ async fn online_relay_revocation_closes_old_streams_without_terminating_origin_a
         c_state.peer_identity(),
     );
     let b_config = Configuration {
-        listen: Some(SocketAddr::new(Ipv4Addr::LOCALHOST.into(), DYNAMIC_PORT)),
         trusted_origins: vec![],
         file_roots: vec![],
         peers: vec![
@@ -39,31 +34,27 @@ async fn online_relay_revocation_closes_old_streams_without_terminating_origin_a
                 false,
                 vec![exports(b.hub(), false), exports(c.hub(), false)],
             ),
-            peer(c, None, true, vec![]),
+            peer(c, Some(&c_state), true, vec![]),
         ],
     };
     let b_node = ManagedNode::start(&b_host, b_state, b_config.clone()).await;
-    let a_listener = listener().await;
-    let c_listener = listener().await;
     let a_config = Configuration {
-        listen: Some(a_listener.local_addr().unwrap()),
         trusted_origins: vec![c],
         file_roots: vec![],
-        peers: vec![peer(b, Some(b_node.address), true, vec![])],
+        peers: vec![peer_at_socket(b, b_node.peer_socket.clone(), true, vec![])],
     };
     let c_config = Configuration {
-        listen: Some(c_listener.local_addr().unwrap()),
         trusted_origins: vec![],
         file_roots: vec![],
-        peers: vec![peer(
+        peers: vec![peer_at_socket(
             b,
-            Some(b_node.address),
+            b_node.peer_socket.clone(),
             false,
             vec![exports(c.hub(), true)],
         )],
     };
-    let a_node = RunningNode::start(&a_host, a_state, a_config, a_listener).await;
-    let c_node = RunningNode::start(&c_host, c_state, c_config, c_listener).await;
+    let a_node = RunningNode::start(&a_host, a_state, a_config).await;
+    let c_node = RunningNode::start(&c_host, c_state, c_config).await;
     let target = launch(&c_node, &c_host, NAME_C).await;
     let identities = a_node.wait_origins(&[c.hub()]).await;
     let before = c_host
@@ -87,7 +78,7 @@ async fn online_relay_revocation_closes_old_streams_without_terminating_origin_a
         .exports
         .retain(|policy| policy.origin != c.hub());
     let receipt = b_node.configure(revoked).await;
-    assert_eq!(receipt.listen_address, Some(b_node.address));
+    assert_eq!(receipt.peer_socket.as_ref(), Some(&b_node.peer_socket));
     tokio::time::timeout_at(deadline(), async {
         loop {
             match output.next_event(deadline()).await {
@@ -146,7 +137,7 @@ async fn online_relay_revocation_closes_old_streams_without_terminating_origin_a
             .is_err()
     );
     let restored = b_node.configure(b_config).await;
-    assert_eq!(restored.listen_address, Some(b_node.address));
+    assert_eq!(restored.peer_socket.as_ref(), Some(&b_node.peer_socket));
     assert_eq!(a_node.wait_origins(&[c.hub()]).await, identities);
     let replay_client = a_node.client().await;
     let replay_request = AttachRequest::new(target, None).unwrap();

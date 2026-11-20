@@ -2,13 +2,12 @@ use super::{
     NativeControlLookupRequest, NativeControlResult, NativeObservationRequest, constants::*,
     outcome_for_receipt, source,
 };
-use crate::agent::AgentState;
 use crate::protocol::ErrorBody;
 use crate::worker::{
     AuthenticatedController, WorkerState, agent_monitor_publication_fence, lock_recover,
 };
 use std::sync::Arc;
-use yolo_agent_control_contract::{NativeControlObservation, NativeTurnEnd, NativeTurnEndKind};
+use yolo_agent_control_contract::NativeControlObservation;
 use yolo_agent_control_journal::JournalError;
 
 impl WorkerState {
@@ -33,25 +32,18 @@ impl WorkerState {
         let Ok(fence) = agent_monitor_publication_fence::try_acquire(self, &record) else {
             return Ok(None);
         };
-        let observed =
-            source::with_source(self, fence.durable(), None, |binding, witness, verify| {
+        let observed = source::with_source(
+            self,
+            fence.durable(),
+            None,
+            |binding, witness, stop_turn, verify| {
                 anyhow::ensure!(
                     witness.fields().binding_digest == request.binding_digest,
                     SOURCE_CHANGED
                 );
                 fence.verify()?;
                 verify()?;
-                // Readiness is a provider fact; terminal mode is a submit-time
-                // transport precondition, never a capability. Only a stop
-                // candidate needs the structured turn-ending record.
-                let (ready, turn_end) = match binding.state {
-                    AgentState::WaitingForInput => (true, None),
-                    AgentState::Active => {
-                        let end = turn_end(self, binding);
-                        (end.is_some(), end)
-                    }
-                    _ => (false, None),
-                };
+                let (ready, turn_end) = super::prompt_readiness::observe(self, binding, stop_turn);
                 let interaction = self.observed_interaction(witness);
                 Ok(NativeControlObservation::new_with_interaction(
                     binding.clone(),
@@ -60,24 +52,10 @@ impl WorkerState {
                     turn_end,
                     interaction,
                 )?)
-            });
+            },
+        );
         Ok(observed.ok())
     }
-}
-
-fn turn_end(state: &WorkerState, binding: &crate::agent::AgentBinding) -> Option<NativeTurnEnd> {
-    let probe = state
-        .provider_runtime
-        .get(&binding.kind)?
-        .turn_end_probe()?;
-    let end = probe.read_turn_end(binding).ok()??;
-    Some(NativeTurnEnd {
-        turn_id: end.turn_id,
-        kind: match end.kind {
-            yolo_agent_providers::TurnEndKind::Completed => NativeTurnEndKind::Completed,
-            yolo_agent_providers::TurnEndKind::Aborted => NativeTurnEndKind::Aborted,
-        },
-    })
 }
 
 impl WorkerState {

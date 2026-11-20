@@ -79,7 +79,7 @@ fn opening_a_selected_agent_row_switches_to_its_terminal() {
     let address = session.fields().address;
     let mut state = crate::client_capability_support::state();
     publish(&mut state, agent, session);
-    state.inventory.view = yolo_tui_inventory::View::Agents;
+    state.inventory.view = yolo_tui_inventory::View::Tree;
     state.inventory.selected_agent = Some(target);
     state.mode = Mode::Inventory;
     let (jobs, _incoming) = tokio::sync::mpsc::channel(crate::constants::QUEUE_CAPACITY);

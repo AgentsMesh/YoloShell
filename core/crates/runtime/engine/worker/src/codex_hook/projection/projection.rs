@@ -1,9 +1,10 @@
 #[path = "projection_binding.rs"]
 mod binding;
-#[path = "projection_cursor.rs"]
-mod cursor;
 #[path = "projection_control.rs"]
 mod control;
+#[path = "projection_cursor.rs"]
+mod cursor;
+pub(in crate::worker) use control::read_stop_turn_end;
 pub(in crate::worker::codex_hook) use control::require_current_control_projection;
 #[cfg(all(test, feature = "yolo-unit-tests"))]
 #[cfg(any(feature = "yolo-integration-tests", feature = "yolo-worker-unit-runtime"))]

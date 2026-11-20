@@ -6,22 +6,10 @@ use yolo_hub_terminal_protocol::{
     CreateShellFields, CreateShellRequest, TERMINAL_PROTOCOL_SCHEMA_VERSION, TerminalSize,
 };
 
-pub(crate) fn destination(state: &State, entry: HubId) -> HubId {
-    if state.mode == crate::Mode::Terminal {
-        if let Some(address) = state.focused_terminal() {
-            return address.hub_id;
-        }
-    }
-    if state.inventory.view == yolo_tui_inventory::View::Hubs {
-        if let Some(hub) = state.inventory.selected_hub {
-            return hub;
-        }
-    }
+pub(crate) fn destination(state: &State, _entry: HubId) -> HubId {
     state
-        .inventory
-        .scope
-        .or_else(|| state.focused_terminal().map(|address| address.hub_id))
-        .unwrap_or(entry)
+        .focused_terminal()
+        .map_or_else(|| state.tabs.machine(), |address| address.hub_id)
 }
 
 pub(crate) fn directory(state: &State, origin: HubId) -> String {

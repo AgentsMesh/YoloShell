@@ -17,7 +17,7 @@ fn changed_filter_scope_view_selection_and_read_freshness_invalidate_the_old_scr
     inventory.current = false;
     assert!(!viewport.current(&inventory, &terminals, selected, ""));
     inventory.current = true;
-    inventory.view = View::Agents;
+    inventory.view = View::Tree;
     assert!(!viewport.current(&inventory, &terminals, selected, ""));
 }
 
@@ -26,7 +26,7 @@ fn capability_changes_invalidate_clicks_even_when_the_visible_sessions_are_uncha
     let (mut inventory, terminals) = catalogue();
     let selected = terminals.keys().next().copied();
     let agents = inventory.agents.values().cloned().collect::<Vec<_>>();
-    let hubs = inventory.hubs.values().cloned().collect::<Vec<_>>();
+    let hubs = inventory.machines.values().cloned().collect::<Vec<_>>();
     for capabilities in [(None, Some(hubs.clone())), (Some(agents.clone()), None)] {
         let viewport = render(&inventory, &terminals, selected, "", area());
         let visible = inventory.visible_selections("", &terminals);
@@ -43,7 +43,7 @@ fn capability_changes_invalidate_clicks_even_when_the_visible_sessions_are_uncha
 #[test]
 fn same_visible_address_does_not_authorize_a_click_after_execution_or_runtime_replacement() {
     let (mut inventory, mut terminals) = catalogue();
-    inventory.view = View::Agents;
+    inventory.view = View::Tree;
     let selected = *inventory.agents.keys().next().unwrap();
     inventory.selected_agent = Some(selected);
     let viewport = render(&inventory, &terminals, None, "", area());

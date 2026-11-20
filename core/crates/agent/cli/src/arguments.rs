@@ -26,13 +26,13 @@ pub enum Command {
 #[derive(Debug, Args)]
 pub struct Options {
     /// Existing local Hub entry socket; supply together with --hub.
-    #[arg(long, global = true, requires = HUB_ARGUMENT)]
+    #[arg(long, global = true, requires = HUB_ARGUMENT, help_heading = "Connection")]
     pub socket: Option<PathBuf>,
     /// Identity of the Hub accepting this client connection.
-    #[arg(long, global = true, requires = SOCKET_ARGUMENT)]
+    #[arg(long, global = true, requires = SOCKET_ARGUMENT, help_heading = "Connection")]
     pub hub: Option<HubId>,
     /// Local profile file; defaults to the current user profile.
-    #[arg(long, global = true, conflicts_with_all = [SOCKET_ARGUMENT, HUB_ARGUMENT])]
+    #[arg(long, global = true, conflicts_with_all = [SOCKET_ARGUMENT, HUB_ARGUMENT], help_heading = "Connection")]
     pub local_profile: Option<PathBuf>,
     #[command(subcommand)]
     pub command: AgentCommand,
@@ -63,11 +63,11 @@ pub enum AgentCommand {
         #[command(flatten)]
         output: OutputArgs,
     },
-    /// Deliver a prompt to the agent's native input.
+    /// Deliver a prompt through the terminal writer; does not wait for the turn.
     Send(PromptArgs),
-    /// Deliver a prompt and wait for the agent to finish the turn.
+    /// Deliver a prompt, then poll until the turn ends or --timeout expires.
     Ask(AskArgs),
-    /// Submit one prompt atomically, optionally waiting for the turn to end.
+    /// Submit one prompt atomically and optionally wait for the turn to end.
     Prompt(PromptExecArgs),
     /// Send an interrupt to the agent.
     Interrupt {

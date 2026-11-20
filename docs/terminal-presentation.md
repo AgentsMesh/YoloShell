@@ -38,7 +38,7 @@ when their values are null or zero. The runtime epoch scopes the counter. Hub
 terminal catalogues carry this metadata through federation so an unopened
 terminal can still supply a title and attention indication.
 
-TUI terminal rows, focused terminal status, pane borders, Agent runs and the
+TUI terminal rows, focused terminal status, pane borders, Agent rows and the
 selected Agent's bottom status use the provider-preferred display title. Missing
 or cleared titles fall back to the PTY title, then the Terminal name or provider
 name. Agent title lookup requires the

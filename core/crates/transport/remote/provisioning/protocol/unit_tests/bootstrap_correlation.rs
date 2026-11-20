@@ -11,9 +11,9 @@ fn first_enrollment_and_pinned_reuse_accept_only_the_complete_requested_build() 
     ready
         .validate_for(&RemoteBootstrapRequest::new(enrollment).unwrap())
         .unwrap();
-    let mut v6 = ready.fields().clone();
-    v6.endpoint = std::net::SocketAddr::from((std::net::Ipv6Addr::LOCALHOST, PORT));
-    RemoteBootstrapReceipt::new(v6)
+    let mut alternate = ready.fields().clone();
+    alternate.peer_socket = "/run/user/1000/yolo/alternate.sock".into();
+    RemoteBootstrapReceipt::new(alternate)
         .unwrap()
         .validate_for(&pinned)
         .unwrap();

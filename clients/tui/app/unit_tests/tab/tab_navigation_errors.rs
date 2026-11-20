@@ -133,7 +133,7 @@ fn nested_picker_open_preserves_original_sidebar_filter_and_never_changes_bindin
         } else {
             crate::client_capability_support::state()
         };
-        state.inventory.view = View::Hubs;
+        state.inventory.view = View::Tree;
         state.filter = SAVED_FILTER.into();
         let mode = state.mode;
         let layout = state.tab_layout().clone();
@@ -145,7 +145,7 @@ fn nested_picker_open_preserves_original_sidebar_filter_and_never_changes_bindin
         tabs::terminal_picker::open(&mut state);
         assert_eq!(state.filter, PICKER_FILTER);
         tabs::terminal_picker::close(&mut state);
-        assert_eq!(state.inventory.view, View::Hubs);
+        assert_eq!(state.inventory.view, View::Tree);
         assert_eq!(state.filter, SAVED_FILTER);
         assert_eq!(state.mode, mode);
         assert_eq!(*state.tab_layout(), layout);

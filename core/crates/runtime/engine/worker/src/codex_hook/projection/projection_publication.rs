@@ -32,22 +32,22 @@ pub(super) async fn publish_lifecycle(
     let current = authority_store.load_in_namespace(state.namespace.lease())?;
     let version = cursor::ProjectionCursor::lifecycle_version(route, lifecycle, authority_revision);
     let previous = replay_base(current.as_ref(), version, before.as_ref());
-    let Some(mut projected) = binding::project(
-        route, lifecycle, authority_revision, mode, previous, state.agent_registry.as_ref(),
-    ) else {
+    let Some(mut projected) = binding::project(route, lifecycle, authority_revision, mode, previous, state.agent_registry.as_ref()) else {
         return Ok(false);
     };
-    if projected.binding.state == AgentState::Active
-        && let Some(stop) = lifecycle.stop_candidate.as_ref()
-        && let Some(turn_id) = stop.turn_id.as_deref()
-        && let Some(probe) = state.provider_runtime.get(&projected.binding.kind).and_then(|runtime| runtime.turn_end_probe())
-    {
-        for _ in 0..STOP_SETTLEMENT_ATTEMPTS {
-            if matches!(probe.read_turn_end(&projected.binding), Ok(Some(end)) if end.turn_id == turn_id) {
-                projected.binding.state = AgentState::WaitingForInput;
-                break;
+    if let Some(turn_id) = binding::stop_turn(lifecycle, &projected.binding) {
+        if let Some(replay) = current.as_ref().filter(|a| a.version == version && a.status == CodexAuthorityStatus::Active) {
+            if replay.binding.state == AgentState::WaitingForInput {
+                projected.settle_stop(previous);
             }
-            tokio::time::sleep(STOP_SETTLEMENT_DELAY).await;
+        } else {
+            for _ in 0..STOP_SETTLEMENT_ATTEMPTS {
+                if super::control::read_stop_turn_end(state, &projected.binding, turn_id).is_some() {
+                    projected.settle_stop(previous);
+                    break;
+                }
+                tokio::time::sleep(STOP_SETTLEMENT_DELAY).await;
+            }
         }
     }
     let runtime = runtime_identity(&expected);
@@ -71,13 +71,7 @@ pub(super) async fn publish_lifecycle(
         &authority,
         || publication_fence.verify(),
     )?;
-    ensure!(
-        store
-            .read_raw_in_namespace(state.namespace.lease())?
-            .as_ref()
-            == Some(&projected.binding),
-        super::super::constants::CODEX_PROJECTION_BINDING_CHANGED
-    );
+    ensure!(store.read_raw_in_namespace(state.namespace.lease())?.as_ref() == Some(&projected.binding), super::super::constants::CODEX_PROJECTION_BINDING_CHANGED);
     publish_event(state, before.as_ref(), projected.binding);
     Ok(true)
 }
@@ -99,13 +93,7 @@ pub(super) async fn invalidate(state: &WorkerState) -> Result<bool> {
     let Some(authority) = authority else {
         return Ok(false);
     };
-    ensure!(
-        store
-            .read_raw_in_namespace(state.namespace.lease())?
-            .as_ref()
-            == Some(&authority.binding),
-        super::super::constants::CODEX_PROJECTION_BINDING_CHANGED
-    );
+    ensure!(store.read_raw_in_namespace(state.namespace.lease())?.as_ref() == Some(&authority.binding), super::super::constants::CODEX_PROJECTION_BINDING_CHANGED);
     publish_event(state, before.as_ref(), authority.binding);
     Ok(true)
 }
@@ -172,23 +160,17 @@ fn publish_event(state: &WorkerState, before: Option<&AgentBinding>, after: Agen
 }
 
 fn same_subject(left: &AgentBinding, right: &AgentBinding) -> bool {
-    left.kind == AgentKind::Codex
-        && right.kind == AgentKind::Codex
-        && left.terminal_id == right.terminal_id
-        && left.provider_session_id == right.provider_session_id
-        && left.executable == right.executable
-        && left.cwd == right.cwd
-        && left.evidence_path == right.evidence_path
-        && left.data_home == right.data_home
+    left.kind == AgentKind::Codex && right.kind == AgentKind::Codex &&
+        left.terminal_id == right.terminal_id && left.provider_session_id == right.provider_session_id &&
+        left.executable == right.executable && left.cwd == right.cwd &&
+        left.evidence_path == right.evidence_path && left.data_home == right.data_home
 }
 
 #[cfg(test)]
-#[cfg(any(not(test), feature = "yolo-unit-tests"))]
 #[cfg(any(feature = "yolo-integration-tests", feature = "yolo-worker-unit-runtime"))]
 #[path = "../../../unit_tests/codex_hook/projection/projection_publication_order_tests.rs"]
 mod order_tests;
 #[cfg(test)]
-#[cfg(any(not(test), feature = "yolo-unit-tests"))]
 #[cfg(any(feature = "yolo-integration-tests", feature = "yolo-worker-unit-runtime"))]
 #[path = "../../../unit_tests/codex_hook/projection/projection_publication_revocation_tests.rs"]
 mod revocation_tests;

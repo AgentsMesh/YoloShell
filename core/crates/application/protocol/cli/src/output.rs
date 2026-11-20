@@ -18,3 +18,7 @@ pub(crate) fn write(command: Command, output: &mut impl Write) -> Result<()> {
     output.write_all(JSON_LINE_END)?;
     Ok(())
 }
+
+pub(crate) fn write_command(command: ProtocolCommand, output: &mut impl Write) -> Result<()> {
+    write(Command::Protocol { command }, output)
+}

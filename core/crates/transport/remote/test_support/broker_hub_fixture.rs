@@ -2,22 +2,21 @@ use super::broker_command_fixture::BrokerCommandCleanupFixture;
 use super::constants::{COMMAND_STDOUT, NORMAL_PROGRAM};
 use super::memory_fs::FailurePoint;
 use crate::remote::{CommandPolicy, CommandRequest, MultiplexedSshConnection};
-use std::net::{Ipv4Addr, SocketAddr};
+use std::path::{Path, PathBuf};
 
-const DYNAMIC_PORT: u16 = 0;
+const TARGET_SOCKET: &str = "hub.sock";
 
 impl BrokerCommandCleanupFixture {
-    pub async fn enable_hub_peer(&self) -> tokio::net::TcpListener {
-        let listener = tokio::net::TcpListener::bind(SocketAddr::new(
-            Ipv4Addr::LOCALHOST.into(),
-            DYNAMIC_PORT,
-        ))
-        .await
-        .unwrap();
-        self.memory
-            .filesystem
-            .set_hub_peer_target(listener.local_addr().unwrap());
-        listener
+    pub async fn enable_hub_peer(&self) -> HubPeerTarget {
+        let root = tempfile::tempdir().unwrap();
+        let path = root.path().join(TARGET_SOCKET);
+        let listener = tokio::net::UnixListener::bind(&path).unwrap();
+        self.memory.filesystem.set_hub_peer_target(path.clone());
+        HubPeerTarget {
+            _root: root,
+            listener,
+            path,
+        }
     }
     pub fn delay_next_channel(&self) {
         self.memory.filesystem.fail_once(FailurePoint::ChannelOpen);
@@ -48,5 +47,17 @@ impl BrokerCommandCleanupFixture {
             ))
             .await
             .unwrap();
+    }
+}
+
+pub struct HubPeerTarget {
+    _root: tempfile::TempDir,
+    pub listener: tokio::net::UnixListener,
+    pub path: PathBuf,
+}
+
+impl HubPeerTarget {
+    pub fn path(&self) -> &Path {
+        &self.path
     }
 }

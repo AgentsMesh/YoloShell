@@ -8,18 +8,31 @@ use crate::{
 use crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
 
 #[test]
-fn enter_advances_text_fields_and_cancel_button_preserves_the_previous_draft() {
+fn enter_saves_a_complete_peer_form_and_cancel_preserves_the_previous_draft() {
     let mut manager = manager();
-    activate(&mut manager, Action::Listener);
-    field(&mut manager, FieldId::Listen, "127.0.0.1:0");
-    key(&mut manager, KeyCode::Enter);
-    assert_eq!(
-        manager.form.as_ref().unwrap().focused,
-        manager.form.as_ref().unwrap().fields.len()
+    let pin = peer_identity();
+    manager.page(Page::Peers);
+    activate(&mut manager, Action::AddPeer);
+    field(&mut manager, FieldId::Hub, &pin.hub().to_string());
+    field(
+        &mut manager,
+        FieldId::Key,
+        &crate::wire_fields::key_text(pin),
     );
-    key(&mut manager, KeyCode::Tab);
-    key(&mut manager, KeyCode::Enter);
-    assert!(manager.form.is_none() && !manager.dirty());
+    field(&mut manager, FieldId::Ssh, "test-machine");
+    field(
+        &mut manager,
+        FieldId::Socket,
+        "/run/user/1000/yolo/hub/peer.sock",
+    );
+    save(&mut manager);
+    assert!(manager.form.is_none() && manager.dirty());
+    let before = manager.draft.clone();
+    manager.page(Page::Peer(pin.hub()));
+    activate(&mut manager, Action::EditPeer(pin.hub()));
+    field(&mut manager, FieldId::Ssh, "changed");
+    key(&mut manager, KeyCode::Esc);
+    assert_eq!(manager.draft, before);
 }
 
 #[test]
@@ -66,7 +79,7 @@ fn navigation_checks_unknown_results_without_resending_mutations_and_allows_safe
 
 #[test]
 fn clear_navigation_and_unhandled_keys_are_safe_at_field_and_command_boundaries() {
-    let mut form = Form::listener(None);
+    let mut form = Form::peer(None);
     for code in [
         KeyCode::Right,
         KeyCode::Left,
@@ -108,7 +121,7 @@ fn errors_and_unapplied_receipts_keep_the_submitted_draft_blocked() {
     reply.state.last_change = change.request_id;
     reply.state.configuration = change.configuration;
     reply.applied = false;
-    manager.complete(request.token, Ok(reply));
+    manager.complete(request.token, Ok(configuration(reply)));
     assert!(manager.blocked && manager.unresolved.is_some());
     let query = manager.query(true);
     manager.complete(
@@ -119,6 +132,6 @@ fn errors_and_unapplied_receipts_keep_the_submitted_draft_blocked() {
     let query = manager.query(false);
     let mut malformed = manager.base.clone().unwrap();
     malformed.state.schema_version = 0;
-    manager.complete(query.token, Ok(malformed));
+    manager.complete(query.token, Ok(configuration(malformed)));
     assert!(manager.blocked);
 }

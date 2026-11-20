@@ -27,3 +27,5 @@ pub(crate) const OBSERVATION_WORKER_BUSY: &str =
 pub(crate) const OBSERVATION_LOAD_TIMEOUT: Duration = Duration::from_secs(5);
 pub(crate) const OBSERVATION_WORKER_STALLED: &str =
     "retired observation cache worker remains blocked; storage custody is retained";
+
+pub(crate) const NO_DIALER: &str = "this Hub has no SSH peer dialer";

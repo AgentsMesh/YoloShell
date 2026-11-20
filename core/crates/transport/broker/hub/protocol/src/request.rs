@@ -1,27 +1,40 @@
 use crate::{BrokerHubConnectionBinding, BrokerHubError};
 use serde::{Deserialize, Serialize};
-use std::net::SocketAddr;
+use std::path::{Component, Path, PathBuf};
 use yolo_hub_delegation::PeerIdentity;
+
+const MAX_SOCKET_PATH_BYTES: usize = 100;
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct BrokerHubOpenRequest {
     pub binding: BrokerHubConnectionBinding,
-    pub endpoint: SocketAddr,
+    pub socket: PathBuf,
     pub peer: PeerIdentity,
 }
 
 impl BrokerHubOpenRequest {
     pub fn validate(&self) -> Result<(), BrokerHubError> {
         self.binding.validate()?;
-        if !self.endpoint.ip().is_loopback()
-            || self.endpoint.port() == u16::default()
-            || matches!(self.endpoint, SocketAddr::V6(value) if value.scope_id() != 0 || value.flowinfo() != 0)
-        {
-            return Err(BrokerHubError::Endpoint);
-        }
-        Ok(())
+        validate_socket(&self.socket)
     }
+}
+
+fn validate_socket(path: &Path) -> Result<(), BrokerHubError> {
+    let encoded = path.as_os_str().as_encoded_bytes();
+    let raw = path.to_str().ok_or(BrokerHubError::Endpoint)?;
+    if !path.is_absolute()
+        || raw.split('/').any(|part| part == "." || part == "..")
+        || encoded.is_empty()
+        || encoded.len() > MAX_SOCKET_PATH_BYTES
+        || encoded.iter().any(|byte| byte.is_ascii_control())
+        || !path
+            .components()
+            .all(|component| matches!(component, Component::RootDir | Component::Normal(_)))
+    {
+        return Err(BrokerHubError::Endpoint);
+    }
+    Ok(())
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]

@@ -21,6 +21,7 @@ impl LocalBackend {
         &self,
         request: &yolo_hub_agent_protocol::AgentStartRequest,
     ) -> Result<Reply, PublicError> {
+        self.refresh_runs().await?;
         yolo_hub_local_platform::agent_start(
             self.hub,
             &self.client,
@@ -73,6 +74,7 @@ impl LocalBackend {
         &self,
         request: &GetPlatformSnapshotRequest,
     ) -> Result<Reply, PublicError> {
+        self.refresh_runs().await?;
         let terminals = self.terminals(false).await?;
         let agents = match self.observe_agents().await {
             Ok(agents) => agents,
@@ -97,10 +99,10 @@ impl LocalBackend {
         let sweep = self
             .observe_catalogue(ObservationScope::Complete, false)
             .await;
-        let agents = self
+        let applied = self
             .apply_catalogue(sweep, true, SweepPolicy::ObserveAgents(None))
-            .await?
-            .agents;
+            .await?;
+        let agents = applied.agents;
         self.adopt_observed(&agents).await;
         Ok(agents)
     }
@@ -176,7 +178,11 @@ impl LocalBackend {
             .collect();
         let mut resolved = Vec::new();
         for terminal in terminals {
-            resolved.push(*current.get(&terminal.terminal_id).ok_or(PublicError::NotFound)?);
+            resolved.push(
+                *current
+                    .get(&terminal.terminal_id)
+                    .ok_or(PublicError::NotFound)?,
+            );
         }
         request.targets.extend(resolved);
         request.targets.sort();

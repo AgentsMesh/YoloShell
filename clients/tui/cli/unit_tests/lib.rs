@@ -1,7 +1,11 @@
 use crate::{arguments::Arguments, selection::Selection};
+mod aux_commands;
 mod clients;
 mod commands;
 mod entry;
+mod hook;
+mod machine;
+mod machine_commands;
 mod layouts;
 mod lifecycle;
 use clap::{Parser, error::ErrorKind};
@@ -15,6 +19,7 @@ mod recipe_edges;
 mod remote_arguments;
 mod remote_credentials;
 mod remote_files;
+mod service;
 #[path = "../test_support/remote_fixture.rs"]
 mod remote_fixture;
 
@@ -58,8 +63,9 @@ fn empty_connection_selects_automatic_local_and_rejects_workspace() {
 
 #[test]
 fn incomplete_or_conflicting_explicit_connection_never_falls_back() {
+    let incomplete = Arguments::try_parse_from([PROGRAM, HUB_ARGUMENT, HUB]).unwrap();
+    assert!(incomplete.selection().is_err());
     for args in [
-        vec![PROGRAM, HUB_ARGUMENT, HUB],
         vec![PROGRAM, SOCKET_ARGUMENT, SOCKET],
         vec![PROGRAM, ENDPOINT_ARGUMENT, LOCAL_ENDPOINT],
     ] {

@@ -5,7 +5,7 @@ use hmac::{Hmac, Mac};
 use sha1::Sha1;
 
 const KEY: &str = "AAAAC3NzaC1lZDI1NTE5AAAAITestKey";
-const OTHER_KEY: &str = "AAAAC3NzaC1lZDI1NTE5AAAan internal working treetherKey";
+const OTHER_KEY: &str = "AAAAC3NzaC1lZDI1NTE5AAAAITestKe2";
 
 fn endpoint(port: u16) -> RemoteEndpoint {
     RemoteEndpoint::new("stone", "Build.Example", port).unwrap()

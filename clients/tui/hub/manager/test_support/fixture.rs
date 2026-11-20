@@ -18,17 +18,20 @@ pub fn snapshot() -> ConfigurationSnapshot {
             configuration: Configuration::default(),
         },
         applied: true,
-        listen_address: None,
+        peer_socket: Some("/run/user/1000/yolo/hub/peer.sock".into()),
     }
+}
+pub fn configuration(snapshot: ConfigurationSnapshot) -> yolo_hub_rpc_protocol::Reply {
+    yolo_hub_rpc_protocol::Reply::Configuration { snapshot }
 }
 pub fn manager() -> Manager {
     let snapshot = snapshot();
     let (mut manager, request) = Manager::open(snapshot.state.identity.hub());
-    manager.complete(request.token, Ok(snapshot));
+    manager.complete(request.token, Ok(configuration(snapshot)));
     manager
 }
 pub fn edit(manager: &mut Manager) {
-    manager.draft.as_mut().unwrap().listen = Some("127.0.0.1:2222".parse().unwrap());
+    manager.draft.as_mut().unwrap().trusted_origins.push(peer_identity());
 }
 
 pub fn key(manager: &mut Manager, code: crossterm::event::KeyCode) -> Option<Effect> {
@@ -75,6 +78,14 @@ pub fn add_peer(manager: &mut Manager, identity: PeerIdentity) {
         FieldId::Key,
         &crate::wire_fields::key_text(identity),
     );
+    // This helper adds a provider-only pin with no dial, so import defaults off.
+    let form = manager.form.as_mut().unwrap();
+    form.focused = form
+        .fields
+        .iter()
+        .position(|field| field.id == FieldId::Import)
+        .unwrap();
+    key(manager, crossterm::event::KeyCode::Char(' '));
     save(manager);
     assert!(manager.form.is_none());
 }

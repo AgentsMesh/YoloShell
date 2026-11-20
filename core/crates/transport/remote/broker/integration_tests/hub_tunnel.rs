@@ -15,13 +15,13 @@ async fn one_connection_supports_independent_tunnels_and_client_recreation_witho
         .open_hub_peer(request.clone(), deadline())
         .await
         .unwrap();
-    let (mut first_remote, _) = fixture.target.accept().await.unwrap();
+    let (mut first_remote, _) = fixture.target.listener.accept().await.unwrap();
     let mut second = fixture
         .client()
         .open_hub_peer(request.clone(), deadline())
         .await
         .unwrap();
-    let (mut second_remote, _) = fixture.target.accept().await.unwrap();
+    let (mut second_remote, _) = fixture.target.listener.accept().await.unwrap();
     let status = fixture.client().status().await.unwrap();
     assert_eq!(status.connection_id, Some(request.binding.connection_id));
     first.write_all(PAYLOAD).await.unwrap();
@@ -74,7 +74,7 @@ async fn stale_identity_wrong_profile_and_rejected_endpoint_never_reconnect_or_p
         matches!(fixture.client().open_hub_peer(wrong, deadline()).await, Err(BrokerClientError::Remote { code, .. }) if code == BrokerHubError::ProfileMismatch.code())
     );
     let mut wrong = request.clone();
-    wrong.endpoint.set_port(WRONG_PORT);
+    wrong.socket = WRONG_SOCKET.into();
     assert!(
         fixture
             .client()
@@ -110,7 +110,7 @@ async fn rotation_keeps_admitted_tunnel_alive_until_its_local_owner_closes() {
         .open_hub_peer(request.clone(), deadline())
         .await
         .unwrap();
-    let (mut remote, _) = fixture.target.accept().await.unwrap();
+    let (mut remote, _) = fixture.target.listener.accept().await.unwrap();
     fixture
         .client()
         .shutdown(request.binding.profile.config_revision)

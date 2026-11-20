@@ -12,8 +12,8 @@ capability, a substituted origin/session, or a finalized creation cannot authori
 cleanup. Public replies do not echo the capability. Capabilities belong in private
 input, not process arguments or diagnostics.
 
-Normal terminal lifecycle uses the public `Terminal` command (`yolo terminate`
-and `yolo archive`) and never requires a creation capability. Creation cleanup
+Normal terminal lifecycle uses the public `Terminal` command (`yolo terminal terminate`
+and `yolo terminal archive`) and never requires a creation capability. Creation cleanup
 is the recovery path for a creation whose binding failed.
 
 The internal Host control surface accepts that private input from stdin as

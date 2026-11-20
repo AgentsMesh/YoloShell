@@ -1,5 +1,5 @@
 use crate::constants::*;
-use anyhow::{Result, ensure};
+use anyhow::{Context, Result, ensure};
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 
@@ -27,7 +27,8 @@ impl LocalProfile {
     /// Reads an explicit private profile; never discovers or creates another profile.
     pub fn load(path: &Path) -> Result<Self> {
         validate_path(path)?;
-        let profile: Self = yolo_paths::read_json(path)?;
+        let profile: Self = yolo_paths::read_json(path)
+            .with_context(|| format!("read local profile {}", path.display()))?;
         profile.validate()?;
         Ok(profile)
     }

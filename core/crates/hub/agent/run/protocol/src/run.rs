@@ -14,15 +14,18 @@ pub struct AgentRunAddress {
 }
 
 /// Fill each run's `current` from the observed terminal-to-execution pairs.
-pub fn annotate_current(
-    runs: &mut [AgentRunSummary],
-    observed: &[(TerminalId, AgentTarget)],
-) {
+pub fn annotate_current(runs: &mut [AgentRunSummary], observed: &[(TerminalId, AgentTarget)]) {
     let current: BTreeMap<TerminalId, AgentTarget> = observed.iter().copied().collect();
     for run in runs {
         run.current = run
             .terminal
-            .and_then(|terminal| current.get(&terminal.terminal_id).copied());
+            .filter(|_| run.state == AgentRunState::Launched)
+            .and_then(|terminal| {
+                current
+                    .get(&terminal.terminal_id)
+                    .copied()
+                    .filter(|target| target.address.hub_id == terminal.hub_id)
+            });
     }
 }
 
@@ -33,7 +36,7 @@ pub enum AgentRunState {
     Starting,
     /// The terminal was created; the provider binding may still be awaiting.
     Launched,
-    /// The run's terminal was stopped through `agent_stop`.
+    /// The Host confirmed the terminal ended or was archived, or the launch was cancelled.
     Stopped,
 }
 

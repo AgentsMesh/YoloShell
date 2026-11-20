@@ -12,34 +12,38 @@ use yolo_hub_identity::{HubId, WorkspaceId};
 use yolo_hub_rpc_protocol::{Command as Rpc, Reply};
 use yolo_hub_workspace_protocol::{
     CreateWorkspaceFields, CreateWorkspaceRequest, ListWorkspacesFields, ListWorkspacesRequest,
-    MembershipChange, UpdateWorkspaceFields, UpdateWorkspaceRequest, WorkspaceAddress,
-    WorkspaceSummary, WORKSPACE_PROTOCOL_SCHEMA_VERSION,
+    MembershipChange, UpdateWorkspaceFields, UpdateWorkspaceRequest,
+    WORKSPACE_PROTOCOL_SCHEMA_VERSION, WorkspaceAddress, WorkspaceSummary,
 };
 
 pub(crate) use crate::selector::resolve;
 
 pub async fn run(arguments: Arguments) -> Result<()> {
     match arguments.command {
-        Command::Workspace(options) => {
-            let mut client = connection::connect(&Connection {
-                socket: options.socket,
-                hub: options.hub,
-                local_profile: options.local_profile,
-            })
-            .await?;
-            let hub = client.hello().hub_id;
-            match options.command {
-                WorkspaceCommand::Create(args) => create(&mut client, hub, args).await,
-                WorkspaceCommand::Update(args) => update(&mut client, hub, args).await,
-                WorkspaceCommand::Get(args) => get(&mut client, hub, args).await,
-                WorkspaceCommand::List(args) => list(&mut client, hub, args).await,
-                WorkspaceCommand::Members(args) => {
-                    crate::members::members(&mut client, hub, args).await
-                }
-            }
-        }
-        Command::Worktree(options) => crate::worktree::run(options).await,
+        Command::Workspace(options) => run_workspace(options).await,
+        Command::Worktree(options) => run_worktree(options).await,
     }
+}
+
+pub async fn run_workspace(options: crate::arguments::Options) -> Result<()> {
+    let mut client = connection::connect(&Connection {
+        socket: options.socket,
+        hub: options.hub,
+        local_profile: options.local_profile,
+    })
+    .await?;
+    let hub = client.hello().hub_id;
+    match options.command {
+        WorkspaceCommand::Create(args) => create(&mut client, hub, args).await,
+        WorkspaceCommand::Update(args) => update(&mut client, hub, args).await,
+        WorkspaceCommand::Get(args) => get(&mut client, hub, args).await,
+        WorkspaceCommand::List(args) => list(&mut client, hub, args).await,
+        WorkspaceCommand::Members(args) => crate::members::members(&mut client, hub, args).await,
+    }
+}
+
+pub async fn run_worktree(options: crate::arguments::WorktreeOptions) -> Result<()> {
+    crate::worktree::run(options).await
 }
 
 async fn create(client: &mut LocalClient, hub: HubId, args: CreateArgs) -> Result<()> {
@@ -70,13 +74,19 @@ async fn update(client: &mut LocalClient, hub: HubId, args: UpdateArgs) -> Resul
         schema_version: WORKSPACE_PROTOCOL_SCHEMA_VERSION,
         request_id: Uuid::new_v4(),
         address: current.address,
-        expected_revision: args.expected_revision,
+        expected_revision: args.expected_revision.unwrap_or(current.revision),
         name: args.name,
         labels,
         members,
     })?;
     let destination = current.address.hub_id;
-    let workspace = match call(client, destination, Rpc::UpdateWorkspace { change: request }).await? {
+    let workspace = match call(
+        client,
+        destination,
+        Rpc::UpdateWorkspace { change: request },
+    )
+    .await?
+    {
         Reply::Workspace { workspace } => workspace,
         _ => return Err(unexpected()),
     };

@@ -35,6 +35,14 @@ pub(crate) struct StoredRun {
     pub(crate) parent: Option<AgentRunAddress>,
     pub(crate) terminal: Option<TerminalAddress>,
     pub(crate) state: AgentRunState,
+    /// A stopped run can follow a replacement PTY after an observed exit.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub(crate) ended_runtime: Option<Uuid>,
+    /// Latest runtime incarnation accepted by the observation fence.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub(crate) observed_runtime: Option<Uuid>,
+    #[serde(default)]
+    pub(crate) terminal_archived: bool,
     pub(crate) start_token: Uuid,
     pub(crate) created_at_ms: i64,
     pub(crate) updated_at_ms: i64,
@@ -70,7 +78,8 @@ impl RunRecord {
         for run in &self.runs {
             ensure!(run.address.hub_id == hub_id, "agent run origin mismatch");
             ensure!(
-                run.workspace.is_none_or(|workspace| workspace.hub_id == hub_id),
+                run.workspace
+                    .is_none_or(|workspace| workspace.hub_id == hub_id),
                 "agent run workspace origin mismatch"
             );
             if let Some(parent) = run.parent {
@@ -85,6 +94,17 @@ impl RunRecord {
             ensure!(ids.insert(run.address.run_id), "duplicate agent run id");
             ensure!(tokens.insert(run.start_token), "duplicate start token");
             ensure!(run.revision >= FIRST_AGENT_RUN_REVISION, "invalid revision");
+            ensure!(
+                run.ended_runtime.is_none_or(|epoch| !epoch.is_nil()
+                    && run.state == AgentRunState::Stopped
+                    && run.terminal.is_some()),
+                "invalid ended runtime"
+            );
+            ensure!(
+                run.observed_runtime
+                    .is_none_or(|epoch| !epoch.is_nil() && run.terminal.is_some()),
+                "invalid observed runtime"
+            );
             validate_name(&run.name).map_err(|_| anyhow::anyhow!("invalid run name"))?;
             validate_aliases(&run.aliases).map_err(|_| anyhow::anyhow!("invalid aliases"))?;
             validate_labels(&run.labels).map_err(|_| anyhow::anyhow!("invalid labels"))?;
@@ -140,6 +160,9 @@ pub(crate) fn stored_run(
         parent: request.parent,
         terminal: None,
         state: AgentRunState::Starting,
+        ended_runtime: None,
+        observed_runtime: None,
+        terminal_archived: false,
         start_token: request.start_token,
         created_at_ms: now,
         updated_at_ms: now,
@@ -170,9 +193,4 @@ pub(crate) fn summary(run: &StoredRun) -> AgentRunSummary {
     }
 }
 
-pub(crate) fn now_ms() -> i64 {
-    std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .map(|duration| duration.as_millis() as i64)
-        .unwrap_or_default()
-}
+pub(crate) fn now_ms() -> i64 { std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(0, |d| d.as_millis() as i64) }

@@ -47,7 +47,7 @@ pub fn receipt(request: &RemoteBootstrapRequest) -> RemoteBootstrapReceiptFields
         schema_version: REMOTE_BOOTSTRAP_SCHEMA_VERSION,
         request_id: request.fields().request_id,
         peer: peer(REMOTE_HUB, REMOTE_KEY),
-        endpoint: std::net::SocketAddr::from((std::net::Ipv4Addr::LOCALHOST, PORT)),
+        peer_socket: "/run/user/1000/yolo/hub/peer.sock".into(),
         configuration_revision: FIRST_REVISION,
         bundle_id: request.fields().bundle.build_id().into(),
         build: ServiceBuild {

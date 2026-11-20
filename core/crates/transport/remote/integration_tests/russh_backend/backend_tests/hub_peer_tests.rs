@@ -24,7 +24,7 @@ async fn hub_peer_exec_and_sftp_share_one_authenticated_connection_and_close_ind
     assert_eq!(peer.identity.purpose, ChannelPurpose::HubPeer);
     assert_eq!(peer.peer, fixture.request.peer());
     assert_eq!(executed.value.stdout, COMMAND_STDOUT);
-    let (mut socket, _) = timeout_at(deadline(), fixture.listener.accept())
+    let (mut socket, _) = timeout_at(deadline(), fixture.target.listener.accept())
         .await
         .unwrap()
         .unwrap();
@@ -43,7 +43,7 @@ async fn hub_peer_exec_and_sftp_share_one_authenticated_connection_and_close_ind
         .unwrap();
     assert_eq!(bytes, PAYLOAD);
     let mut sibling = connection.open_hub_peer(&fixture.request).await.unwrap();
-    let (mut sibling_socket, _) = timeout_at(deadline(), fixture.listener.accept())
+    let (mut sibling_socket, _) = timeout_at(deadline(), fixture.target.listener.accept())
         .await
         .unwrap()
         .unwrap();
@@ -75,7 +75,7 @@ async fn wrong_connection_and_server_rejection_do_not_open_or_poison_sibling_cha
     let fixture = PeerFixture::new().await;
     let stale = HubPeerRequest::new(
         uuid::Uuid::new_v4(),
-        fixture.request.endpoint(),
+        fixture.request.endpoint().clone(),
         fixture.request.peer(),
     )
     .unwrap();
@@ -83,15 +83,9 @@ async fn wrong_connection_and_server_rejection_do_not_open_or_poison_sibling_cha
         fixture.ssh.connection.open_hub_peer(&stale).await,
         Err(RemoteError::ChannelMismatch)
     ));
-    let denied_listener = tokio::net::TcpListener::bind(std::net::SocketAddr::new(
-        std::net::Ipv4Addr::LOCALHOST.into(),
-        DYNAMIC_PORT,
-    ))
-    .await
-    .unwrap();
     let denied = HubPeerRequest::new(
         fixture.request.connection_id(),
-        HubPeerEndpoint::new(denied_listener.local_addr().unwrap()).unwrap(),
+        HubPeerEndpoint::new("/run/user/1000/yolo/denied.sock").unwrap(),
         fixture.request.peer(),
     )
     .unwrap();
@@ -117,7 +111,7 @@ async fn closing_hub_peer_during_incoming_burst_does_not_disconnect_ssh() {
         &fixture.ssh,
         started,
         Phase::Accept,
-        fixture.listener.accept(),
+        fixture.target.listener.accept(),
     )
     .await;
     observe_phase(&fixture.ssh, started, Phase::Accept, async {

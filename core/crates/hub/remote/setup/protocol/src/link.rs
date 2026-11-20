@@ -1,5 +1,5 @@
 use anyhow::{Result, ensure};
-use yolo_hub_federation_settings::{DialTransport, Peer, PeerAddress};
+use yolo_hub_federation_settings::{Peer, PeerAddress};
 use yolo_hub_management_protocol::{ConfigurationChange, ConfigurationSnapshot};
 use yolo_remote_provisioning_protocol::{ProvisionOutcome, ProvisionStatus};
 use yolo_ssh_profile_protocol::SshProfileRef;
@@ -25,8 +25,8 @@ pub fn configuration_contains_link(
     )?;
     Ok(configuration.applied && peer.identity == enrollment.fields().peer && peer.consume
         && peer.dial.as_ref().is_some_and(|dial| {
-            matches!(&dial.transport, DialTransport::Ssh { profile: selected } if selected == &profile)
-                && dial.ssh_endpoint().is_ok_and(|endpoint| endpoint == enrollment.fields().endpoint)
+            dial.profile_id() == Some(profile.profile_id())
+                && dial.socket() == enrollment.fields().peer_socket.as_path()
         }))
 }
 
@@ -47,7 +47,10 @@ pub fn plan_link(
         anyhow::bail!(crate::constants::INVALID_REQUEST);
     };
     let remote = enrollment.fields().peer;
-    let dial = PeerAddress::ssh(request.profile()?, enrollment.fields().endpoint)?;
+    let dial = PeerAddress::profile(
+        request.profile()?.profile_id().to_owned(),
+        enrollment.fields().peer_socket.clone(),
+    )?;
     let mut configuration = baseline.state.configuration.clone();
     match configuration
         .peers

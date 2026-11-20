@@ -2,7 +2,7 @@ use crate::{Federation, constants::*, node::now_ms};
 use anyhow::Result;
 use std::sync::Arc;
 use tokio::{
-    net::TcpListener,
+    net::UnixListener,
     sync::watch,
     task::JoinSet,
     time::{Instant, interval, timeout_at},
@@ -11,7 +11,7 @@ use tokio::{
 impl Federation {
     pub async fn run(
         self: Arc<Self>,
-        listener: Option<TcpListener>,
+        listener: Option<UnixListener>,
         mut shutdown: watch::Receiver<bool>,
     ) -> Result<()> {
         if *shutdown.borrow() || self.is_closing() {
@@ -43,7 +43,7 @@ impl Federation {
             .config
             .peers
             .iter()
-            .filter(|peer| peer.dial.is_some())
+            .filter(|peer| peer.consume && peer.dial.is_some())
             .cloned()
         {
             tasks.spawn(self.clone().dial_loop(peer, stopped.clone()));
@@ -73,12 +73,7 @@ impl Federation {
         while tasks.join_next().await.is_some() {}
         let connections = std::mem::take(&mut *self.connections.write().await);
         for link in connections.into_values() {
-            let _ = self
-                .book
-                .lock()
-                .await
-                .disconnect(link.connection.peer().hub(), link.id);
-            let _ = link.connection.close(Instant::now() + STOP_TIMEOUT).await;
+            self.retire(&link).await;
         }
         self.observation_cache
             .wait_closed(Instant::now() + STOP_TIMEOUT)

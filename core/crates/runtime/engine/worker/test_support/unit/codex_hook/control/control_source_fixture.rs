@@ -2,9 +2,9 @@ use super::super::{
     binding::{self, ProjectionMode},
     test_support::{ProjectionFixture, registry},
 };
-use crate::agent::AgentBindingStore;
 use crate::agent::authority::{AuthorityProcessIdentity, AuthorityRuntimeIdentity};
 use crate::agent::codex::authority::CodexBindingAuthority;
+use crate::agent::{AgentBindingStore, AgentState};
 use crate::codex_hooks::CodexSnapshotLineage;
 use crate::namespace_lease::NamespaceLease;
 use anyhow::Result;
@@ -41,11 +41,15 @@ impl ControlSource {
     }
 
     pub fn persist_current(&self) {
+        self.persist_state(None);
+    }
+
+    pub fn persist_state(&self, state: Option<AgentState>) {
         let source = self.projection.authority.as_ref().unwrap();
         let lifecycle = source.runtime.lock_lifecycle_anyhow().unwrap();
         let reducer = lifecycle.reducer().unwrap();
         let previous = self.store.read_raw_in_namespace(&self.namespace).unwrap();
-        let projected = binding::project(
+        let mut projected = binding::project(
             &self.projection.route(),
             reducer.state(),
             reducer.revision(),
@@ -54,6 +58,9 @@ impl ControlSource {
             &registry(),
         )
         .unwrap();
+        if let Some(state) = state {
+            projected.binding.state = state;
+        }
         let worker = crate::process::ProcessIdentity::capture(std::process::id()).unwrap();
         let authority = CodexBindingAuthority::new_with_verified_resume_identity(
             AuthorityRuntimeIdentity {
@@ -100,9 +107,12 @@ impl ControlSource {
         self.projection
             .router
             .with_control_route(&authority, |entry| {
-                entry
-                    .runtime()
-                    .with_control_authority(entry, &authority, &registry(), callback)
+                entry.runtime().with_control_authority(
+                    entry,
+                    &authority,
+                    &registry(),
+                    |lineage, _, verify| callback(lineage, verify),
+                )
             })
     }
 }

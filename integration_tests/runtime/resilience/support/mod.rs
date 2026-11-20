@@ -1,5 +1,17 @@
 use super::*;
 use std::sync::Mutex;
+
+pub fn claude_install_spec() -> &'static yolo_hook_installation::HookInstallSpec {
+    install_spec("claude")
+}
+pub fn codex_install_spec() -> &'static yolo_hook_installation::HookInstallSpec {
+    install_spec("codex")
+}
+fn install_spec(provider: &str) -> &'static yolo_hook_installation::HookInstallSpec {
+    yolo_runtime::agent::builtin_provider_runtime()
+        .install_spec(provider)
+        .expect("builtin provider install spec")
+}
 mod bridge_rpc;
 mod child_guard;
 #[path = "cleanup/cleanup.rs"]

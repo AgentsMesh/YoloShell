@@ -21,6 +21,7 @@ pub struct Received {
     pub reply: PeerReply,
     pub updates: Option<RemoteUpdates>,
 }
+#[derive(Clone)]
 pub struct Client {
     connection: Connection,
 }
@@ -33,6 +34,9 @@ impl Client {
         Ok(Self {
             connection: Connection::open(stream, Protocol::Peer, deadline).await?,
         })
+    }
+    pub fn is_closed(&self) -> bool {
+        self.connection.is_closed()
     }
     pub async fn request(
         &self,

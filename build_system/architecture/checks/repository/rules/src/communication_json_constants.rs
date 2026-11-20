@@ -29,6 +29,7 @@ pub(super) const PUBLIC_DOCUMENT_FILES: &[&str] = &[
     "core/crates/application/trusted-plugin/cli/src/execution.rs",
     "core/crates/application/trusted-plugin/cli/src/install.rs",
     "core/crates/application/trusted-plugin/cli/src/install_registry.rs",
+    "clients/tui/hub/cli/src/output.rs",
     // Public CLI documents, not private IPC.
     "core/crates/application/protocol/cli/src/output.rs",
 ];

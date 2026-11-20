@@ -26,15 +26,16 @@ fn unknown_delivery_only_resolves_against_the_exact_applied_receipt() {
     };
     manager.complete(request.token, Err(ManagementError::OutcomeUnknown));
     let check = manager.query(true);
-    manager.complete(check.token, Ok(original.clone()));
+    manager.complete(check.token, Ok(configuration(original.clone())));
     assert!(manager.dirty() && manager.blocked && manager.unresolved.is_some());
     let mut applied = original;
+    let retained_socket = applied.peer_socket.clone();
     applied.state.revision += CONFIGURATION_REVISION_STEP;
     applied.state.last_change = change.request_id;
     applied.state.configuration = change.configuration;
-    applied.listen_address = applied.state.configuration.listen;
+    applied.peer_socket = retained_socket;
     let check = manager.query(true);
-    manager.complete(check.token, Ok(applied));
+    manager.complete(check.token, Ok(configuration(applied)));
     assert!(!manager.dirty() && !manager.blocked && manager.unresolved.is_none());
 }
 
@@ -44,13 +45,13 @@ fn stale_callbacks_and_changed_local_key_do_not_replace_current_configuration() 
     let before = manager.base.clone().unwrap();
     let stale = manager.query(false);
     let current = manager.query(false);
-    manager.complete(stale.token, Ok(snapshot()));
+    manager.complete(stale.token, Ok(configuration(snapshot())));
     assert_eq!(manager.base, Some(before.clone()));
     assert!(manager.pending());
     let mut malicious = before.clone();
     let key = [2; yolo_hub_delegation::ED25519_PUBLIC_KEY_BYTES];
     malicious.state.identity = yolo_hub_delegation::PeerIdentity::new(manager.entry, key).unwrap();
-    manager.complete(current.token, Ok(malicious));
+    manager.complete(current.token, Ok(configuration(malicious)));
     assert_eq!(manager.base, Some(before));
 }
 
@@ -72,7 +73,8 @@ fn inactive_persisted_configuration_can_be_explicitly_activated_without_inventin
     let (mut manager, request) = crate::Manager::open(snapshot.state.identity.hub());
     let mut inactive = snapshot;
     inactive.applied = false;
-    manager.complete(request.token, Ok(inactive));
+    inactive.peer_socket = None;
+    manager.complete(request.token, Ok(configuration(inactive)));
     assert!(!manager.dirty());
     assert!(manager.can_apply());
     assert!(manager.proposal().is_some());
@@ -91,7 +93,7 @@ fn reload_rejects_revision_rollback_and_same_revision_equivocation() {
             reply.state.revision -= CONFIGURATION_REVISION_STEP;
         }
         let request = manager.query(false);
-        manager.complete(request.token, Ok(reply));
+        manager.complete(request.token, Ok(configuration(reply)));
         assert_eq!(manager.base, before);
         assert!(manager.blocked);
     }

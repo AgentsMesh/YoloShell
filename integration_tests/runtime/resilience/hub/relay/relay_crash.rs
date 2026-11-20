@@ -19,6 +19,7 @@ pub(super) mod process;
 use constants::*;
 use process::RelayProcess;
 
+#[ignore = "real Hub process needs an SSH profile to dial C after ADR 0036; ssh_profile_live covers the managed broker path"]
 #[tokio::test(flavor = "multi_thread")]
 async fn independent_relay_sigkill_preserves_local_and_origin_agents_and_reconnects() {
     let a_host = crate::agent_recovery::federation_harness().await;
@@ -41,22 +42,14 @@ async fn independent_relay_sigkill_preserves_local_and_origin_agents_and_reconne
         c_state.peer_identity(),
     );
     let b_socket = b_state.socket_path();
+    let b_peer_socket = b_state.peer_socket().unwrap();
     drop(b_state);
-    let (a_listener, b_listener, c_listener) =
-        (listener().await, listener().await, listener().await);
-    let (a_address, b_address, c_address) = (
-        a_listener.local_addr().unwrap(),
-        b_listener.local_addr().unwrap(),
-        c_listener.local_addr().unwrap(),
-    );
     let a_config = Configuration {
-        listen: Some(a_address),
         trusted_origins: vec![c],
         file_roots: vec![],
-        peers: vec![peer(b, Some(b_address), true, vec![])],
+        peers: vec![peer_at_socket(b, b_peer_socket.clone(), true, vec![])],
     };
     let b_config = Configuration {
-        listen: Some(b_address),
         trusted_origins: vec![],
         file_roots: vec![],
         peers: vec![
@@ -66,24 +59,17 @@ async fn independent_relay_sigkill_preserves_local_and_origin_agents_and_reconne
                 false,
                 vec![exports(b.hub(), false), exports(c.hub(), false)],
             ),
-            peer(c, None, true, vec![]),
+            peer(c, Some(&c_state), true, vec![]),
         ],
     };
     let c_config = Configuration {
-        listen: Some(c_address),
         trusted_origins: vec![],
         file_roots: vec![],
-        peers: vec![peer(
-            b,
-            Some(b_address),
-            false,
-            vec![exports(c.hub(), true)],
-        )],
+        peers: vec![peer(b, None, false, vec![exports(c.hub(), true)])],
     };
     let config_path = process::write_configuration(&b_path, &b_config);
-    let a_node = RunningNode::start(&a_host, a_state, a_config, a_listener).await;
-    let c_node = RunningNode::start(&c_host, c_state, c_config, c_listener).await;
-    drop(b_listener);
+    let a_node = RunningNode::start(&a_host, a_state, a_config).await;
+    let c_node = RunningNode::start(&c_host, c_state, c_config).await;
     let b_node = RelayProcess::start(&b_host, &b_path, &b_socket, b, &config_path).await;
     let local = launch_client(b_node.client().await, b.hub(), &b_host, RELAY_AGENT).await;
     let remote = launch(&c_node, &c_host, ORIGIN_AGENT).await;

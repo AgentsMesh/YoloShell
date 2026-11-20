@@ -1,0 +1,10 @@
+pub const PROGRAM: &str = "yolo";
+pub const WORKSPACE: &str = "workspace";
+pub const UPDATE: &str = "update";
+pub const NAME: &str = "--name";
+pub const EXPECTED_REVISION: &str = "--expected-revision";
+pub const WORKTREE: &str = "worktree";
+pub const CREATE: &str = "create";
+pub const TRUST_REPOSITORY: &str = "--trust-repository";
+pub const PARENT: &str = "parent";
+pub const WORKTREE_NAME: &str = "worktree-name";
