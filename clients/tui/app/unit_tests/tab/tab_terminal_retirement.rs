@@ -137,3 +137,27 @@ fn archived_record_retires_the_binding_and_stays_in_history() {
         vec![address]
     );
 }
+
+#[test]
+fn retiring_the_entry_terminal_keeps_its_shared_layout_while_a_remote_tab_is_active() {
+    let session = fixtures::session();
+    let address = session.fields().address;
+    let mut state = state_with(std::slice::from_ref(&session));
+    state.entry_hub = address.hub_id;
+    state.tabs = yolo_tui_tab::TabCatalog::new(state.entry_hub, LocalTabView::default());
+    let entry_tab = state.tabs.active().id;
+    bind_as_terminal_tab(&mut state, address);
+    state
+        .tabs
+        .select_machine(yolo_hub_identity::HubId::new())
+        .unwrap();
+    let remote_tab = state.tabs.active().clone();
+
+    state.replace_terminals(vec![ended(&session)]);
+
+    assert_eq!(state.tabs.active(), &remote_tab);
+    let shared = state.tabs.shared_tabs(state.entry_hub).unwrap();
+    assert_eq!(shared.len(), 1);
+    assert_eq!(shared[0].id, entry_tab);
+    assert!(shared[0].root.panes().iter().all(|pane| pane.terminal.is_none()));
+}

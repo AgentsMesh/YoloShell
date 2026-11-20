@@ -88,6 +88,23 @@ fn exited_tab_does_not_remove_its_live_sibling() {
 }
 
 #[test]
+fn exiting_the_last_remote_tab_returns_to_the_entry_machine() {
+    let session = fixtures::session();
+    let address = session.fields().address;
+    let mut state = state_with(std::slice::from_ref(&session));
+    let entry_tab = state.tabs.active().id;
+    state.tabs.select_machine(address.hub_id).unwrap();
+    bind_as_terminal_tab(&mut state, address);
+    state.mode = Mode::Terminal;
+
+    state.replace_terminals(vec![ended(&session)]);
+
+    assert_eq!(state.tabs.entries().len(), 1);
+    assert_eq!(state.tabs.machine(), state.entry_hub);
+    assert_eq!(state.tabs.active().id, entry_tab);
+}
+
+#[test]
 fn exited_pane_leaves_the_rest_of_its_tab_interactive() {
     let (mut state, first, second) = panes::state();
     let first_pane = state

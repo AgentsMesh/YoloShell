@@ -106,14 +106,15 @@ impl TabCatalog {
         self.remove_entry(id)
     }
 
-    /// Low-level removal used after a dead terminal empties a tab. The owning
-    /// machine must still have another tab, or the caller must replace the view.
+    /// Retiring a terminal can remove the last tab of a remote machine.
+    /// The catalog must still contain a tab on some machine.
     pub fn remove_entry(&mut self, id: Uuid) -> Result<()> {
         let index = self
             .entries()
             .iter()
             .position(|entry| entry.id == id)
             .ok_or_else(|| anyhow::anyhow!(ACTIVE_ERROR))?;
+        ensure!(self.entries().len() > 1, LAST_TAB);
         let machine = self.entries()[index].machine;
         let before = self
             .entries()
@@ -131,7 +132,6 @@ impl TabCatalog {
             .collect();
         if remaining.is_empty() {
             self.0.active_by_machine.remove(&machine);
-            ensure!(!self.0.entries.is_empty(), LAST_TAB);
             if self.0.machine == machine {
                 self.0.machine = self.0.entries[0].machine;
             }
