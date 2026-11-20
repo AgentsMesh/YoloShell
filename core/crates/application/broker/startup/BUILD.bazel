@@ -1,0 +1,87 @@
+load("@rules_rust//rust:defs.bzl", "rust_library")
+load("//build_system/bazel/rust:isolated_test.bzl", "isolated_rust_test")
+load("//build_system/bazel/rust:test_features.bzl", "INTEGRATION_TEST_FEATURES", "UNIT_TEST_FEATURES")
+
+package(default_visibility = ["//visibility:public"])
+
+_SOURCES = glob(["src/**/*.rs"])
+
+_SUPPORT = glob(["test_support/**/*.rs"])
+
+_DEPS = [
+    "//core/crates/application/broker/profile/authority:yolo_broker_profile_authority",
+    "//core/crates/application/broker/child/custody:yolo_broker_child_custody",
+    "//core/crates/application/broker/supervision:yolo_broker_supervision",
+    "//core/crates/application/broker/supervision/state:yolo_broker_supervision_state",
+    "//core/crates/runtime/engine/process:yolo_process",
+    "//core/crates/transport/broker/launch/authority:yolo_broker_launch_authority",
+    "//core/crates/transport/broker/hub/protocol:yolo_broker_hub_protocol",
+    "//core/crates/transport/remote/broker:yolo_remote_broker",
+    "@crates//:anyhow",
+    "@crates//:tokio",
+    "@crates//:uuid",
+]
+
+_TEST_DEPS = [dependency for dependency in _DEPS if dependency != "//core/crates/application/broker/supervision:yolo_broker_supervision"] + [
+    "//core/crates/transport/runtime/testing",
+    "//core/crates/application/broker/supervision:test_support",
+    "//core/crates/application/support:yolo_application_test_fixtures",
+    "//core:yolo_runtime",
+    "//core/crates/transport/remote:yolo_remote",
+    "@crates//:libc",
+    "@crates//:serde",
+    "@crates//:serde_json",
+    "@crates//:tempfile",
+]
+
+_TEST_ALIASES = {"//core/crates/application/broker/supervision:test_support": "yolo_broker_supervision"}
+
+rust_library(
+    name = "yolo_broker_startup",
+    srcs = _SOURCES,
+    crate_name = "yolo_broker_startup",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    deps = _DEPS,
+)
+
+rust_library(
+    name = "test_support",
+    testonly = True,
+    srcs = _SUPPORT,
+    aliases = _TEST_ALIASES,
+    crate_name = "yolo_broker_startup_test_support",
+    crate_root = "test_support/lib.rs",
+    edition = "2024",
+    deps = _TEST_DEPS + [":yolo_broker_startup"],
+)
+
+isolated_rust_test(
+    name = "unit_tests",
+    srcs = _SOURCES + _SUPPORT + glob(["unit_tests/**/*.rs"]),
+    aliases = _TEST_ALIASES,
+    crate_features = UNIT_TEST_FEATURES,
+    crate_name = "yolo_broker_startup_unit_tests",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    deps = _TEST_DEPS,
+)
+
+isolated_rust_test(
+    name = "integration_tests",
+    srcs = _SOURCES + _SUPPORT + glob(["integration_tests/**/*.rs"]),
+    aliases = _TEST_ALIASES,
+    crate_features = INTEGRATION_TEST_FEATURES,
+    crate_name = "yolo_broker_startup_integration_tests",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    deps = _TEST_DEPS,
+)
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = _SOURCES + _SUPPORT + glob([
+        "unit_tests/**/*.rs",
+        "integration_tests/**/*.rs",
+    ]) + ["BUILD.bazel"],
+)

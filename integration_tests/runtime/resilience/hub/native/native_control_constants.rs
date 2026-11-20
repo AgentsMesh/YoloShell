@@ -1,0 +1,17 @@
+pub const ENTRY: &str = "native-control-entry";
+pub const RELAY: &str = "native-control-relay";
+pub const ORIGIN: &str = "native-control-origin";
+pub const BINARY_DIRECTORY: &str = "native-control-bin";
+pub const DATA_DIRECTORY: &str = "native-control-provider";
+pub const FIRST_DIRECTORY: &str = "native-control-first";
+pub const NEXT_DIRECTORY: &str = "native-control-next";
+pub const TARGET_MARKER: &str = "target-sigint";
+pub const OTHER_MARKER: &str = "other-sigint";
+pub const TARGET_NAME: &str = "native-control-target";
+pub const OTHER_NAME: &str = "native-control-bystander";
+pub const EXECUTABLE_MODE: u32 = 0o755;
+pub const SHELL_QUOTE_ESCAPE: &str = "'\"'\"'";
+pub const FIRST_DELIVERY: usize = 1;
+pub const SECOND_DELIVERY: usize = 2;
+pub const CURSOR_STEP: u64 = 1;
+pub const COHERENT_WORKER_DEADLINE: &str = "native control Worker did not advertise its capability and matching witness before the deadline";

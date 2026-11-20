@@ -1,0 +1,18 @@
+load("@rules_rust//rust:defs.bzl", "rust_library")
+package(default_visibility = ["//visibility:public"])
+filegroup(name = "architecture_check_data", srcs = glob(["src/**/*.rs"]) + ["BUILD.bazel"])
+filegroup(name = "catalog_source", srcs = ["src/lib.rs"])
+rust_library(
+    name = "yolo_plugin_provider_catalog",
+    srcs = glob(["src/**/*.rs"]),
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    deps = [
+        "//core/crates/agent/providers/claude/provider:yolo_claude_identity",
+        "//core/crates/agent/providers/codex/provider:yolo_codex_identity",
+        "//core/crates/agent/providers/gemini/provider:yolo_gemini_identity",
+        "//core/crates/agent/providers/grok/provider:yolo_grok_identity",
+        "//core/crates/agent/providers/qwen/provider:yolo_qwen_identity",
+        "//core/crates/plugin/provider:yolo_plugin_provider",
+    ],
+)

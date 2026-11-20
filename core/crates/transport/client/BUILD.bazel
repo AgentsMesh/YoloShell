@@ -1,0 +1,165 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+load("//build_system/bazel:version.bzl", "YOLO_MARKETING_VERSION")
+load("//build_system/bazel/rust:test_features.bzl", "UNIT_TEST_FEATURES")
+
+package(default_visibility = ["//visibility:public"])
+
+filegroup(
+    name = "runtime_sources",
+    srcs = glob(
+        ["src/**/*.rs"],
+        allow_empty = False,
+    ),
+)
+
+rust_library(
+    name = "yolo_client",
+    srcs = [":runtime_sources"],
+    crate_name = "yolo_client",
+    crate_root = "src/mod.rs",
+    edition = "2024",
+    version = YOLO_MARKETING_VERSION,
+    deps = [
+        "//core/crates/build_image:yolo_build_image",
+        "//core/crates/agent/system/control/contract:yolo_agent_control_contract",
+        "//core/crates/crypto:yolo_crypto",
+        "//core/crates/persistence/lease:yolo_lease",
+        "//core/crates/persistence/paths:yolo_paths",
+        "//core/crates/runtime/engine/protocol:yolo_runtime_protocol",
+        "//core/crates/terminal/model:yolo_terminal_model",
+        "//core/crates/transport/protocol/validation:yolo_protocol_validation",
+        "//core/crates/wire:yolo_wire",
+        "//core/crates/transport/local/unix:yolo_local_unix",
+        "//core/crates/transport/runtime/rpc",
+        "//core/crates/transport/capnp/rpc",
+        "//core/crates/transport/session:yolo_session_timing",
+        "@crates//:libc",
+        "@crates//:serde",
+        "@crates//:serde_json",
+        "@crates//:thiserror",
+        "@crates//:tokio",
+        "@crates//:uuid",
+    ],
+)
+
+rust_library(
+    name = "yolo_client_adversarial",
+    testonly = True,
+    srcs = [":runtime_sources"],
+    crate_name = "yolo_client_adversarial",
+    crate_root = "src/mod.rs",
+    edition = "2024",
+    deps = [
+        "//core/crates/build_image:yolo_build_image",
+        "//core/crates/agent/system/control/contract:yolo_agent_control_contract",
+        "//core/crates/crypto:yolo_crypto",
+        "//core/crates/persistence/lease:yolo_lease",
+        "//core/crates/persistence/paths:yolo_paths",
+        "//core/crates/runtime/engine/protocol:yolo_runtime_protocol",
+        "//core/crates/terminal/model:yolo_terminal_model",
+        "//core/crates/transport/protocol/validation:yolo_protocol_validation",
+        "//core/crates/wire:yolo_wire",
+        "//core/crates/transport/local/unix:yolo_local_unix",
+        "//core/crates/transport/runtime/rpc",
+        "//core/crates/transport/capnp/rpc",
+        "//core/crates/transport/session:yolo_session_timing",
+        "@crates//:libc",
+        "@crates//:serde",
+        "@crates//:serde_json",
+        "@crates//:thiserror",
+        "@crates//:tokio",
+        "@crates//:uuid",
+    ],
+)
+
+rust_test(
+    name = "yolo_client_unit_tests",
+    srcs = [
+        ":runtime_sources",
+        ":unit_test_sources",
+    ],
+    crate_features = UNIT_TEST_FEATURES,
+    crate_name = "yolo_client_unit_test",
+    crate_root = "src/mod.rs",
+    edition = "2024",
+    deps = [
+        "//core:yolo_runtime",
+        "//core/crates/build_image:yolo_build_image",
+        "//core/crates/agent/system/control/contract:yolo_agent_control_contract",
+        "//core/crates/crypto:yolo_crypto",
+        "//core/crates/persistence/lease:yolo_lease",
+        "//core/crates/persistence/paths:yolo_paths",
+        "//core/crates/runtime/engine/protocol:yolo_runtime_protocol",
+        "//core/crates/terminal/model:yolo_terminal_model",
+        "//core/crates/transport/protocol/validation:yolo_protocol_validation",
+        "//core/crates/wire:yolo_wire",
+        "//core/crates/agent/input:yolo_agent_input",
+        "//core/crates/transport/local/unix:yolo_local_unix",
+        "//core/crates/transport/runtime/rpc",
+        "//core/crates/transport/capnp/rpc",
+        "//core/crates/transport/session:yolo_session_timing",
+        "@crates//:libc",
+        "//core/crates/transport/capnp/value",
+        "//core/crates/transport/runtime/testing",
+        "@crates//:serde",
+        "@crates//:serde_json",
+        "@crates//:tempfile",
+        "@crates//:thiserror",
+        "@crates//:tokio",
+        "@crates//:uuid",
+    ],
+)
+
+filegroup(
+    name = "unit_test_sources",
+    testonly = True,
+    srcs = glob(
+        ["unit_tests/**/*.rs", "test_support/**/*.rs"],
+        allow_empty = True,
+    ),
+)
+
+filegroup(
+    name = "integration_test_sources",
+    testonly = True,
+    srcs = glob(
+        ["integration_tests/**/*.rs"],
+        allow_empty = True,
+    ),
+)
+
+rust_test(
+    name = "yolo_client_integration_tests",
+    srcs = [":integration_test_sources"],
+    crate_name = "yolo_client_integration_tests",
+    crate_root = "integration_tests/lib.rs",
+    edition = "2024",
+    deps = [
+        ":yolo_client",
+        "//core:yolo_runtime",
+        "//core/crates/transport/runtime/testing",
+        "//core/crates/agent/system/control/contract:yolo_agent_control_contract",
+        "//core/crates/crypto:yolo_crypto",
+        "//core/crates/persistence/lease:yolo_lease",
+        "//core/crates/persistence/paths:yolo_paths",
+        "//core/crates/runtime/engine/protocol:yolo_runtime_protocol",
+        "//core/crates/terminal/model:yolo_terminal_model",
+        "//core/crates/transport/protocol/validation:yolo_protocol_validation",
+        "//core/crates/wire:yolo_wire",
+        "//core/crates/transport/capnp/codec",
+        "//core/crates/transport/capnp/rpc",
+        "@crates//:tempfile",
+        "@crates//:tokio",
+    ],
+)
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = glob(
+        ["**/*"],
+        allow_empty = True,
+        exclude = ["BUILD.bazel"],
+    ) + [
+        "BUILD.bazel",
+    ],
+)

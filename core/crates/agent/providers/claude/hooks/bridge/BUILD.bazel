@@ -1,0 +1,147 @@
+load("@rules_rust//rust:defs.bzl", "rust_library")
+load("//build_system/bazel:version.bzl", "YOLO_MARKETING_VERSION")
+load("//build_system/bazel/rust:config.bzl", "RUST_UNIT_TEST_THREAD_COUNT")
+load("//build_system/bazel/rust:isolated_test.bzl", "isolated_rust_test")
+load(
+    "//build_system/bazel/rust:test_features.bzl",
+    "INTEGRATION_TEST_FEATURES",
+    "TEST_SUPPORT_FEATURE",
+    "UNIT_TEST_FEATURES",
+)
+
+package(default_visibility = ["//visibility:public"])
+
+_HOOKS = "//core/crates/agent/providers/claude/hooks:yolo_claude_hooks"
+
+_HOOKS_RESILIENCE = "//core/crates/agent/providers/claude/hooks:yolo_claude_hooks_resilience_support"
+
+_PROCESS = "//core/crates/runtime/engine/process:yolo_process"
+
+_DEPS = [
+    "//core/crates/agent/system/core:yolo_agent_core",
+    _HOOKS,
+    _PROCESS,
+    "//core/crates/transport/local/unix:yolo_local_unix",
+    "@crates//:anyhow",
+    "@crates//:libc",
+    "@crates//:serde",
+    "@crates//:serde_json",
+    "@crates//:tokio",
+    "@crates//:uuid",
+]
+
+_RESILIENCE_DEPS = [dependency for dependency in _DEPS if dependency != _HOOKS] + [_HOOKS_RESILIENCE]
+
+_RESILIENCE_ALIASES = {_HOOKS_RESILIENCE: "yolo_claude_hooks"}
+
+_PROCESS_TEST_SUPPORT = "//core/crates/runtime/engine/process:yolo_process_adversarial"
+
+_TEST_ALIASES = {
+    _HOOKS_RESILIENCE: "yolo_claude_hooks",
+    _PROCESS_TEST_SUPPORT: "yolo_process",
+}
+
+_TEST_DEPS = [dependency for dependency in _RESILIENCE_DEPS if dependency != _PROCESS] + [
+    _PROCESS_TEST_SUPPORT,
+    "@crates//:tempfile",
+]
+
+rust_library(
+    name = "yolo_claude_hook_bridge",
+    srcs = [":runtime_sources"],
+    crate_name = "yolo_claude_hook_bridge",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    version = YOLO_MARKETING_VERSION,
+    deps = _DEPS,
+)
+
+rust_library(
+    name = "yolo_claude_hook_bridge_test_support",
+    testonly = True,
+    srcs = [
+        ":runtime_sources",
+        ":test_support_sources",
+    ],
+    aliases = _RESILIENCE_ALIASES,
+    crate_features = [TEST_SUPPORT_FEATURE],
+    crate_name = "yolo_claude_hook_bridge",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    deps = _RESILIENCE_DEPS,
+)
+
+rust_library(
+    name = "yolo_claude_hook_bridge_resilience_support",
+    testonly = True,
+    srcs = [":runtime_sources"],
+    aliases = _RESILIENCE_ALIASES,
+    crate_features = ["adversarial-test-hooks"],
+    crate_name = "yolo_claude_hook_bridge",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    version = YOLO_MARKETING_VERSION,
+    deps = _RESILIENCE_DEPS,
+)
+
+isolated_rust_test(
+    name = "yolo_claude_hook_bridge_unit_tests",
+    srcs = [
+        ":runtime_sources",
+        ":test_support_sources",
+        ":unit_test_sources",
+    ],
+    aliases = _TEST_ALIASES,
+    crate_features = UNIT_TEST_FEATURES,
+    crate_name = "yolo_claude_hook_bridge_unit_tests",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    deps = _TEST_DEPS,
+)
+
+isolated_rust_test(
+    name = "yolo_claude_hook_bridge_integration_tests",
+    srcs = [
+        ":integration_test_sources",
+        ":runtime_sources",
+        ":test_support_sources",
+    ],
+    aliases = _TEST_ALIASES,
+    crate_features = INTEGRATION_TEST_FEATURES,
+    crate_name = "yolo_claude_hook_bridge_integration_tests",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    env = {"RUST_TEST_THREADS": RUST_UNIT_TEST_THREAD_COUNT},
+    deps = _TEST_DEPS,
+)
+
+filegroup(
+    name = "runtime_sources",
+    srcs = glob(["src/**/*.rs"]),
+)
+
+filegroup(
+    name = "unit_test_sources",
+    testonly = True,
+    srcs = glob(["unit_tests/**/*.rs"]),
+)
+
+filegroup(
+    name = "integration_test_sources",
+    testonly = True,
+    srcs = glob(["integration_tests/**/*.rs"]),
+)
+
+filegroup(
+    name = "test_support_sources",
+    testonly = True,
+    srcs = glob(["test_support/**/*.rs"]),
+)
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = glob(
+        ["**/*"],
+        exclude = ["BUILD.bazel"],
+    ) + ["BUILD.bazel"],
+)

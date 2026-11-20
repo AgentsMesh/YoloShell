@@ -1,0 +1,129 @@
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library")
+load("//build_system/platform/macos:config.bzl", "RELEASE_EVIDENCE_MACOS_MINIMUM_OS_ENV")
+load("//build_system/bazel/rust:config.bzl", "RUST_UNIT_TEST_THREAD_COUNT")
+load("//build_system/bazel/rust:isolated_test.bzl", "isolated_rust_test")
+load("//build_system/bazel/rust:test_features.bzl", "INTEGRATION_TEST_FEATURES")
+
+package(default_visibility = ["//visibility:public"])
+
+PRODUCTION_SOURCES = glob(["src/*.rs"])
+
+DELIVERY_TEST_FEATURES = INTEGRATION_TEST_FEATURES + ["yolo-delivery-tests"]
+
+DEVELOPER_RELEASE_TEST_FEATURES = INTEGRATION_TEST_FEATURES + ["yolo-developer-release-tests"]
+
+TEST_SUPPORT_SOURCES = glob(["test_support/*.rs"])
+
+DELIVERY_TEST_SOURCES = ["integration_tests/delivery.rs"] + glob(
+    ["integration_tests/delivery*.rs"],
+    exclude = ["integration_tests/delivery.rs"],
+) + [
+    "test_support/delivery_fixture.rs",
+    "test_support/delivery_recovery_support.rs",
+    "test_support/delivery_system_constants.rs",
+]
+
+DEVELOPER_RELEASE_TEST_SOURCES = [
+    "integration_tests/developer_release.rs",
+] + glob(
+    [
+        "integration_tests/developer_release*.rs",
+        "integration_tests/verify_acceptance*.rs",
+    ],
+    exclude = ["integration_tests/developer_release.rs"],
+) + TEST_SUPPORT_SOURCES
+
+ALL_TEST_SOURCES = glob(["integration_tests/*.rs"]) + TEST_SUPPORT_SOURCES
+
+REMOUNT_DRIVER_SOURCES = glob(["test_support/remount/*.rs"]) + [
+    "test_support/delivery_fixture.rs",
+    "test_support/delivery_recovery_support.rs",
+]
+
+PRODUCTION_DEPS = [
+    "//build_system/release/delivery_workflow:library",
+    "//build_system/release/developer_release_system:library",
+]
+
+TEST_DEPS = [
+    "//build_system/release/acceptance_receipt:test_support",
+    "//build_system/release/archive_audit:library",
+    "//build_system/release/archive_audit:test_support",
+    "//build_system/release/candidate_artifact:test_support",
+    "//build_system/release/contracts:library",
+    "//build_system/release/delivery_foundation:test_support",
+    "//build_system/release/delivery_workflow:test_support",
+    "//build_system/release/developer_release_system:test_support",
+    "//build_system/release/evidence_model:library",
+    "//build_system/release/filesystem:library",
+    "//build_system/release/foundation:library",
+    "//build_system/release/gate_system:library",
+    "//build_system/release/process_execution:library",
+    "//build_system/release/test_support:library",
+    "//build_system/release/verification:test_support",
+    "@crates//:anyhow",
+    "@crates//:crc32fast",
+    "@crates//:libc",
+    "@crates//:ring",
+    "@crates//:serde",
+    "@crates//:serde_json",
+    "@crates//:tempfile",
+]
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = PRODUCTION_SOURCES + ALL_TEST_SOURCES + glob(["test_support/remount/*.rs"]) + ["BUILD.bazel"],
+)
+
+rust_library(
+    name = "library",
+    srcs = PRODUCTION_SOURCES,
+    crate_name = "yolo_release_delivery_system",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    rustc_env = RELEASE_EVIDENCE_MACOS_MINIMUM_OS_ENV,
+    deps = PRODUCTION_DEPS,
+)
+
+isolated_rust_test(
+    name = "delivery_integration_tests",
+    srcs = PRODUCTION_SOURCES + DELIVERY_TEST_SOURCES,
+    crate_features = DELIVERY_TEST_FEATURES,
+    crate_name = "yolo_release_delivery_integration_tests",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    env = {"RUST_TEST_THREADS": RUST_UNIT_TEST_THREAD_COUNT},
+    rustc_env = RELEASE_EVIDENCE_MACOS_MINIMUM_OS_ENV,
+    deps = TEST_DEPS,
+)
+
+isolated_rust_test(
+    name = "developer_release_integration_tests",
+    srcs = PRODUCTION_SOURCES + DEVELOPER_RELEASE_TEST_SOURCES,
+    crate_features = DEVELOPER_RELEASE_TEST_FEATURES,
+    crate_name = "yolo_release_developer_integration_tests",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    env = {"RUST_TEST_THREADS": RUST_UNIT_TEST_THREAD_COUNT},
+    rustc_env = RELEASE_EVIDENCE_MACOS_MINIMUM_OS_ENV,
+    deps = TEST_DEPS,
+)
+
+test_suite(
+    name = "tests",
+    tests = [
+        ":delivery_integration_tests",
+        ":developer_release_integration_tests",
+    ],
+)
+
+rust_binary(
+    name = "delivery_remount_driver",
+    testonly = True,
+    srcs = REMOUNT_DRIVER_SOURCES,
+    crate_name = "yolo_delivery_remount_driver",
+    crate_root = "test_support/remount/main.rs",
+    edition = "2024",
+    rustc_env = RELEASE_EVIDENCE_MACOS_MINIMUM_OS_ENV,
+    deps = TEST_DEPS + ["//core/crates/persistence/identity/durable:yolo_durable_identity"],
+)

@@ -1,0 +1,15 @@
+pub const HUB_DIRECTORY: &str = "hub";
+pub const HOST_DIRECTORY: &str = "host";
+pub const RECORD_FILE: &str = "access.json";
+pub const RETIRED_RECORD: &str = "retired-record";
+pub const RETIRED_DIRECTORY: &str = "retired-access";
+pub const REPLACEMENT_DIRECTORY: &str = "replacement-access";
+pub const RETIRED_HUB: &str = "retired-hub";
+pub const TEST_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(5);
+pub const CLIENT_VALUE: u128 = 3;
+pub const KEY_BYTE: u8 = 7;
+pub const FIRST_CLIENT: usize = 0;
+pub const ONE: usize = 1;
+pub const REVISION_STEP: u64 = 1;
+pub const INVALID_BYTES: &[u8] = b"not-json";
+pub const PRIVATE_FILE_MODE: u32 = 0o600;
