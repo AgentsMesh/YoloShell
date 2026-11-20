@@ -1,5 +1,11 @@
 # TUI local startup
 
+If startup reports `directory permissions are unsafe`, inspect the named
+directory with `ls -ld`. For a personal directory owned by your account,
+remove group and other write access from that directory. For example, on an
+Ubuntu installation where both directories have mode 0775, run
+`chmod go-w -- "$HOME/.local" "$HOME/.local/state"`.
+
 On macOS and Linux, the installed `yolo` without connection arguments reuses or
 starts the persistent local Hub through the explicit `internal hub --bootstrap`
 role. Host, Hub, file helper and TUI processes all use the same executable image;
