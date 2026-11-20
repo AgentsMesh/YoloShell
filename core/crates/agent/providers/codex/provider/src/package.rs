@@ -6,8 +6,8 @@ use crate::turn_end::CodexTurnEndProbe;
 use crate::{CONVERSATION_TOKEN, DISPLAY_NAME, INSTALL_TOKEN, identity};
 use std::sync::Arc;
 use yolo_agent_provider_contract::{
-    AuthorityKind, InteractionSemantics, InterruptDelivery, LifecycleSemantics, ProjectionPolicy, PromptSubmit,
-    ProviderCapabilities, ProviderDescriptor, ProviderTier,
+    AuthorityKind, InteractionSemantics, InterruptDelivery, LifecycleSemantics, ProjectionPolicy,
+    PromptSubmit, ProviderCapabilities, ProviderDescriptor, ProviderTier,
 };
 use yolo_agent_provider_runtime::{HookClient, ProviderRuntime};
 use yolo_codex_hook_contract::SENSITIVE_ENVIRONMENT_NAMES;
@@ -22,7 +22,7 @@ pub fn runtime() -> ProviderRuntime {
         .with_interrupt_delivery(InterruptDelivery::Key(
             yolo_codex::codex::constants::PROMPT_INTERRUPT_KEY,
         ))
-        .with_launch_command(yolo_codex::codex::constants::EXECUTABLE)
+        .with_launch_command("codex --config features.daemon_auto_start=false")
         .with_interaction_semantics(InteractionSemantics::Terminal)
         .with_hook_client(HookClient::CodexNative)
         .with_turn_end_probe(Arc::new(CodexTurnEndProbe))

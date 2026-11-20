@@ -42,6 +42,7 @@ pub const BOOLEAN_ARGUMENTS: &[&str] = &[
     BYPASS_HOOK_TRUST_ARGUMENT,
     "--include-non-interactive",
     "--no-alt-screen",
+    "--no-daemon",
     "--oss",
     "--search",
     "--strict-config",

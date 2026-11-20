@@ -2,6 +2,12 @@
 
 All notable changes to Yolo are recorded here. The project follows semantic versioning once a stable release exists.
 
+## 0.5.5 — Alpha
+
+- Managed Codex launches disable the shared app-server so the terminal keeps a stable provider ownership boundary.
+- Codex hook callbacks that run in their own process group without a controlling TTY retain admission through the provider process and callback group evidence.
+- Host provider capability probes accept closed launch commands with arguments.
+
 ## 0.5.4 — Alpha
 
 - Yolo reads ext4 filesystem UUIDs on Ubuntu 24.04 GA kernels, including Linux 6.8.
@@ -32,9 +38,7 @@ All notable changes to Yolo are recorded here. The project follows semantic vers
 ## 0.5.0 — Alpha
 
 ### Changed
-- One root command tree: `yolo --help` lists every command. The shell entry stays `yolo`, `yolo new`, `yolo attach` and `yolo terminals`; other commands
-  are grouped by the noun they operate on: `terminal`, `client`, `layout`, `machine`, `agent`, `server`, `platform`, `conversation`, `workspace`,
-  `worktree`, `protocol`, `plugin`, `update`, `audit` and `recipe`.
+- One root command tree: `yolo --help` lists every command. The shell entry stays `yolo`, `yolo new`, `yolo attach` and `yolo terminals`; other commands are grouped by the noun they operate on: `terminal`, `client`, `layout`, `machine`, `agent`, `server`, `platform`, `conversation`, `workspace`, `worktree`, `protocol`, `plugin`, `update`, `audit` and `recipe`.
 
 ### Migration
 - `yolo list|screen|archive|terminate` become `yolo terminal ...`.
@@ -132,8 +136,7 @@ All notable changes to Yolo are recorded here. The project follows semantic vers
 ## 0.1.5 — Alpha
 
 ### Added
-- Hubs pair over SSH with a single-use, expiring `yolo1_` code; the provider's
-  account and export policy remain the authority.
+- Hubs pair over SSH with a single-use, expiring `yolo1_` code; the provider's account and export policy remain the authority.
 
 ## 0.1.4 — Alpha
 
@@ -144,22 +147,18 @@ All notable changes to Yolo are recorded here. The project follows semantic vers
 ## 0.1.3 — Alpha
 
 ### Added
-- `yolo hub peer add`/`list` manage federation peers with explicit dial
-  addresses, imports and export policies.
+- `yolo hub peer add`/`list` manage federation peers with explicit dial addresses, imports and export policies.
 
 ### Fixed
-- A YOLO client inside a YOLO terminal stays read-only, and alternate-screen
-  snapshots keep the screen mode.
+- A YOLO client inside a YOLO terminal stays read-only, and alternate-screen snapshots keep the screen mode.
 
 ## 0.1.2 — Alpha
 
 ### Added
-- `yolo plugin install` replaces an existing link, stops the previous daemon
-  when its manifest declares a `stop` action, and starts the new version.
+- `yolo plugin install` replaces an existing link, stops the previous daemon when its manifest declares a `stop` action, and starts the new version.
 
 ### Fixed
-- Codex Stop candidates resolve with the structured turn journal, so a finished
-  turn that awaits the user reports Needs input instead of Running.
+- Codex Stop candidates resolve with the structured turn journal, so a finished turn that awaits the user reports Needs input instead of Running.
 - A missing plugin runtime names the executable in the startup error.
 
 ### Changed

@@ -35,6 +35,22 @@ fn changed_callback_start_time_cannot_register() {
 }
 
 #[test]
+fn detached_group_leader_callback_binds_to_foreground_codex() {
+    let mut chain = direct();
+    let callback = chain.last_mut().unwrap();
+    callback.process_group = i32::try_from(CALLBACK_PID).unwrap();
+    callback.foreground_group = i32::default();
+    assert_eq!(capture(&chain).unwrap().0.pid, AGENT_PID);
+}
+
+#[test]
+fn detached_callback_with_an_external_group_is_rejected() {
+    let mut chain = direct();
+    chain.last_mut().unwrap().foreground_group = i32::default();
+    assert!(capture(&chain).is_err());
+}
+
+#[test]
 fn duplicate_pid_observation_cannot_authorize_any_branch() {
     let mut chain = direct();
     chain.push(chain.first().unwrap().clone());
