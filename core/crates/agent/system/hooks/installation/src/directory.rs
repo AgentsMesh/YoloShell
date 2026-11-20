@@ -40,19 +40,28 @@ impl Directory {
             let sticky_root = owner == ROOT_UID && mode & SPECIAL_MODE == STICKY_MODE;
             ensure!(
                 owner == ROOT_UID || owner == unsafe { libc::geteuid() },
-                UNSAFE_CONFIG
+                "hook configuration directory owner mismatch: {}",
+                current.display()
             );
             ensure!(
                 sticky_root || mode & (UNSAFE_WRITE_MODE | SPECIAL_MODE) == 0,
-                UNSAFE_CONFIG
+                "unsafe hook directory permissions on {} (mode {:04o})",
+                current.display(),
+                mode & PERMISSION_MASK
             );
             yolo_paths::private_acl::require_no_grants(&file, &current)?;
         }
         let metadata = file.metadata()?;
-        ensure!(metadata.uid() == unsafe { libc::geteuid() }, UNSAFE_CONFIG);
+        ensure!(
+            metadata.uid() == unsafe { libc::geteuid() },
+            "hook configuration directory owner mismatch: {}",
+            path.display()
+        );
         ensure!(
             metadata.mode() & (UNSAFE_WRITE_MODE | SPECIAL_MODE) == 0,
-            UNSAFE_CONFIG
+            "unsafe hook directory permissions on {} (mode {:04o})",
+            path.display(),
+            metadata.mode() & PERMISSION_MASK
         );
         let identity = DirectoryIdentity {
             object: ObjectIdentity::from_metadata(&metadata),

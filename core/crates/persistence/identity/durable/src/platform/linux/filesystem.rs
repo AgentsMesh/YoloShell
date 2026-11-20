@@ -1,6 +1,6 @@
 use crate::{
     Error,
-    model::{BTRFS_MAGIC, UUID_BYTES, supported_linux_filesystem},
+    model::{BTRFS_MAGIC, EXT4_MAGIC, UUID_BYTES, supported_linux_filesystem},
 };
 use std::os::fd::{AsRawFd, BorrowedFd};
 
@@ -9,6 +9,8 @@ const BTRFS_FS_INFO_COMMAND: u32 = 31;
 const BTRFS_FS_INFO_RESERVED_BYTES: usize = 944;
 const FILESYSTEM_IOCTL_GROUP: u32 = 0x15;
 const FILESYSTEM_UUID_COMMAND: u32 = 0;
+const UUID_UNAVAILABLE: &str = "filesystem UUID";
+const EXT4_GETFSUUID_COMMAND: u32 = 44;
 
 #[repr(C)]
 struct BtrfsInfo {
@@ -32,6 +34,18 @@ struct FilesystemUuid {
     uuid: [u8; UUID_BYTES],
 }
 
+#[repr(C)]
+struct Ext4UuidHeader {
+    length: u32,
+    flags: u32,
+}
+
+#[repr(C)]
+struct Ext4Uuid {
+    header: Ext4UuidHeader,
+    uuid: [u8; UUID_BYTES],
+}
+
 pub(super) fn capture(descriptor: BorrowedFd<'_>) -> Result<(u32, [u8; UUID_BYTES]), Error> {
     let mut filesystem = std::mem::MaybeUninit::<libc::statfs>::uninit();
     // SAFETY: fstatfs writes one statfs into the output for this borrowed FD.
@@ -52,7 +66,12 @@ pub(super) fn capture(descriptor: BorrowedFd<'_>) -> Result<(u32, [u8; UUID_BYTE
     let uuid = if kind == BTRFS_MAGIC {
         btrfs_uuid(descriptor)?
     } else {
-        generic_uuid(descriptor)?
+        match generic_uuid(descriptor) {
+            Err(Error::Unsupported(UUID_UNAVAILABLE)) if kind == EXT4_MAGIC => {
+                ext4_uuid(descriptor)?
+            }
+            result => result?,
+        }
     };
     Ok((kind, uuid))
 }
@@ -79,6 +98,25 @@ fn generic_uuid(descriptor: BorrowedFd<'_>) -> Result<[u8; UUID_BYTES], Error> {
     parse_uuid(output)
 }
 
+fn ext4_uuid(descriptor: BorrowedFd<'_>) -> Result<[u8; UUID_BYTES], Error> {
+    let mut output = Ext4Uuid {
+        header: Ext4UuidHeader {
+            length: UUID_BYTES as u32,
+            flags: 0,
+        },
+        uuid: [0; UUID_BYTES],
+    };
+    // EXT4_IOC_GETFSUUID encodes sizeof(struct fsuuid), excluding its flexible array.
+    let request = libc::_IOR::<Ext4UuidHeader>(u32::from(b'f'), EXT4_GETFSUUID_COMMAND);
+    // SAFETY: the repr(C) header is followed by the requested number of writable bytes.
+    let status = unsafe { libc::ioctl(descriptor.as_raw_fd(), request, &mut output) };
+    require_uuid_support(status)?;
+    if output.header.length != UUID_BYTES as u32 {
+        return Err(Error::Unsupported("filesystem UUID length"));
+    }
+    Ok(output.uuid)
+}
+
 fn parse_uuid(output: FilesystemUuid) -> Result<[u8; UUID_BYTES], Error> {
     if usize::from(output.length) != UUID_BYTES {
         return Err(Error::Unsupported("filesystem UUID length"));
@@ -95,7 +133,7 @@ fn require_uuid_support(status: libc::c_int) -> Result<(), Error> {
         source.raw_os_error(),
         Some(libc::ENOTTY | libc::EOPNOTSUPP | libc::ENOSYS)
     ) {
-        return Err(Error::Unsupported("filesystem UUID"));
+        return Err(Error::Unsupported(UUID_UNAVAILABLE));
     }
     Err(Error::Io {
         operation: "read filesystem UUID",

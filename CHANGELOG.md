@@ -1,7 +1,12 @@
 # Changelog
 
-All notable changes to Yolo are recorded here. The project follows semantic
-versioning once a stable release exists.
+All notable changes to Yolo are recorded here. The project follows semantic versioning once a stable release exists.
+
+## 0.5.4 — Alpha
+
+- Yolo reads ext4 filesystem UUIDs on Ubuntu 24.04 GA kernels, including Linux 6.8.
+- The installer creates private user directories even when the login umask allows group writes.
+- Hook installation errors identify the affected configuration file or directory and report its unsafe permission mode.
 
 ## 0.5.3 — Alpha
 
@@ -27,10 +32,8 @@ versioning once a stable release exists.
 ## 0.5.0 — Alpha
 
 ### Changed
-- One root command tree: `yolo --help` lists every command. The shell entry
-  stays `yolo`, `yolo new`, `yolo attach` and `yolo terminals`; other commands
-  are grouped by the noun they operate on: `terminal`, `client`, `layout`,
-  `machine`, `agent`, `server`, `platform`, `conversation`, `workspace`,
+- One root command tree: `yolo --help` lists every command. The shell entry stays `yolo`, `yolo new`, `yolo attach` and `yolo terminals`; other commands
+  are grouped by the noun they operate on: `terminal`, `client`, `layout`, `machine`, `agent`, `server`, `platform`, `conversation`, `workspace`,
   `worktree`, `protocol`, `plugin`, `update`, `audit` and `recipe`.
 
 ### Migration
@@ -186,14 +189,11 @@ versioning once a stable release exists.
 - A one-line installer, `yolo update`, digest-verified downloads and
   immutable-image installation; GitHub releases publish macOS arm64 and Linux
   x86_64/arm64 assets from GitLab tags.
-- Bazel architecture gates, Rust coverage gates, private-PTY acceptance and
-  browser end-to-end tests.
+- Bazel architecture gates, Rust coverage gates, private-PTY acceptance and browser end-to-end tests.
 
 ### Known limits
 
-- Alpha support targets macOS Apple Silicon and Linux aarch64/x86_64; Linux
-  remote deployment remains preview.
-- Only Claude Code and Codex are accepted agent targets for the current Alpha.
-  Additional provider adapters are experimental.
+- Alpha support targets macOS Apple Silicon and Linux aarch64/x86_64; Linux remote deployment remains preview.
+- Only Claude Code and Codex are accepted agent targets for the current Alpha. Additional provider adapters are experimental.
 - Plugins are trusted and unsandboxed by policy. There is no plugin marketplace.
 - Plain-HTTP LAN mode is for trusted networks only.
