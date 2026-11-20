@@ -3,6 +3,11 @@
 All notable changes to Yolo are recorded here. The project follows semantic
 versioning once a stable release exists.
 
+## 0.5.3 — Alpha
+
+- The TUI can retire the last terminal on a machine in a multi-machine layout. The entry Hub keeps a tab for sharing the layout.
+- `yolo terminal screen` reads remote terminals through the Hub that owns the selected terminal, including across multiple hops.
+
 ## 0.5.2 — Alpha
 
 - Codex conversations can be read and prompted after a verified turn end.
@@ -13,16 +18,11 @@ versioning once a stable release exists.
 ## 0.5.1 — Alpha
 
 ### Added
-- `yolo hook status|install` manages the hooks Yolo uses to observe terminal
-  agents. `install` reviews the managed callbacks, asks for confirmation and
-  preserves user hooks; `--dry-run`, `--yes` and `--json` support automation.
-- Codex, Gemini CLI and Grok Build still require trust in the provider's own
-  settings; Yolo never bypasses hook trust.
+- `yolo hook status|install` manages the hooks Yolo uses to observe terminal agents. `install` reviews the managed callbacks, asks for confirmation and preserves user hooks; `--dry-run`, `--yes` and `--json` support automation.
+- Codex, Gemini CLI and Grok Build still require trust in the provider's own settings; Yolo never bypasses hook trust.
 
 ### Changed
-- Provider hook installation no longer exposes the internal revision token or
-  Cap'n Proto output; `yolo internal host hooks` keeps the revision-fenced
-  commands for automation.
+- Provider hook installation no longer exposes the internal revision token or Cap'n Proto output; `yolo internal host hooks` keeps the revision-fenced commands for automation.
 
 ## 0.5.0 — Alpha
 

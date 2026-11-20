@@ -39,7 +39,7 @@ pub(crate) async fn run(options: &Options, selector: String, json: bool) -> anyh
     .map_err(|error| anyhow::anyhow!(error))?;
     let reply = client
         .call(
-            client.hello().hub_id,
+            target.address.hub_id,
             Command::ReadTerminalText { request },
             deadline,
         )
