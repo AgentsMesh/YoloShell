@@ -23,7 +23,9 @@ variables:
 # Linux gates run on the internal runner. The macOS build gate remains in
 # GitHub Actions; the release jobs below stay tag/schedule/web only.
 .bazel:
-  tags: [linux]
+  tags: [k8s]
+  # Use the amd64 release build image for its native C/C++ toolchain.
+  image: docker.io/library/rust@sha256:57a1fe202c77d0a56ea72baa67981509cc75df1d99f904dac875732b188f7e1f
   before_script:
     - mkdir -p .cache/bin
     - |

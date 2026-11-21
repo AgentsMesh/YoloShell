@@ -22,7 +22,7 @@ SHA256SUMS
 
 Linux archives are built in pinned Debian bullseye containers (glibc 2.31) on
 GitHub's Ubuntu amd64 and arm64 runners. The macOS archive is built natively on
-the Apple Silicon `macos-15` runner.
+the Apple Silicon `macos-26` runner.
 
 ## GitLab stage
 
@@ -32,8 +32,9 @@ the Apple Silicon `macos-15` runner.
    release tag, version, name, prerelease flag and source commit, then polls
    the workflow until it completes.
 
-The GitLab runner only needs `git`, `curl`, `perl` and `python3`; it does not
-need a compiler or Docker.
+GitLab verification jobs run in the pinned Linux amd64 build image on a
+Kubernetes runner. The deployment runner uses `git`, `curl`, `perl` and
+`python3` to export the tree and dispatch the GitHub workflow.
 
 ## GitHub Actions workflow
 
