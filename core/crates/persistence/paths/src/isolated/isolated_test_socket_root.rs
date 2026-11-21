@@ -75,23 +75,19 @@ impl Drop for IsolatedTestSocketRoot {
     }
 }
 
-#[cfg(test)]
-#[cfg(any(not(test), feature = "yolo-integration-tests"))]
+#[cfg(all(test, feature = "yolo-integration-tests"))]
 #[path = "../../integration_tests/isolated/isolated_test_socket_root_tests.rs"]
 mod tests;
 
-#[cfg(test)]
-#[cfg(any(not(test), feature = "yolo-integration-tests"))]
+#[cfg(all(test, feature = "yolo-integration-tests"))]
 #[path = "../../integration_tests/isolated/isolated_test_socket_root_adopt_tests.rs"]
 mod adopt_tests;
 #[cfg(all(test, feature = "yolo-integration-tests"))]
 #[path = "../../integration_tests/isolated/isolated_test_socket_root_drop_tests.rs"]
 mod drop_tests;
-#[cfg(test)]
-#[cfg(any(not(test), feature = "yolo-integration-tests"))]
+#[cfg(all(test, feature = "yolo-integration-tests"))]
 #[path = "../../integration_tests/isolated/isolated_test_socket_root_fault_tests.rs"]
 mod fault_tests;
-#[cfg(test)]
-#[cfg(any(not(test), feature = "yolo-integration-tests"))]
+#[cfg(all(test, feature = "yolo-integration-tests"))]
 #[path = "../../integration_tests/isolated/isolated_test_socket_root_security_tests.rs"]
 mod security_tests;

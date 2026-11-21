@@ -64,6 +64,10 @@ integration:
   script:
     - |
       # Durable state fixtures need the mounted build volume's filesystem identity.
+      # GitLab creates its per-pod emptyDir with mode 0777 for the build and helper.
+      if awk -v path="$CI_BUILDS_DIR" '$5 == path && $4 ~ /\/kubernetes\.io~empty-dir\// { found = 1 } END { exit !found }' /proc/self/mountinfo; then
+        chmod +t "$CI_BUILDS_DIR"
+      fi
       test_root=$(mktemp -d "$CI_BUILDS_DIR/yolo-tests.XXXXXX")
       trap 'rm -rf "$test_root"' EXIT
       # Bazel's local spawn strategy takes TMPDIR from its own client environment.
@@ -73,6 +77,8 @@ integration:
         //core/crates/terminal/metadata:integration_tests \
         //clients/tui/app:integration_tests \
         //clients/tui/cli:integration_tests \
+        --@rules_rust//rust/settings:extra_exec_rustc_env=YOLO_TEST_SOCKET_PARENT="$CI_BUILDS_DIR" \
+        --@rules_rust//rust/settings:extra_rustc_env=YOLO_TEST_SOCKET_PARENT="$CI_BUILDS_DIR" \
         --test_env=TMPDIR --test_tmpdir="$test_root/bazel" \
         --spawn_strategy=local --test_output=errors --cache_test_results=no
 
