@@ -38,10 +38,13 @@ pub async fn read(
     json: bool,
 ) -> Result<Outcome> {
     let selection = catalog::resolve(client, &selector).await?;
-    let snapshot = observe::snapshot(client, selection.target).await?;
+    let runtime = match selection.observed_runtime {
+        Some(runtime) => runtime,
+        None => observe::snapshot(client, selection.target).await?.fields().terminal,
+    };
     let binding = ConversationBinding {
         agent: selection.target,
-        runtime: snapshot.fields().terminal,
+        runtime,
     };
     let deadline = Instant::now() + RPC_TIMEOUT;
     let descriptor = match conversation::resolve(client, binding, deadline).await {
@@ -62,7 +65,7 @@ pub async fn read(
         since_revision: None,
         since_generation: None,
     };
-    match conversation::read(client, request, deadline).await {
+    match conversation::read(client, request, Instant::now() + RPC_TIMEOUT).await {
         Ok(reading) => {
             let value = serde_json::to_value(&reading)?;
             let text = render::conversation_text(&reading);

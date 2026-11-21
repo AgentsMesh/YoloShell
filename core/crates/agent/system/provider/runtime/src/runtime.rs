@@ -25,7 +25,8 @@ pub struct ProviderRuntime {
     install_spec: Option<&'static HookInstallSpec>,
     conversation_source: Option<Arc<dyn ConversationSource>>,
     interaction_semantics: InteractionSemantics,
-    launch_command: Option<&'static str>,
+    launch: Option<(&'static str, &'static str)>,
+    previous_launch_command: Option<&'static str>,
 }
 
 impl ProviderRuntime {
@@ -48,7 +49,8 @@ impl ProviderRuntime {
             install_spec: None,
             conversation_source: None,
             interaction_semantics: InteractionSemantics::None,
-            launch_command: None,
+            launch: None,
+            previous_launch_command: None,
         })
     }
 
@@ -159,12 +161,29 @@ impl ProviderRuntime {
         self.interaction_semantics
     }
 
-    pub fn with_launch_command(mut self, command: &'static str) -> Self {
-        self.launch_command = Some(command);
+    pub fn with_launch_command(self, command: &'static str) -> Self {
+        self.with_launch_policy(command.split_whitespace().next().unwrap_or(""), command)
+    }
+
+    pub fn with_launch_policy(mut self, executable: &'static str, command: &'static str) -> Self {
+        self.launch = Some((executable, command));
         self
     }
 
+    pub fn launch_executable(&self) -> Option<&'static str> {
+        self.launch.map(|(executable, _)| executable)
+    }
+
+    pub fn with_previous_launch_command(mut self, command: &'static str) -> Self {
+        self.previous_launch_command = Some(command);
+        self
+    }
+
+    pub fn previous_launch_command(&self) -> Option<&'static str> {
+        self.previous_launch_command
+    }
+
     pub fn launch_command(&self) -> Option<&'static str> {
-        self.launch_command
+        self.launch.map(|(_, command)| command)
     }
 }

@@ -45,32 +45,28 @@ fn enrollment_requires_explicit_observation_authorization_and_distinct_identity(
 }
 
 #[test]
-fn receipts_reject_invalid_envelope_and_nonloopback_or_unbound_listener() {
+fn receipts_reject_invalid_envelope_and_noncanonical_peer_sockets() {
     let request = request();
-    for endpoint in [
-        std::net::SocketAddr::from((std::net::Ipv4Addr::UNSPECIFIED, PORT)),
-        std::net::SocketAddr::from((std::net::Ipv6Addr::UNSPECIFIED, PORT)),
-        std::net::SocketAddr::from((std::net::Ipv4Addr::LOCALHOST, 0)),
-        std::net::SocketAddr::V6(std::net::SocketAddrV6::new(
-            std::net::Ipv6Addr::LOCALHOST,
-            PORT,
-            0,
-            1,
-        )),
-        std::net::SocketAddr::V6(std::net::SocketAddrV6::new(
-            std::net::Ipv6Addr::LOCALHOST,
-            PORT,
-            1,
-            0,
-        )),
+    for socket in [
+        "peer.sock",
+        "relative/peer.sock",
+        "/tmp/../etc/peer.sock",
+        "/tmp/./peer.sock",
+        "/tmp/peer\n.sock",
     ] {
         let mut changed = receipt(&request);
-        changed.endpoint = endpoint;
+        changed.peer_socket = socket.into();
         assert_eq!(
             RemoteBootstrapReceipt::new(changed),
             Err(BootstrapError::Endpoint)
         );
     }
+    let mut changed = receipt(&request);
+    changed.peer_socket = format!("/{}", "a".repeat(100)).into();
+    assert_eq!(
+        RemoteBootstrapReceipt::new(changed),
+        Err(BootstrapError::Endpoint)
+    );
     let mut changed = receipt(&request);
     changed.schema_version += 1;
     assert_eq!(

@@ -73,6 +73,15 @@ fn automatic_codex_resume_pins_the_detected_cwd_in_the_native_command() {
         crate::agent::constants::COMMAND_LINE_ENDING,
     );
     assert_eq!(launch.cwd, detected_cwd);
-    assert_eq!(launch.initial_input, Some(expected.into_bytes()));
+    let old_input = expected.into_bytes();
+    let current = launch.initial_input.as_ref().unwrap();
+    assert!(current.ends_with(&old_input));
+    assert_ne!(current, &old_input);
     assert_ne!(launch.cwd, manifest.cwd);
+    let mut previous = launch;
+    previous.initial_input = Some(old_input);
+    let transaction = ResumeTransaction::new(
+        Uuid::new_v4(), ResumeIntent::Automatic, ResumeTarget::from_binding(&selected), &previous,
+    ).unwrap();
+    host.validate_transaction_launch(&manifest, &transaction, &previous).unwrap();
 }

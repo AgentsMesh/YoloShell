@@ -1,7 +1,7 @@
 use super::process::{self, RelayProcess};
 use crate::hub::{
     federation_agents::launch_client,
-    federation_support::{RunningNode, TEMP_ROOT, deadline, exports, listener, peer},
+    federation_support::{RunningNode, TEMP_ROOT, deadline, exports, peer, peer_at_socket},
     local_startup_support::retain_fixture_host,
     multipath::{io, observe},
 };
@@ -47,7 +47,6 @@ async fn source_hub_sigkill_reuses_enrolled_ephemeral_port_and_rejects_external_
     let source_socket = source_state.socket_path();
     drop(source_state);
     let source_configuration = Configuration {
-        listen: Some(LOOPBACK.parse().unwrap()),
         peers: vec![peer(entry, None, false, vec![exports(source.hub(), false)])],
         ..Configuration::default()
     };
@@ -57,18 +56,15 @@ async fn source_hub_sigkill_reuses_enrolled_ephemeral_port_and_rejects_external_
     let original = snapshot(&source_process, source).await;
     assert!(original.applied);
     assert_eq!(original.state.configuration, source_configuration);
-    let source_address = original.listen_address.unwrap();
-    let entry_listener = listener().await;
+    let source_peer_socket = original.peer_socket.clone().unwrap();
     let entry_configuration = Configuration {
-        listen: Some(entry_listener.local_addr().unwrap()),
-        peers: vec![peer(source, Some(source_address), true, vec![])],
+        peers: vec![peer_at_socket(source, source_peer_socket.clone(), true, vec![])],
         ..Configuration::default()
     };
     let entry_node = RunningNode::start(
         &entry_host,
         entry_state,
         entry_configuration,
-        entry_listener,
     )
     .await;
     let agent = launch_client(
@@ -101,7 +97,8 @@ async fn source_hub_sigkill_reuses_enrolled_ephemeral_port_and_rejects_external_
     drop(recovered);
     source_process.crash().await;
     observe::connections(&entry_node, &[]).await;
-    let occupied = std::net::TcpListener::bind(source_address).unwrap();
+    let _ = std::fs::remove_file(&source_peer_socket);
+    let occupied = std::os::unix::net::UnixListener::bind(&source_peer_socket).unwrap();
     let rejection =
         RelayProcess::expect_rejected(&source_host, &source_path, &source_socket, source).await;
     assert!(rejection.contains(OCCUPIED), "{rejection}");

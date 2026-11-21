@@ -22,6 +22,7 @@ pub fn render(
         filter,
         &BTreeMap::new(),
         0,
+        None,
         area,
     );
 }

@@ -16,14 +16,12 @@ use yolo_hub_terminal_protocol::TerminalSummary;
 use yolo_hub_workspace_protocol::WorkspaceAddress;
 
 const PAGE: u16 = 128;
-const MAX_PAGES: usize = 8;
 
 pub async fn members(client: &mut LocalClient, hub: HubId, args: MembersArgs) -> Result<()> {
     let workspace = resolve(client, hub, &args.selector).await?;
     let destination = workspace.address.hub_id;
-    let (terminals, terminals_truncated) = terminals(client, destination, workspace.address).await?;
-    let (runs, runs_truncated) = runs(client, destination, workspace.address).await?;
-    let truncated = terminals_truncated || runs_truncated;
+    let terminals = terminals(client, destination, workspace.address).await?;
+    let runs = runs(client, destination, workspace.address).await?;
     if args.json {
         println!(
             "{}",
@@ -31,7 +29,7 @@ pub async fn members(client: &mut LocalClient, hub: HubId, args: MembersArgs) ->
                 "workspace": workspace,
                 "terminals": terminals,
                 "runs": runs,
-                "truncated": truncated,
+                "truncated": false,
             }))?
         );
         return Ok(());
@@ -46,9 +44,6 @@ pub async fn members(client: &mut LocalClient, hub: HubId, args: MembersArgs) ->
     for run in &runs {
         println!("run\t{}\t{}\t{:?}", run.address.run_id, run.name, run.state);
     }
-    if truncated {
-        println!("truncated");
-    }
     Ok(())
 }
 
@@ -56,10 +51,10 @@ async fn terminals(
     client: &mut LocalClient,
     hub: HubId,
     workspace: WorkspaceAddress,
-) -> Result<(Vec<TerminalSummary>, bool)> {
+) -> Result<Vec<TerminalSummary>> {
     let mut after = None;
     let mut found = Vec::new();
-    for _ in 0..MAX_PAGES {
+    loop {
         let reply = call(
             client,
             hub,
@@ -77,22 +72,20 @@ async fn terminals(
                 .into_iter()
                 .filter(|terminal| terminal.fields().workspace == Some(workspace)),
         );
-        let Some(cursor) = next else {
-            return Ok((found, false));
-        };
-        after = Some(cursor);
+        if !advance(&mut after, next)? {
+            return Ok(found);
+        }
     }
-    Ok((found, true))
 }
 
 async fn runs(
     client: &mut LocalClient,
     hub: HubId,
     workspace: WorkspaceAddress,
-) -> Result<(Vec<AgentRunSummary>, bool)> {
+) -> Result<Vec<AgentRunSummary>> {
     let mut after = None;
     let mut found = Vec::new();
-    for _ in 0..MAX_PAGES {
+    loop {
         let request = ListAgentRunsRequest::new(ListAgentRunsFields {
             schema_version: AGENT_RUN_PROTOCOL_SCHEMA_VERSION,
             after,
@@ -108,10 +101,23 @@ async fn runs(
                 .into_iter()
                 .filter(|run| run.workspace == Some(workspace)),
         );
-        let Some(cursor) = list.next else {
-            return Ok((found, false));
-        };
-        after = Some(cursor);
+        if !advance(&mut after, list.next)? {
+            return Ok(found);
+        }
     }
-    Ok((found, true))
 }
+
+fn advance<T: Ord>(after: &mut Option<T>, next: Option<T>) -> Result<bool> {
+    let Some(cursor) = next else {
+        return Ok(false);
+    };
+    if after.as_ref().is_some_and(|previous| &cursor <= previous) {
+        return Err(unexpected());
+    }
+    *after = Some(cursor);
+    Ok(true)
+}
+
+#[cfg(test)]
+#[path = "../unit_tests/paging.rs"]
+mod tests;

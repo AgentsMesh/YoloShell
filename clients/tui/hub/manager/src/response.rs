@@ -4,13 +4,10 @@ use yolo_hub_management_client::ManagementError;
 use yolo_hub_management_protocol::{
     CONFIGURATION_REVISION_STEP, ConfigurationChange, ConfigurationSnapshot,
 };
+use yolo_hub_rpc_protocol::Reply;
 
 impl Manager {
-    pub fn complete(
-        &mut self,
-        token: Uuid,
-        result: Result<ConfigurationSnapshot, ManagementError>,
-    ) {
+    pub fn complete(&mut self, token: Uuid, result: Result<Reply, ManagementError>) {
         if self
             .pending
             .as_ref()
@@ -20,6 +17,28 @@ impl Manager {
         }
         let pending = self.pending.take().unwrap();
         self.epoch = Uuid::new_v4();
+        if pending.consumers {
+            match result {
+                Ok(Reply::Consumers { consumers }) => {
+                    self.consumers = Some(consumers);
+                    self.status = READY.into();
+                }
+                Ok(_) => {
+                    self.consumers = None;
+                    self.status = ManagementError::Unavailable.to_string();
+                }
+                Err(error) => {
+                    self.consumers = None;
+                    self.status = error.to_string();
+                }
+            }
+            return;
+        }
+        let result = result.and_then(|reply| match reply {
+            Reply::Configuration { snapshot } => Ok(snapshot),
+            _ if pending.change.is_some() => Err(ManagementError::OutcomeUnknown),
+            _ => Err(ManagementError::Unavailable),
+        });
         match result {
             Ok(snapshot)
                 if snapshot.validate().is_ok()

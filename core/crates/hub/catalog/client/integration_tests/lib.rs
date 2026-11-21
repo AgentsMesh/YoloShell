@@ -4,6 +4,26 @@ use support::*;
 use yolo_hub_catalog_client::{CatalogError, read};
 use yolo_hub_rpc_protocol::{Command, HubSummary, Method, Reply};
 
+#[tokio::test(start_paused = true)]
+async fn agent_selection_gives_terminal_and_agent_reads_independent_deadlines() {
+    let (mut client, mut server) =
+        connected(vec![Method::Hello, Method::List, Method::ListAgents, Method::ListHubs]).await;
+    let serve = async {
+        let terminal = receive(&mut server).await;
+        assert!(matches!(terminal.fields().command, Command::List { .. }));
+        tokio::time::sleep(PAGE_LATENCY).await;
+        respond(&mut server, &terminal, Reply::Terminals { terminals: vec![], next: None }).await;
+        let agents = receive(&mut server).await;
+        assert!(matches!(agents.fields().command, Command::ListAgents { .. }));
+        tokio::time::sleep(PAGE_LATENCY).await;
+        respond(&mut server, &agents, Reply::Agents { agents: vec![], next: None }).await;
+    };
+    let (result, ()) = tokio::join!(
+        yolo_hub_catalog_client::agent_resources(&mut client, true, deadline), serve,
+    );
+    assert!(matches!(result, Ok((terminals, Some(agents))) if terminals.is_empty() && agents.is_empty()));
+}
+
 #[tokio::test]
 async fn multi_page_hubs_retain_exact_cursor_and_origin_order() {
     let (mut client, mut server) =

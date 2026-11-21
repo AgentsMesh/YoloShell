@@ -14,22 +14,16 @@ pub fn configuration(
     a: yolo_hub_delegation::PeerIdentity,
     b: yolo_hub_delegation::PeerIdentity,
     c: yolo_hub_delegation::PeerIdentity,
-    addresses: (
-        std::net::SocketAddr,
-        std::net::SocketAddr,
-        std::net::SocketAddr,
-    ),
+    sockets: (std::path::PathBuf, std::path::PathBuf, std::path::PathBuf),
 ) -> (Configuration, Configuration, Configuration) {
-    let (a_addr, b_addr, c_addr) = addresses;
+    let (_a_socket, b_socket, c_socket) = sockets;
     (
         Configuration {
-            listen: Some(a_addr),
             trusted_origins: vec![c],
             file_roots: vec![],
-            peers: vec![federation_support::peer(b, Some(b_addr), true, vec![])],
+            peers: vec![federation_support::peer_at_socket(b, b_socket.clone(), true, vec![])],
         },
         Configuration {
-            listen: Some(b_addr),
             trusted_origins: vec![],
             file_roots: vec![],
             peers: vec![
@@ -42,16 +36,15 @@ pub fn configuration(
                         federation_support::exports(c.hub(), false),
                     ],
                 ),
-                federation_support::peer(c, None, true, vec![]),
+                federation_support::peer_at_socket(c, c_socket.clone(), true, vec![]),
             ],
         },
         Configuration {
-            listen: Some(c_addr),
             trusted_origins: vec![],
             file_roots: vec![],
             peers: vec![federation_support::peer(
                 b,
-                Some(b_addr),
+                b_socket.clone(),
                 false,
                 vec![federation_support::exports(c.hub(), true)],
             )],

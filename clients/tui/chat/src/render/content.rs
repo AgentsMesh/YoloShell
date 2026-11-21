@@ -84,14 +84,11 @@ fn part_rows(rows: &mut VecDeque<Row>, part: &ConversationPart, width: u16) {
 }
 
 fn add(rows: &mut VecDeque<Row>, text: &str, width: u16, color: Color) {
-    let (lines, truncated) = wrap::wrap(text, width, MAX_PART_ROWS);
-    for text in lines
-        .into_iter()
-        .chain(truncated.then(|| PART_TRUNCATED.to_owned()))
-    {
-        rows.push_back(Row { text, color });
-        if rows.len() > MAX_RENDER_ROWS {
+    wrap::for_each_row(text, width, |text| {
+        if rows.len() == MAX_RENDER_ROWS {
             rows.pop_front();
         }
-    }
+        rows.push_back(Row { text, color });
+        true
+    });
 }

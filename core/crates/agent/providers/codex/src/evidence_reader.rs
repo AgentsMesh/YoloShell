@@ -1,35 +1,14 @@
 use super::constants;
-use super::evidence_path::AnchoredEvidence;
 use anyhow::{Context, Result};
 use serde_json::Value;
 use std::fs::File;
 use std::io::{Read, Seek, SeekFrom};
-use std::path::Path;
 
-pub(super) fn read_with_hook<F>(
-    data_home: &Path,
-    path: &Path,
-    after_read: F,
-) -> Result<Option<Vec<Value>>>
-where
-    F: FnOnce(),
-{
-    let Some(mut evidence) = AnchoredEvidence::open(data_home, path)? else {
-        return Ok(None);
-    };
-    let head = read_complete_head(evidence.file_mut())?;
-    after_read();
-    if !evidence.verify()? {
-        return Ok(None);
-    }
-    Ok(Some(head))
-}
-
-pub(super) fn read_complete_head(file: &mut File) -> Result<Vec<Value>> {
+pub(super) fn read_complete_head(file: &mut File) -> Result<Vec<u8>> {
     let limit = crate::agent::constants::EVIDENCE_HEAD_BYTES;
     let mut bytes = read_at(file, SeekFrom::Start(constants::FILE_START_OFFSET), limit)?;
     truncate_to_complete_lines(&mut bytes);
-    Ok(parse_bytes(&bytes))
+    Ok(bytes)
 }
 
 pub(super) fn read_at(file: &mut File, start: SeekFrom, limit: u64) -> Result<Vec<u8>> {

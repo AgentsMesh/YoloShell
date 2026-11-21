@@ -54,16 +54,17 @@ impl AgentAdapter for ClaudeAdapter {
         if internal_helper(process) {
             return false;
         }
-        super::matching::matches_executable_or_node_entrypoint(
-            process,
-            constants::EXECUTABLE_NAMES,
-            constants::NODE_PACKAGE_COMPONENTS,
-            constants::NODE_ENTRYPOINTS,
-        )
+        yolo_claude_identity::native_version(Path::new(&process.executable)).is_some()
+            || super::matching::matches_executable_or_node_entrypoint(
+                process,
+                constants::EXECUTABLE_NAMES,
+                constants::NODE_PACKAGE_COMPONENTS,
+                constants::NODE_ENTRYPOINTS,
+            )
     }
 
     fn owns_evidence_path(&self, path: &Path, context: &DetectionContext) -> bool {
-        self.data_home(context).is_some_and(|home| {
+        context.data_home(&self.kind()).is_some_and(|home| {
             super::validation::evidence_path_is_owned(path, &home.join(constants::EVIDENCE_DIR))
         })
     }
@@ -93,7 +94,7 @@ impl AgentAdapter for ClaudeAdapter {
     }
 
     fn evidence_files(&self, context: &DetectionContext) -> Result<Vec<PathBuf>> {
-        let Some(home) = self.data_home(context) else {
+        let Some(home) = context.data_home(&self.kind()) else {
             return Ok(Vec::new());
         };
         discovery::evidence_files(&home.join(constants::EVIDENCE_DIR), &context.expected_cwd)
@@ -104,7 +105,7 @@ impl AgentAdapter for ClaudeAdapter {
         context: &DetectionContext,
         agent_cwd: &Path,
     ) -> Result<Vec<PathBuf>> {
-        let Some(home) = self.data_home(context) else {
+        let Some(home) = context.data_home(&self.kind()) else {
             return Ok(Vec::new());
         };
         discovery::evidence_files(&home.join(constants::EVIDENCE_DIR), agent_cwd)
@@ -120,7 +121,7 @@ impl AgentAdapter for ClaudeAdapter {
         agent_cwd: &Path,
         context: &DetectionContext,
     ) -> Result<Option<AgentEvidence>> {
-        let Some(data_home) = self.data_home(context) else {
+        let Some(data_home) = context.data_home(&self.kind()) else {
             return Ok(None);
         };
         self.inspect_evidence_at(path, agent_cwd, data_home, || {})
@@ -152,11 +153,12 @@ impl AgentAdapter for ClaudeAdapter {
 
     fn validate_binding(&self, binding: &AgentBinding, context: &DetectionContext) -> Result<()> {
         let data_home = Path::new(&binding.data_home);
+        let version = yolo_claude_identity::native_version(Path::new(&binding.executable));
         super::validation::validate_adapter_binding(
             binding,
             context,
             self.kind(),
-            constants::EXECUTABLE_NAMES,
+            version.as_ref().map(std::slice::from_ref).unwrap_or(constants::EXECUTABLE_NAMES),
             data_home,
             &data_home.join(constants::EVIDENCE_DIR),
         )?;
@@ -176,10 +178,4 @@ fn internal_helper(process: &ObservedProcess) -> bool {
         process.argv.as_slice(),
         [_, argument, _] if argument == crate::claude_hooks::CLAUDE_HOOK_HELPER_ARGUMENT
     )
-}
-
-impl ClaudeAdapter {
-    fn data_home<'a>(&self, context: &'a DetectionContext) -> Option<&'a Path> {
-        context.data_home(&self.kind())
-    }
 }

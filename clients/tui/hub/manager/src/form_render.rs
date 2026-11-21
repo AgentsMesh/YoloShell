@@ -18,7 +18,6 @@ pub(crate) fn render(frame: &mut Frame<'_>, form: &Form, area: Rect, epoch: Uuid
         FormKind::Peer(Some(_)) => EDIT_PEER,
         FormKind::Origin => ADD_ORIGIN,
         FormKind::Export { .. } => EXPORTS,
-        FormKind::Listener => LISTENER,
         FormKind::FileRoot {
             existing: false, ..
         } => ADD_FILE_ROOT,

@@ -179,7 +179,8 @@ TUI with a structured agent API.
 Agent kinds are open wire identifiers. Unknown providers retain their raw identifier
 and use the generic terminal presentation until a provider-specific adapter is available.
 
-Codex resumes with `codex resume -C <cwd> <id>`. Claude Code resumes with
+Codex resumes with `resume -C <cwd> <id>` on the terminal's Codex executable.
+Yolo selects `--no-daemon` when supported and uses the legacy daemon setting on older versions. Claude Code resumes with
 `claude --resume <id>`. Ambiguous or stale evidence fails closed and cannot bind
 an unrelated history file.
 

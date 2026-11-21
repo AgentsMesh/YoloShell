@@ -21,7 +21,9 @@ mod snapshot;
 mod workspace_reply;
 
 pub use access::Access;
+mod consumer;
 pub use command::Command;
+pub use consumer::ConsumerSummary;
 pub use constants::*;
 pub use envelope::{Request, RequestFields};
 pub use hub::HubSummary;

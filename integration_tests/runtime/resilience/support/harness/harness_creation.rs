@@ -36,6 +36,8 @@ impl Harness {
                 cwd: self.home.path().to_path_buf(),
                 cols: Some(90),
                 rows: Some(25),
+                initial_input: None,
+                context: None,
             })
             .await
             .unwrap_or_else(|error| {

@@ -22,7 +22,7 @@ async fn real_tui_chat_reads_native_content_and_appends_once_without_replacing_t
         &host,
         &hub,
         &marker,
-        &yolo_hook_installation_catalog::CLAUDE,
+        crate::support::claude_install_spec(),
     )
     .await;
     let initial = support::current(&hub, target).await;

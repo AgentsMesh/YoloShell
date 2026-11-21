@@ -22,6 +22,7 @@ _DEPS = [
     "//core/crates/terminal/model:yolo_terminal_model",
     "//core/crates/transport/client:yolo_client",
     "//core/crates/wire:yolo_wire",
+    "@crates//:futures",
     "@crates//:tokio",
     "@crates//:uuid",
 ]
@@ -52,6 +53,7 @@ rust_test(
     edition = "2024",
     deps = _DEPS + [
         "//core/crates/presentation/protocol:yolo_presentation_protocol",
+        "//core/crates/transport/runtime/testing:testing",
         "@crates//:serde_json",
         "@crates//:tempfile",
     ],

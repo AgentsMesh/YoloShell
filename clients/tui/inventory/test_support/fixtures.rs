@@ -7,7 +7,7 @@ use yolo_hub_rpc_protocol::HubSummary;
 use yolo_hub_terminal_protocol::{
     RuntimeStatus, RuntimeSummary, TerminalSummary, TerminalSummaryFields,
 };
-use yolo_tui_inventory::{Inventory, View};
+use yolo_tui_inventory::{Inventory, TreeSelection};
 
 pub struct Fixture {
     pub agent: AgentSnapshot,
@@ -95,8 +95,13 @@ impl Fixture {
         let mut inventory = Inventory::default();
         inventory.replace(Some(vec![self.agent.clone()]), Some(vec![self.hub.clone()]));
         inventory.current = true;
-        inventory.view = View::Agents;
+
         inventory.reconcile("", &self.terminals());
+        inventory.select_tree(
+            TreeSelection::Agent(self.agent.cursor().target()),
+            "",
+            &self.terminals(),
+        );
         inventory
     }
 }

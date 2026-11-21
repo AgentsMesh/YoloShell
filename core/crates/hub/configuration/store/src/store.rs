@@ -25,7 +25,6 @@ pub struct ConfigurationStore {
     lock: CoordinationLock,
     file_identity: FileIdentity,
     lost: AtomicBool,
-    listener_binding_initialized: bool,
 }
 
 impl ConfigurationStore {
@@ -54,7 +53,7 @@ impl ConfigurationStore {
                 schema_version: PRIVATE_RECORD_SCHEMA,
                 directory: object,
                 state,
-                listener_binding_initialized: false,
+                _legacy_listener_binding: false,
             };
             record.validate(object, identity)?;
             let written =
@@ -78,7 +77,6 @@ impl ConfigurationStore {
             lock,
             file_identity,
             lost: AtomicBool::new(false),
-            listener_binding_initialized: record.listener_binding_initialized,
         };
         store.current()?;
         Ok(store)
@@ -96,43 +94,11 @@ impl ConfigurationStore {
         self.lost.load(Ordering::Acquire)
     }
 
-    pub fn listener_binding_initialized(&self) -> Result<bool> {
-        self.current()?;
-        Ok(self.listener_binding_initialized)
-    }
-
-    /// Commits only private initialization evidence; the public configuration is unchanged.
-    pub fn complete_listener_initialization(
-        &mut self,
-        mut verify_listener: impl FnMut() -> Result<()>,
-    ) -> Result<()> {
-        let state = self.current()?;
-        verify_listener()?;
-        if self.listener_binding_initialized {
-            return Ok(());
-        }
-        self.write_record(
-            &Record {
-                schema_version: PRIVATE_RECORD_SCHEMA,
-                directory: self.directory,
-                state,
-                listener_binding_initialized: true,
-            },
-            verify_listener,
-        )?;
-        self.current()?;
-        Ok(())
-    }
-
     fn read_current(&self) -> Result<ConfigurationState> {
         self.verify()?;
         let (record, identity): (Record, FileIdentity) =
             self.namespace.read_json_with_identity(&self.path)?;
-        ensure!(
-            identity == self.file_identity
-                && record.listener_binding_initialized == self.listener_binding_initialized,
-            REPLACED_RECORD
-        );
+        ensure!(identity == self.file_identity, REPLACED_RECORD);
         record.validate(self.directory, self.identity)?;
         self.verify()?;
         Ok(record.state)
@@ -143,7 +109,7 @@ impl ConfigurationStore {
             schema_version: PRIVATE_RECORD_SCHEMA,
             directory: self.directory,
             state,
-            listener_binding_initialized: self.listener_binding_initialized,
+            _legacy_listener_binding: false,
         };
         self.write_record(&record, || Ok(()))
     }
@@ -167,7 +133,6 @@ impl ConfigurationStore {
             )
         })();
         self.file_identity = self.retain_failure(result)?;
-        self.listener_binding_initialized = record.listener_binding_initialized;
         Ok(())
     }
 

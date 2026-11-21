@@ -20,7 +20,7 @@ pub fn baseline(request: &RemoteSetupRequest) -> ConfigurationSnapshot {
             configuration: Default::default(),
         },
         applied: true,
-        listen_address: None,
+        peer_socket: Some("/run/user/1000/yolo/hub/peer.sock".into()),
     }
 }
 pub fn published(request: &RemoteSetupRequest) -> ProvisionStatus {

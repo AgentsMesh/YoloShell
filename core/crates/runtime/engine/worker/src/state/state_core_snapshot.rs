@@ -14,8 +14,8 @@ impl WorkerState {
             if let Some(title) = lock_recover(&self.agent_title).as_ref() {
                 presentation.title = Some(title.clone());
             }
-            let title_prefix =
-                yolo_terminal_metadata::MetadataCallbacks::new(presentation).snapshot_prefix();
+            let title_prefix = yolo_terminal_metadata::MetadataCallbacks::new(presentation)
+                .snapshot_prefix(terminal.screen().alternate_screen());
             TerminalSnapshot {
                 runtime_epoch: journal.runtime_epoch(),
                 barrier_sequence: journal.last_sequence(),

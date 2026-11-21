@@ -1,8 +1,21 @@
 use super::constants::SOURCE_CHANGED;
-use crate::agent::{AgentBinding, AgentRecoveryAvailability, AgentState};
+use crate::agent::{AgentBinding, AgentState};
 use crate::worker::{WorkerState, lock_recover, process, run_process_query};
-use anyhow::{Result, anyhow, bail, ensure};
-use yolo_agent_control_contract::{NativeControlWitness, NativeTurnEnd, NativeTurnEndKind};
+use anyhow::{Result, ensure};
+use yolo_agent_control_contract::{NativeControlWitness, NativeTurnEnd};
+
+pub(super) fn observe(
+    state: &WorkerState,
+    binding: &AgentBinding,
+    stop_turn: Option<&str>,
+) -> (bool, Option<NativeTurnEnd>) {
+    if binding.state == AgentState::WaitingForInput {
+        return (true, None);
+    }
+    let end = stop_turn
+        .and_then(|turn| crate::worker::codex_hook::read_stop_turn_end(state, binding, turn));
+    (end.is_some(), end)
+}
 
 /// Read-only PTY discovery scope; each use re-observes foreground membership.
 pub(super) struct PromptInputProof {
@@ -22,45 +35,11 @@ impl WorkerState {
 }
 
 impl PromptInputProof {
-    /// `Ok(None)` means the PTY is idle. `Ok(Some(end))` means the binding is
-    /// still a Stop candidate but the provider turn journal proves the turn
-    /// ended. Any error means input is not ready.
-    pub(super) fn verify(
+    pub(super) fn verify_pty(
         &self,
         state: &WorkerState,
-        binding: &AgentBinding,
         witness: &NativeControlWitness,
-    ) -> Result<Option<NativeTurnEnd>> {
-        self.verify_pty(state, witness)?;
-        if binding.state == AgentState::WaitingForInput {
-            return Ok(None);
-        }
-        let provider = state
-            .provider_runtime
-            .get(&binding.kind)
-            .ok_or_else(|| anyhow!(SOURCE_CHANGED))?;
-        let probe = provider
-            .turn_end_probe()
-            .ok_or_else(|| anyhow!(SOURCE_CHANGED))?;
-        if binding.recovery_availability != AgentRecoveryAvailability::Available
-            || !matches!(binding.state, AgentState::Active | AgentState::Running)
-        {
-            bail!(SOURCE_CHANGED);
-        }
-        let end = probe
-            .read_turn_end(binding)
-            .map_err(|_| anyhow!(SOURCE_CHANGED))?
-            .ok_or_else(|| anyhow!(SOURCE_CHANGED))?;
-        Ok(Some(NativeTurnEnd {
-            turn_id: end.turn_id,
-            kind: match end.kind {
-                yolo_agent_providers::TurnEndKind::Completed => NativeTurnEndKind::Completed,
-                yolo_agent_providers::TurnEndKind::Aborted => NativeTurnEndKind::Aborted,
-            },
-        }))
-    }
-
-    fn verify_pty(&self, state: &WorkerState, witness: &NativeControlWitness) -> Result<()> {
+    ) -> Result<()> {
         ensure!(
             state.foreground_process_group()? == self.group_id,
             SOURCE_CHANGED

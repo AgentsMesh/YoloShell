@@ -19,9 +19,14 @@ impl MetadataCallbacks {
         &self.presentation
     }
 
-    /// Reconstruct the title only. Historical alerts must not ring on attachment.
-    pub fn snapshot_prefix(&self) -> Vec<u8> {
+    /// Reconstruct the title and the alternate-screen mode. Historical alerts
+    /// must not ring on attachment; a snapshot of the alternate grid must not
+    /// be replayed into the primary grid.
+    pub fn snapshot_prefix(&self, alternate_screen: bool) -> Vec<u8> {
         let mut bytes = Vec::new();
+        if alternate_screen {
+            bytes.extend_from_slice(ALTERNATE_SCREEN_ENTER);
+        }
         if let Some(title) = &self.presentation.title {
             bytes.extend_from_slice(TITLE_PREFIX);
             bytes.extend_from_slice(title.as_bytes());

@@ -12,6 +12,7 @@ _DEPS = [
     "//core/crates/hub/rpc/protocol:yolo_hub_rpc_protocol",
     "//core/crates/hub/terminal/protocol:yolo_hub_terminal_protocol",
     "@crates//:anyhow",
+    "@crates//:serde_json",
     "@crates//:tokio",
     "@crates//:uuid",
 ]

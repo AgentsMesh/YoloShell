@@ -1,20 +1,20 @@
 use ratatui::style::Color;
 
-pub const SECTION_LABELS: [&str; 2] = [yolo_tui_lifecycle::AGENT_RUNS_LABEL, "Hubs"];
-pub const COMPACT_SECTION_LABELS: [&str; 2] = ["A", "H"];
+pub const SECTION_LABELS: [&str; 2] = [yolo_tui_lifecycle::AGENT_RUNS_LABEL, "Machines"];
+pub const COMPACT_SECTION_LABELS: [&str; 2] = ["A", "M"];
 pub const AGENTS_SECTION: usize = 0;
-pub const HUBS_SECTION: usize = 1;
+pub const MACHINES_SECTION: usize = 1;
 pub const TERMINAL_PICKER_LABEL: &str = "Terminals";
 pub const SECTION_ROWS: u16 = 1;
 pub const CONTEXT_ROWS: u16 = 1;
 const SECTION_PADDING_SIDES: usize = 2;
 pub const FULL_SECTIONS_WIDTH: u16 = (SECTION_LABELS[AGENTS_SECTION].len()
-    + SECTION_LABELS[HUBS_SECTION].len()
+    + SECTION_LABELS[MACHINES_SECTION].len()
     + SECTION_LABELS.len() * SECTION_PADDING.len() * SECTION_PADDING_SIDES
     + (SECTION_LABELS.len() - 1) * SECTION_DIVIDER.len())
     as u16;
 pub const COMPACT_SECTIONS_WIDTH: u16 = (COMPACT_SECTION_LABELS[AGENTS_SECTION].len()
-    + COMPACT_SECTION_LABELS[HUBS_SECTION].len()
+    + COMPACT_SECTION_LABELS[MACHINES_SECTION].len()
     + COMPACT_SECTION_LABELS.len() * SECTION_PADDING.len() * SECTION_PADDING_SIDES
     + (COMPACT_SECTION_LABELS.len() - 1) * SECTION_DIVIDER.len())
     as u16;
@@ -25,7 +25,7 @@ pub const SELECTION_MARKER: &str = "> ";
 pub const SECTION_DIVIDER: &str = "|";
 pub const SECTION_PADDING: &str = " ";
 pub const SELECTION_STEP: usize = 1;
-pub const ALL_HUBS: &str = "All Hubs";
+pub const ALL_MACHINES: &str = "All machines";
 pub const ACTIVE_SCOPE: &str = "Active · h history";
 pub const HISTORY_SCOPE: &str = "History · h active";
 pub const AGENT_DETAILS_TITLE: &str = "Agent run details";
@@ -39,7 +39,8 @@ pub const DETAILS_RECOVERY_HINT: &str = "R view terminal recovery · Esc back";
 pub const CONTROL_UNKNOWN_LABEL: &str = "Control status unknown";
 pub const OBSERVE_ONLY_CONTROL_LABEL: &str = "Observe only · no input control";
 pub const DETAILS_TERMINAL_LABEL: &str = "Terminal";
-pub const HUB_LABEL: &str = "Hub";
+pub const MACHINE_LABEL: &str = "Machine";
+pub const THIS_MACHINE_LABEL: &str = "This machine";
 pub const TERMINAL_LABEL: &str = "Term";
 pub(crate) const PHASE_SEPARATOR: &str = " | ";
 pub const HUB_REACHABLE_GLYPH: &str = "●";
@@ -63,10 +64,10 @@ pub const STALE_LABEL: &str = "Stale";
 pub const REACHABLE_LABEL: &str = "Reachable";
 pub const UNREACHABLE_LABEL: &str = "Unreachable";
 pub const AGENTS_UNSUPPORTED: &str = "Agent inventory unavailable";
-pub const HUBS_UNSUPPORTED: &str = "Hub inventory unavailable";
+pub const MACHINES_UNSUPPORTED: &str = "Machine inventory unavailable";
 pub const EMPTY_SESSIONS: &str = "No terminals";
 pub const EMPTY_AGENTS: &str = "No agent runs";
-pub const EMPTY_HUBS: &str = "No hubs";
+pub const EMPTY_MACHINES: &str = "No machines";
 pub const UNKNOWN_LABEL: &str = "Unknown";
 pub const STARTING_LABEL: &str = "Starting";
 pub const RUNNING_LABEL: &str = "Running";

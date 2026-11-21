@@ -62,13 +62,15 @@ pub(crate) fn admit(state: &mut State, mut catalog: TabCatalog) -> (TabCatalog, 
             .all(|(_, terminal)| terminal.is_some_and(|address| gone.contains(&address)));
         if empty_tab {
             crate::chat::close(state, entry.id, None);
-            if catalog.entries().len() == 1 {
-                catalog.update_active(LocalTabView::default());
+            // The entry Hub publishes its own tabs even while a remote machine is active.
+            let last_entry_tab =
+                entry.machine == state.entry_hub && catalog.count_for(entry.machine) == 1;
+            if last_entry_tab || catalog.entries().len() == 1 {
+                catalog.replace_view(entry.id, LocalTabView::default())
             } else {
-                catalog
-                    .remove(entry.id)
-                    .expect(crate::tabs::LAYOUT_INVARIANT);
+                catalog.remove_entry(entry.id)
             }
+            .expect(crate::tabs::LAYOUT_INVARIANT);
         } else {
             let mut layout = entry.view.layout;
             for pane in dead {

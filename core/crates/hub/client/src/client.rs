@@ -24,9 +24,19 @@ enum Phase {
 impl<S: AsyncRead + AsyncWrite + Unpin> Client<S> {
     /// The caller supplies an authenticated transport and its pinned Hub identity.
     pub async fn open(stream: S, expected: HubId, deadline: Instant) -> Result<Self, ClientError> {
+        Self::open_observing_version(stream, expected, deadline, |_| {}).await
+    }
+
+    /// An authenticated peer can report an incompatible version without creating a control client.
+    pub async fn open_observing_version(
+        stream: S,
+        expected: HubId,
+        deadline: Instant,
+        observe_version: impl FnOnce(u16),
+    ) -> Result<Self, ClientError> {
         let mut channel = Framed::new(stream);
         let request = Request::new(expected, Command::Hello {}).map_err(ClientError::Validation)?;
-        let reply = exchange(&mut channel, &request, deadline)
+        let reply = exchange(&mut channel, &request, deadline, observe_version)
             .await
             .map_err(|failure| failure.error)?;
         let Reply::Hello { hello } = reply else {
@@ -68,7 +78,7 @@ impl<S: AsyncRead + AsyncWrite + Unpin> Client<S> {
             return Err(ClientError::Transport(TransportError::Deadline));
         }
         let mut channel = self.channel.take().ok_or(ClientError::Poisoned)?;
-        let reply = exchange(&mut channel, &request, deadline).await;
+        let reply = exchange(&mut channel, &request, deadline, |_| {}).await;
         if matches!(reply, Ok(Reply::Attached { .. })) {
             self.phase = Phase::Terminal;
         }

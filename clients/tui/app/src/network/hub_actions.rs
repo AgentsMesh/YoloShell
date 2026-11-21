@@ -10,40 +10,25 @@ use tokio::sync::mpsc;
 use yolo_builtin_client_contract::ClientCapability;
 use yolo_hub_identity::HubId;
 use yolo_tui_hub_manager::{Effect, Manager, OPEN_LABEL, Operation};
-use yolo_tui_inventory::View;
 
-const MIN_HEADER_SPACE: u16 = 20;
-
-pub fn button(state: &State, header: Rect) -> Option<Rect> {
+pub fn draw_footer(frame: &mut Frame<'_>, state: &State, area: Rect) -> Option<Rect> {
     let width = u16::try_from(OPEN_LABEL.len()).ok()?;
-    if state.mode != Mode::Inventory
+    if area.height == 0
+        || area.width < width
         || !state.client_capability_enabled(ClientCapability::HubManagement)
-        || state.inventory.view != View::Hubs
-        || header.width < width + MIN_HEADER_SPACE
-        || header.height == 0
     {
         return None;
     }
-    Some(Rect::new(
-        header.right().saturating_sub(width),
-        header.y,
-        width,
-        1,
-    ))
-}
-
-/// The button shares the section row with `Agent runs | Hubs`, so Hub
-/// configuration does not cost a separate header line.
-pub fn draw_button(frame: &mut Frame<'_>, state: &State, area: Rect) -> Option<Rect> {
-    let button = button(state, area)?;
+    let button = Rect::new(area.x, area.y, width, 1);
     frame.render_widget(
         Paragraph::new(OPEN_LABEL).style(Style::default().fg(Color::Black).bg(Color::Cyan)),
         button,
     );
     Some(button)
 }
+
 pub fn open_event(state: &State, event: &Event) -> bool {
-    if state.mode != Mode::Inventory || state.inventory.view != View::Hubs {
+    if !matches!(state.mode, Mode::Inventory | Mode::Terminal) {
         return false;
     }
     match event {
@@ -51,6 +36,7 @@ pub fn open_event(state: &State, event: &Event) -> bool {
             key.kind != KeyEventKind::Release
                 && key.code == KeyCode::Char('m')
                 && key.modifiers.is_empty()
+                && state.mode == Mode::Inventory
         }
         Event::Mouse(mouse) => {
             mouse.kind == MouseEventKind::Down(MouseButton::Left)

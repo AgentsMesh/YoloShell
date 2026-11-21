@@ -13,6 +13,19 @@ const CONTENT_BYTE: u8 = 0xa5;
 const REPLACEMENT_BYTE: u8 = 0x5a;
 
 #[test]
+fn expired_provider_digest_returns_a_timeout_instead_of_a_partial_hash() {
+    let fixture = support::Fixture::new();
+    let mut file = std::fs::File::open(&fixture.request.real_executable).unwrap();
+    let length = file.metadata().unwrap().len();
+    let error =
+        super::content_digest(&mut file, length, Some(std::time::Instant::now())).unwrap_err();
+    assert_eq!(
+        error.downcast_ref::<std::io::Error>().unwrap().kind(),
+        std::io::ErrorKind::TimedOut
+    );
+}
+
+#[test]
 fn accelerated_digest_preserves_durable_sha256_across_read_boundaries() {
     let fixture = support::Fixture::new();
     for length in [

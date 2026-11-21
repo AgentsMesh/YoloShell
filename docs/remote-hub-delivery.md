@@ -45,16 +45,18 @@ protocol mismatch rejects enrollment without replacing surviving services or
 Workers. Unsupported records are rejected; no automatic migration or alias
 endpoint is provided.
 
-Enrollment adds a loopback listener and an explicit consumer export with the
-requested rights and reexport depth. It preserves unrelated configuration and
-rejects conflicting existing policy. A configuration mutation uses its exact
-base revision. After an unknown result, only the exact request ID, resulting
-revision, document and applied state can confirm success through read requests.
+Enrollment records the remote Hub's pinned identity and peer socket, then plans
+a consumer peer entry that dials that socket through the request's SSH profile,
+carrying the requested rights and reexport depth. It preserves unrelated
+configuration and rejects conflicting existing policy. A configuration mutation
+uses its exact base revision. After an unknown result, only the exact request ID,
+resulting revision, document and applied state can confirm success through read
+requests.
 
-The SSH transport can open a dedicated `direct-tcpip` channel to the remote
-loopback Hub while keeping other channels on the same SSH connection. The inner
-Hub connection retains pinned mutual authentication and delegated authorization.
-Outer SSH login and public build metadata are not substitutes for Hub authority.
+The SSH transport opens a dedicated `direct-streamlocal` channel to the remote
+Hub's peer socket while keeping other channels on the same SSH connection. The
+Hub link keeps its own identity handshake and peer policy; outer SSH login and
+public build metadata are not substitutes for Hub authority.
 
 ## Integration boundary
 

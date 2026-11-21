@@ -3,6 +3,7 @@ use yolo_hub_identity::HubId;
 mod bootstrap_document;
 #[path = "../test_support/constants.rs"]
 mod constants;
+mod failure;
 mod readiness;
 mod retry;
 use constants::REMOVED_ORIGIN_MAPPING;

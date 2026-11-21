@@ -1,6 +1,6 @@
 use super::CodexHookRuntime;
 use crate::agent::codex::authority::CodexBindingAuthority;
-use crate::agent::hooks::{InstrumentationState, ProcessState, HookProviderKind};
+use crate::agent::hooks::{HookProviderKind, InstrumentationState, ProcessState};
 use crate::codex_hooks::CodexSnapshotLineage;
 use crate::worker::codex_hook::{
     projection, publication::CodexAuthorityView, router::CodexRouteEntry,
@@ -18,7 +18,7 @@ impl CodexHookRuntime {
         entry: &CodexRouteEntry,
         authority: &CodexBindingAuthority,
         registry: &crate::agent::AgentRegistry,
-        operation: impl FnOnce(&CodexSnapshotLineage, &dyn Fn() -> Result<()>) -> Result<T>,
+        operation: impl FnOnce(&CodexSnapshotLineage, Option<&str>, &dyn Fn() -> Result<()>) -> Result<T>,
     ) -> Result<T> {
         self.registration.with_control_authority(|lifecycle| {
             let owner = &entry.admission().record().request().identity;
@@ -47,8 +47,12 @@ impl CodexHookRuntime {
                 INVALID
             );
             let proof = lifecycle.prove_snapshot_current()?;
-            projection::require_current_control_projection(
-                entry, authority, current, reducer.revision(), registry,
+            let stop_turn = projection::require_current_control_projection(
+                entry,
+                authority,
+                current,
+                reducer.revision(),
+                registry,
             )?;
             let lineage = lifecycle.snapshot_lineage()?;
             let verify = || -> Result<()> {
@@ -58,7 +62,7 @@ impl CodexHookRuntime {
             verify()?;
             // The installed registration, lifecycle mutex, and durable snapshot
             // proof remain live through this synchronous effect callback.
-            operation(&lineage, &verify)
+            operation(&lineage, stop_turn, &verify)
         })
     }
 }

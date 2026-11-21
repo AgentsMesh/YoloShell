@@ -2,5 +2,5 @@
 mod client;
 mod error;
 
-pub use client::{read, resolve, resolve_agent, resolve_current, watch};
+pub use client::{current_binding, read, resolve, resolve_agent, resolve_current, watch};
 pub use error::ConversationClientError;

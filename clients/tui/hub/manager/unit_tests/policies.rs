@@ -113,7 +113,7 @@ fn trusted_origin_removal_prunes_dependent_exports_but_keeps_an_independent_peer
     independent.peers.push(yolo_hub_federation_settings::Peer {
         identity: origin,
         dial: None,
-        consume: true,
+        consume: false,
         exports: vec![],
     });
     manager.draft = Some(independent.clone());

@@ -64,7 +64,7 @@ impl Fixture {
                 configuration: Configuration::default(),
             },
             applied: true,
-            listen_address: None,
+            peer_socket: Some("/run/user/1000/yolo/hub/peer.sock".into()),
         };
         let record = SetupRecord::new(owner, request, registration, baseline).unwrap();
         Self {

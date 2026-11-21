@@ -69,3 +69,29 @@ fn default_tui_selection_ignores_program_basename_and_never_consumes_user_argume
         );
     }
 }
+
+#[test]
+fn command_index_finds_a_command_after_root_options() {
+    use yolo_launch_contract::{Routing, command_index};
+    const COMMANDS: &[&str] = &[AGENT, UPDATE];
+    const VALUES: &[&str] = &[LOCAL_PROFILE];
+    const TERMINAL: &[&str] = &[HELP];
+    let routing = Routing {
+        commands: COMMANDS,
+        value_options: VALUES,
+        terminal_options: TERMINAL,
+    };
+    let index = |arguments: &[&str]| {
+        command_index(
+            &arguments.iter().map(OsString::from).collect::<Vec<_>>(),
+            &routing,
+        )
+    };
+    assert_eq!(
+        index(&[ARGV0, LOCAL_PROFILE, PROFILE, AGENT, LIST]),
+        Some(3)
+    );
+    assert_eq!(index(&[ARGV0, LOCAL_PROFILE, AGENT, LIST]), None);
+    assert_eq!(index(&[ARGV0, HELP, AGENT]), None);
+    assert_eq!(index(&[ARGV0, AGENT, LOCAL_PROFILE, PROFILE, LIST]), None);
+}

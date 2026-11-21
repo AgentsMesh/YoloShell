@@ -77,9 +77,28 @@ pub async fn read_with_archived<S: AsyncRead + AsyncWrite + Unpin>(
     deadline: Instant,
     include_archived: bool,
 ) -> Result<Catalog, CatalogError> {
+    let (terminals, agents) = agent_resources(client, include_archived, || deadline).await?;
+    let hubs = if client.hello().methods.contains(&Method::ListHubs) {
+        Some(
+            pages::collect(client, || deadline, |after| Command::ListHubs { after }, pages::hubs)
+                .await?,
+        )
+    } else {
+        None
+    };
+    Ok(Catalog { terminals, agents, hubs })
+}
+
+/// Terminal and agent pages for identity selection. The caller supplies the
+/// deadline for each RPC, including later pages of the same collection.
+pub async fn agent_resources<S: AsyncRead + AsyncWrite + Unpin>(
+    client: &mut Client<S>,
+    include_archived: bool,
+    deadline: impl Fn() -> Instant,
+) -> Result<(Vec<TerminalSummary>, Option<Vec<AgentSnapshot>>), CatalogError> {
     let terminals = pages::collect(
         client,
-        deadline,
+        &deadline,
         |after| Command::List {
             include_archived,
             after,
@@ -100,24 +119,7 @@ pub async fn read_with_archived<S: AsyncRead + AsyncWrite + Unpin>(
     } else {
         None
     };
-    let hubs = if client.hello().methods.contains(&Method::ListHubs) {
-        Some(
-            pages::collect(
-                client,
-                deadline,
-                |after| Command::ListHubs { after },
-                pages::hubs,
-            )
-            .await?,
-        )
-    } else {
-        None
-    };
-    Ok(Catalog {
-        terminals,
-        agents,
-        hubs,
-    })
+    Ok((terminals, agents))
 }
 
 #[cfg(test)]

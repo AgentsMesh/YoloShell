@@ -23,7 +23,3 @@ pub const IDENTITY_FIELD: &str = "identity";
 pub const REVISION_FIELD: &str = "revision";
 pub const LAST_CHANGE_FIELD: &str = "last_change";
 pub const INJECTED_FIELD: &str = "injected";
-pub const LISTENER_INITIALIZED_FIELD: &str = "listener_binding_initialized";
-pub const LISTENER_REVOKED: &str = "listener identity changed before initialization commit";
-pub const EPHEMERAL_LOOPBACK: &str = "127.0.0.1:0";
-pub const EPHEMERAL_WILDCARD: &str = "0.0.0.0:0";

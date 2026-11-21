@@ -135,7 +135,7 @@ fn assert_foreground_agent_descendant(
     let runtime = view.runtime.as_ref().expect("detected shell runtime");
     let binding = view.agent.as_ref().expect("detected agent binding");
     let pid = binding.process_pid.expect("detected agent process id");
-    let processes = SystemProcessSource.descendants(runtime.child_pid).unwrap();
+    let processes = RuntimeProcessSource::new([]).descendants(runtime.child_pid).unwrap();
     let process = processes
         .into_iter()
         .find(|process| process.pid == pid)

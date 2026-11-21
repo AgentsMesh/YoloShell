@@ -120,17 +120,7 @@ pub(crate) fn select(
     let Some(observed) = observed else {
         return Ok((previous.map(|entry| entry.witness.clone()), false));
     };
-    let fields = observed.witness().fields();
-    ensure!(
-        view.agent.as_ref() == Some(observed.binding())
-            && fields.terminal_id == view.manifest.terminal_id
-            && view
-                .runtime
-                .as_ref()
-                .is_some_and(|runtime| fields.runtime_epoch == runtime.runtime_epoch
-                    && fields.worker_id == runtime.worker_id),
-        INVALID_BINDING
-    );
+    observation::validate_native(view, observed)?;
     Ok((Some(observed.witness().clone()), true))
 }
 

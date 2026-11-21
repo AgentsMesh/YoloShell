@@ -1,5 +1,6 @@
 mod catalog;
 mod catalog_validation;
+mod machines;
 mod shared_layout;
 #[path = "../test_support/mod.rs"]
 mod support;

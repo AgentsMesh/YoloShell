@@ -114,7 +114,7 @@ impl CommandOutput {
 fn validate_request(request: &CommandRequest) -> Result<(), RemoteError> {
     if !safe_program(request.program())
         || request.args().len() > MAX_COMMAND_ARGUMENTS
-        || request.args().iter().any(|value| unsafe_text(value))
+        || request.args().iter().any(|value| value.contains('\0'))
         || request.cwd().is_some_and(|path| !scoped_absolute(path))
         || request.timeout().is_zero()
         || request.timeout() > MAX_COMMAND_TIMEOUT
@@ -128,11 +128,7 @@ fn validate_request(request: &CommandRequest) -> Result<(), RemoteError> {
     Ok(())
 }
 
-fn unsafe_text(value: &str) -> bool {
-    value.is_empty() || value.contains('\0')
-}
-
 fn safe_program(value: &str) -> bool {
     let path = Path::new(value);
-    !unsafe_text(value) && scoped_absolute(path) && path.file_name().is_some()
+    !value.contains('\0') && scoped_absolute(path) && path.file_name().is_some()
 }

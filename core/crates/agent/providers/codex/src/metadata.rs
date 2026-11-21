@@ -49,14 +49,19 @@ enum MetadataSource {
 }
 
 fn metadata_source(value: &Value) -> Option<MetadataSource> {
-    let source = value
-        .get(constants::PAYLOAD_KEY)?
-        .get(constants::SOURCE_KEY)?;
-    if matches!(
-        source.as_str(),
-        Some(constants::CLI_SOURCE | constants::EXEC_SOURCE)
-    ) {
-        return Some(MetadataSource::Main);
+    let payload = value.get(constants::PAYLOAD_KEY)?;
+    let source = payload.get(constants::SOURCE_KEY)?;
+    // Newer Codex records the originating client and the thread's role separately.
+    // A user thread keeps its original client when resumed in another terminal.
+    if let Some(client) = source.as_str().filter(|client| !client.is_empty()) {
+        return match payload.get(constants::THREAD_SOURCE_KEY) {
+            None | Some(Value::Null) => matches!(client, constants::CLI_SOURCE | constants::EXEC_SOURCE)
+                .then_some(MetadataSource::Main),
+            Some(role) => match role.as_str()? {
+                constants::USER_THREAD_SOURCE => Some(MetadataSource::Main),
+                _ => Some(MetadataSource::Nested),
+            },
+        };
     }
     source
         .get(constants::SUBAGENT_SOURCE_KEY)

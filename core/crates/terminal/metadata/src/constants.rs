@@ -1,3 +1,4 @@
+pub(crate) const ALTERNATE_SCREEN_ENTER: &[u8] = b"\x1b[?1049h";
 pub(crate) const TITLE_PREFIX: &[u8] = b"\x1b]2;";
 pub(crate) const STRING_TERMINATOR: &[u8] = b"\x1b\\";
 pub(crate) const OSC_TITLE_AND_ICON: &[u8] = b"0";

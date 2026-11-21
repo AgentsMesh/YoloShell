@@ -70,6 +70,13 @@ fn shell_command_and_resume_cover_both_agent_homes() {
         Some(&"/codex-home".to_owned())
     );
     assert!(codex.initial_input.unwrap().ends_with(b"agent-session\n"));
+    let codex_binding = binding(AgentKind::Codex, AgentState::Exited, "/codex-home");
+    let mut previous = launch();
+    previous.environment.insert("CODEX_HOME".into(), "/codex-home".into());
+    previous.initial_input = Some(b"codex resume -C /tmp agent-session\n".to_vec());
+    assert!(matches_previous_resume(&previous, &codex_binding, &registry()).unwrap());
+    previous.initial_input = Some(b"codex resume -C /tmp other-session\n".to_vec());
+    assert!(!matches_previous_resume(&previous, &codex_binding, &registry()).unwrap());
 
     let mut claude = launch();
     apply_resume_with_registry(

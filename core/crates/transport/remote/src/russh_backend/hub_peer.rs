@@ -5,9 +5,6 @@ use super::{
 use crate::remote::{ChannelPurpose, HubPeerRequest, OpenedHubPeerChannel, RemoteError};
 use tokio::time::Instant;
 
-pub(super) const HUB_PEER_ORIGINATOR_ADDRESS: &str = "127.0.0.1";
-pub(super) const HUB_PEER_ORIGINATOR_PORT: u32 = 0;
-
 pub(super) fn open_error(error: russh::Error) -> RemoteError {
     match error {
         russh::Error::ChannelOpenFailure(_) => RemoteError::ChannelRejected,
@@ -25,7 +22,7 @@ impl RusshConnection {
         }
         let opened = self
             .open_hub_peer_channel_until(
-                request.endpoint(),
+                request.endpoint().clone(),
                 Instant::now() + self.operation_timeout,
             )
             .await?;

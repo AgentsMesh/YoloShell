@@ -1,39 +1,30 @@
-use crate::constants::*;
+use crate::{AgentRow, Selection, constants::*};
 use crate::reject::rejected;
 use anyhow::Result;
 use std::collections::BTreeMap;
 use std::str::FromStr;
 use tokio::time::Instant;
 use yolo_hub_agent_protocol::{AgentSnapshot, Freshness, Lifecycle, Reachability};
-use yolo_hub_catalog_client::{Catalog, read_with_archived};
+use yolo_hub_catalog_client::agent_resources;
 use yolo_hub_client::LocalClient;
 use yolo_hub_identity::{AgentId, AgentTarget, TerminalAddress, TerminalId};
 use yolo_hub_terminal_protocol::TerminalSummary;
 
-pub struct AgentRow {
-    pub terminal_name: Option<String>,
-    pub snapshot: AgentSnapshot,
-}
-
-pub struct Selection {
-    pub target: AgentTarget,
-    pub terminal_name: Option<String>,
-}
-
 /// Archived terminals are history. Only an explicit `--all` listing needs
 /// them; every other listing scopes the Host read to live sessions.
-async fn catalog(client: &mut LocalClient, include_archived: bool) -> Result<Catalog> {
-    let deadline = Instant::now() + RPC_TIMEOUT;
-    Ok(read_with_archived(client, deadline, include_archived).await?)
+async fn catalog(
+    client: &mut LocalClient,
+    include_archived: bool,
+) -> Result<(Vec<TerminalSummary>, Vec<AgentSnapshot>)> {
+    let (terminals, agents) =
+        agent_resources(client, include_archived, || Instant::now() + RPC_TIMEOUT).await?;
+    let agents = agents.ok_or_else(|| rejected(AGENT_LIST_UNSUPPORTED))?;
+    Ok((terminals, agents))
 }
 
 pub async fn agents(client: &mut LocalClient, all: bool) -> Result<Vec<AgentRow>> {
-    let catalog = catalog(client, all).await?;
-    let agents = catalog
-        .agents
-        .ok_or_else(|| rejected(AGENT_LIST_UNSUPPORTED))?;
-    let names: BTreeMap<TerminalAddress, String> = catalog
-        .terminals
+    let (terminals, agents) = catalog(client, all).await?;
+    let names: BTreeMap<TerminalAddress, String> = terminals
         .iter()
         .map(|terminal| (terminal.fields().address, terminal.fields().name.clone()))
         .collect();
@@ -83,23 +74,22 @@ async fn resolve_in(
     selectors: &[String],
     include_archived: bool,
 ) -> Result<Vec<Selection>> {
-    let catalog = catalog(client, include_archived).await?;
-    let agents = catalog
-        .agents
-        .ok_or_else(|| rejected(AGENT_LIST_UNSUPPORTED))?;
+    let (terminals, agents) = catalog(client, include_archived).await?;
     let mut selections: Vec<Selection> = Vec::with_capacity(selectors.len());
     for selector in selectors {
-        let target = by_selector(selector, &agents, &catalog.terminals)?;
+        let target = by_selector(selector, &agents, &terminals)?;
         if selections.iter().any(|selection| selection.target == target) {
             continue;
         }
-        let terminal_name = catalog
-            .terminals
+        let terminal_name = terminals
             .iter()
             .find(|terminal| terminal.fields().agent == Some(target))
             .map(|terminal| terminal.fields().name.clone());
         selections.push(Selection {
             target,
+            observed_runtime: agents.iter()
+                .find(|agent| agent.cursor().target() == target)
+                .map(|agent| agent.fields().terminal),
             terminal_name,
         });
     }

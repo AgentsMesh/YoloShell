@@ -31,16 +31,16 @@ pub(super) fn fenced_with_keys(
 /// hook callbacks in their own session and PTY, so pid/start-time ancestry to
 /// the custody shell is the fence rather than terminal group membership.
 #[cfg(target_os = "linux")]
-#[cfg(target_os = "linux")]
 pub(super) fn fenced_ancestry_with_keys(
     root: crate::process::ProcessIdentity,
     peer_pid: u32,
     keys: &[&str],
+    include_root: bool,
 ) -> anyhow::Result<super::FencedDescendants> {
     if !root.matches() {
         return Ok(super::FencedDescendants::RootChanged);
     }
-    let observed = observe_ancestry(&super::fallback::SystemApi, root, peer_pid, keys);
+    let observed = observe_ancestry(&super::fallback::SystemApi, root, peer_pid, keys, include_root);
     if !root.matches() {
         return Ok(super::FencedDescendants::RootChanged);
     }
@@ -54,13 +54,15 @@ fn observe_ancestry(
     root: crate::process::ProcessIdentity,
     peer_pid: u32,
     keys: &[&str],
+    include_root: bool,
 ) -> Option<Vec<ObservedProcess>> {
     let lineage = capture_ancestry(api, peer_pid, root)?;
-    let first = observe(api, &lineage, keys)?;
+    let subjects = if include_root { lineage.as_slice() } else { lineage.split_last()?.1 };
+    let first = observe(api, subjects, keys)?;
     if !lineage_is_stable(api, &lineage) {
         return None;
     }
-    let second = observe(api, &lineage, keys)?;
+    let second = observe(api, subjects, keys)?;
     (first == second && lineage_is_stable(api, &lineage)).then_some(first)
 }
 
@@ -106,11 +108,12 @@ fn observe_lineage(
         return None;
     }
     let lineage = capture(api, peer_pid, &root)?;
-    let first = observe(api, &lineage, keys)?;
+    let (_, descendants) = lineage.split_last()?;
+    let first = observe(api, descendants, keys)?;
     if !lineage_is_stable(api, &lineage) {
         return None;
     }
-    let second = observe(api, &lineage, keys)?;
+    let second = observe(api, descendants, keys)?;
     (first == second && lineage_is_stable(api, &lineage)).then_some(first)
 }
 
@@ -150,8 +153,7 @@ fn observe(
     lineage: &[ProcessIdentity],
     keys: &[&str],
 ) -> Option<Vec<ObservedProcess>> {
-    let (_, descendants) = lineage.split_last()?;
-    descendants
+    lineage
         .iter()
         .map(|identity| {
             observe_process(

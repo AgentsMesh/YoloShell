@@ -78,6 +78,19 @@ fn claude_uses_consistent_structured_records_and_exact_resume_id() {
     native.executable = "/tmp/claude/bin/claude.exe".into();
     native.argv = vec!["claude".into(), "probe".into()];
     assert!(adapter.matches_process(&native));
+    let release = std::env::home_dir()
+        .unwrap()
+        .join(".local/share/claude/versions/2.1.318");
+    native.executable = release.display().to_string();
+    assert!(adapter.matches_process(&native));
+    for name in ["README", "2.1.318.notes", "2.1.318-"] {
+        native.executable = release.with_file_name(name).display().to_string();
+        assert!(!adapter.matches_process(&native), "{name}");
+    }
+    for path in ["/other/versions/2.1.318", "/tmp/claude/versions/2.1.318", "2.1.318"] {
+        native.executable = path.into();
+        assert!(!adapter.matches_process(&native), "{path}");
+    }
     let mut echo = process.clone();
     echo.executable = "echo".into();
     echo.argv = vec!["echo".into(), "@anthropic-ai/claude-code".into()];
@@ -111,6 +124,9 @@ fn claude_uses_consistent_structured_records_and_exact_resume_id() {
         detected_at_ms: 1,
         updated_at_ms: 1,
     };
+    let mut observed_binding = binding.clone();
+    observed_binding.executable = release.display().to_string();
+    assert!(adapter.validate_binding(&observed_binding, &context).is_ok());
     assert_eq!(
         adapter.resume_plan(&binding),
         ResumePlan {

@@ -14,13 +14,6 @@ pub(crate) fn handle(state: &mut State, jobs: &mpsc::Sender<Job>, hub: HubId, ev
         return;
     };
     if let Action::Create(name) = action {
-        // Validate in a disposable catalog before admitting a real shell request.
-        // Rejected names must never create a hidden PTY or change the active view.
-        if let Err(error) = tabs.create(&name) {
-            manager.error(error.to_string());
-            state.tab_manager = Some(manager);
-            return;
-        }
         create(state, jobs, hub, manager, &name);
         return;
     }

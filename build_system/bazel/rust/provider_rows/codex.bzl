@@ -17,6 +17,7 @@ CODEX = struct(
     ],
     worker_components = [
         "//core/crates/agent/providers/codex:yolo_codex",
+        "//core/crates/agent/providers/codex/provider:yolo_codex_provider",
         "//core/crates/agent/providers/codex/hooks:yolo_codex_hooks",
     ],
     runtime_tests = [

@@ -10,7 +10,7 @@ fn inventory_uses_real_resources_and_selection_survives_reordering() {
     let second = session();
     let mut state = crate::client_capability_support::state();
     assert_eq!(state.mode, Mode::Inventory);
-    assert_eq!(state.inventory.view, yolo_tui_inventory::View::Agents);
+    assert_eq!(state.inventory.view, yolo_tui_inventory::View::Tree);
     crate::tabs::terminal_picker::open(&mut state);
     assert!(state.visible().is_empty());
     state.move_selection(true);

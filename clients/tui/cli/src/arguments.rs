@@ -10,25 +10,36 @@ use yolo_tui_app::Options;
 #[command(about = ABOUT, after_help = CONTROLS)]
 #[command(group(connection_group()))]
 pub(crate) struct Arguments {
-    #[arg(long, global = true, conflicts_with = ENDPOINT_ARGUMENT)]
+    /// Existing local Hub entry socket; supply together with --hub.
+    #[arg(long, global = true, help_heading = "Connection", conflicts_with = ENDPOINT_ARGUMENT)]
     socket: Option<PathBuf>,
-    #[arg(long, global = true, conflicts_with = SOCKET_ARGUMENT)]
+    /// Hub entry endpoint (local:<socket>); supply together with --hub.
+    #[arg(long, global = true, help_heading = "Connection", conflicts_with = SOCKET_ARGUMENT)]
     endpoint: Option<HubEndpoint>,
-    #[arg(long, global = true, requires = CONNECTION_GROUP, conflicts_with = LOCAL_PROFILE_ARGUMENT)]
+    /// Identity of the Hub accepting this client connection.
+    #[arg(long, global = true, help_heading = "Connection", conflicts_with = LOCAL_PROFILE_ARGUMENT)]
     hub: Option<HubId>,
-    #[arg(long, global = true, conflicts_with_all = [HUB_ARGUMENT, SOCKET_ARGUMENT, ENDPOINT_ARGUMENT])]
+    /// Local profile file; defaults to the current user profile.
+    #[arg(long, global = true, help_heading = "Connection", conflicts_with_all = [HUB_ARGUMENT, SOCKET_ARGUMENT, ENDPOINT_ARGUMENT])]
     local_profile: Option<PathBuf>,
-    #[arg(long, global = true, requires_all = [ACCOUNT_KEY_ARGUMENT, CLIENT_KEY_ARGUMENT], conflicts_with_all = [HUB_ARGUMENT, SOCKET_ARGUMENT, ENDPOINT_ARGUMENT, LOCAL_PROFILE_ARGUMENT])]
+    /// Remote profile file; requires --account-key and --client-key.
+    #[arg(long, global = true, help_heading = "Connection", requires_all = [ACCOUNT_KEY_ARGUMENT, CLIENT_KEY_ARGUMENT], conflicts_with_all = [HUB_ARGUMENT, SOCKET_ARGUMENT, ENDPOINT_ARGUMENT, LOCAL_PROFILE_ARGUMENT])]
     remote_profile: Option<PathBuf>,
-    #[arg(long, global = true, requires = REMOTE_PROFILE_ARGUMENT)]
+    /// Account key paired with --remote-profile.
+    #[arg(long, global = true, help_heading = "Connection", requires = REMOTE_PROFILE_ARGUMENT)]
     account_key: Option<PathBuf>,
-    #[arg(long, global = true, requires = REMOTE_PROFILE_ARGUMENT)]
+    /// Client key paired with --remote-profile.
+    #[arg(long, global = true, help_heading = "Connection", requires = REMOTE_PROFILE_ARGUMENT)]
     client_key: Option<PathBuf>,
     /// Attach a shared layout on the selected Hub; keyboard focus stays private.
-    #[arg(long, global = true)]
+    #[arg(long, global = true, help_heading = "Layout")]
     layout: Option<uuid::Uuid>,
     #[command(subcommand)]
     pub(crate) command: Option<crate::command::Command>,
+}
+
+fn connection_error(message: &'static str) -> anyhow::Error {
+    clap::Error::raw(clap::error::ErrorKind::MissingRequiredArgument, message).into()
 }
 
 pub(crate) fn connection_group() -> ArgGroup {
@@ -38,8 +49,29 @@ pub(crate) fn connection_group() -> ArgGroup {
 }
 
 impl Arguments {
+    /// The same root switches in the shape auxiliary commands consume. They
+    /// validate local-only access themselves.
+    pub(crate) fn connection_options(&self) -> yolo_command_cli::ConnectionOptions {
+        yolo_command_cli::ConnectionOptions {
+            socket: self.socket.clone(),
+            endpoint: self.endpoint.clone(),
+            hub: self.hub,
+            local_profile: self.local_profile.clone(),
+            remote_profile: self.remote_profile.clone(),
+            account_key: self.account_key.clone(),
+            client_key: self.client_key.clone(),
+            layout: self.layout,
+        }
+    }
+
     pub(crate) fn selection(self) -> anyhow::Result<Selection> {
         anyhow::ensure!(self.layout.is_none_or(|id| !id.is_nil()), INVALID_LAYOUT);
+        if !(self.hub.is_some() || (self.socket.is_none() && self.endpoint.is_none())) {
+            return Err(connection_error(yolo_command_cli::HUB_REQUIRES_CONNECTION));
+        }
+        if !(self.hub.is_none() || self.socket.is_some() || self.endpoint.is_some()) {
+            return Err(connection_error(yolo_command_cli::CONNECTION_REQUIRES_HUB));
+        }
         for path in [self.local_profile.as_ref()].into_iter().flatten() {
             yolo_paths::validation::validate_absolute(path)?;
             anyhow::ensure!(

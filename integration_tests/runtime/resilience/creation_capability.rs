@@ -9,6 +9,8 @@ fn creation_request(token: Uuid, name: &str, cwd: PathBuf) -> CreateTerminal {
         cwd,
         cols: Some(90),
         rows: Some(25),
+        initial_input: None,
+        context: None,
     }
 }
 

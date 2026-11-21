@@ -139,19 +139,12 @@ fn native_callback_uses_the_runtime_bound_before_sending_its_first_request() {
     let fixture = Fixture::new();
     let _file = bounds::resize(
         &fixture.request.hook_executable,
-        bounds::RUNTIME_SIZED_EXECUTABLE,
+        bounds::ABOVE_RUNTIME_LIMIT,
     );
     let values = values(&fixture);
     let environment =
         NativeEnvironment::from_values(&fixture.paths, &fixture.request.hook_executable, |name| {
             values.get(name).cloned()
-        })
-        .unwrap();
-    bounds::assert_invalid(
-        environment
-            .executable
-            .verify_current(crate::codex_hooks::CodexExecutableKind::Provider),
-    );
-    let request = environment.request(request(&fixture).input).unwrap();
-    assert_eq!(request.hook_executable, fixture.request.hook_executable);
+        });
+    bounds::assert_invalid(environment);
 }

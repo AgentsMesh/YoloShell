@@ -15,6 +15,7 @@ pub(super) fn current(state: &State, intent: &Intent) -> bool {
             .panes()
             .iter()
             .any(|pane| pane.id == intent.pane && pane.terminal == Some(intent.address))
+        && !crate::constants::is_self_terminal(intent.address.terminal_id.as_uuid())
 }
 
 pub(crate) fn valid_target(state: &State, intent: &Intent, target: RuntimeTarget) -> bool {

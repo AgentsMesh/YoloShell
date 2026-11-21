@@ -6,8 +6,6 @@ use yolo_presentation_layout::Axis;
 use yolo_tui_tab::{LocalTabView, MAX_TABS, TabCatalog, TabViewMode};
 
 const SINGLE_PANE: usize = 1;
-const FIRST_TAB_NUMBER: usize = 1;
-const TAB_NAME: &str = "Tab";
 const TAB_LIMIT: &str = "Close a tab before opening another";
 
 #[derive(Clone, Copy)]
@@ -95,9 +93,6 @@ fn vacant(state: &State) -> bool {
 }
 
 pub(super) fn tab_name(tabs: &TabCatalog) -> anyhow::Result<String> {
-    anyhow::ensure!(tabs.entries().len() < MAX_TABS, TAB_LIMIT);
-    (FIRST_TAB_NUMBER..=MAX_TABS)
-        .map(|number| format!("{TAB_NAME} {number}"))
-        .find(|name| tabs.entries().iter().all(|entry| entry.name != *name))
-        .ok_or_else(|| anyhow::anyhow!(TAB_LIMIT))
+    anyhow::ensure!(tabs.count_for(tabs.machine()) < MAX_TABS, TAB_LIMIT);
+    tabs.next_name(tabs.machine())
 }

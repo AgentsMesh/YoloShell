@@ -35,7 +35,6 @@ fn every_command_bound_is_enforced_independently() {
     let policy = CommandPolicy::new(["/usr/bin/git".into()]).unwrap();
     let invalid = [
         CommandRequest::new("relative", vec![]),
-        CommandRequest::new("/usr/bin/git", vec![String::new()]),
         CommandRequest::new("/usr/bin/git", vec!["nul\0value".into()]),
         CommandRequest::new("/usr/bin/git", vec![])
             .with_limits(MAX_COMMAND_TIMEOUT, INVALID_COMMAND_OUTPUT_LIMIT),

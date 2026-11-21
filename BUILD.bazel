@@ -12,6 +12,17 @@ filegroup(
     srcs = glob(["docs/**/*.md"]),
 )
 
+sh_test(
+    name = "native_release_package_test",
+    srcs = ["scripts/release/integration_tests/native_package.sh"],
+    data = [
+        "scripts/release/build.sh",
+        "scripts/release/ensure-bazel.sh",
+        "scripts/release/set-version.sh",
+        "scripts/release/variables.sh",
+    ],
+)
+
 BUILD_SYSTEM_ARCHITECTURE_DATA = [
     "//{}:architecture_check_data".format(package)
     for package in subpackages(include = ["build_system/**"])
@@ -53,6 +64,7 @@ test_suite(
 test_suite(
     name = "release_unit",
     tests = [
+        ":native_release_package_test",
         ":unit",
     ],
 )

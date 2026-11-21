@@ -2,7 +2,7 @@ use super::*;
 use std::os::unix::fs::PermissionsExt;
 use tempfile::tempdir;
 use yolo_runtime::agent::constants::{COMMAND_LINE_ENDING, PATH_ENV, SHELL_ENV};
-use yolo_runtime::agent::{AgentState, ProcessSource, SystemProcessSource};
+use yolo_runtime::agent::{AgentState, ProcessSource, RuntimeProcessSource};
 use yolo_runtime::{RecoveryState, TerminalView};
 
 const AGENT_BIN_DIR: &str = "agent-bin";

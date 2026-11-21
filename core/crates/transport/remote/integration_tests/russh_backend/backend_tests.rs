@@ -54,8 +54,6 @@ mod deployment_tests;
 mod failure_tests;
 #[path = "../../test_support/russh_backend/fixture.rs"]
 mod fixture;
-#[path = "backend_tests/hub_peer_auth_tests.rs"]
-mod hub_peer_auth_tests;
 #[path = "backend_tests/hub_peer_cancellation_tests.rs"]
 mod hub_peer_cancellation_tests;
 #[path = "../../test_support/russh_backend/hub_peer_fixture.rs"]

@@ -15,11 +15,15 @@ Agent callbacks execute a separate hook bridge and report to the Worker.
 Neither hook callback handling nor configuration generation depends on an agent
 launcher, the desktop process, or an agent API client.
 
-The shell retains its normal arguments, PATH, ZDOTDIR, startup files and functions.
-Yolo exports session-scoped callback context but does not shadow `codex` or
-`claude`, rewrite agent arguments, or require a Begin acknowledgement before the
-native executable starts. The existing shell bootstrap gate remains: it owns the
-PTY process boundary, not agent command interception.
+The shell retains its normal arguments, PATH and user startup files. Yolo exports
+session-scoped callback context. With Yolo's native Codex hooks installed, a new
+Bash or Zsh login shell also gets a function for the interactive invocation
+`codex --yolo`. It selects the native per-invocation `--no-daemon` option when
+supported, so callbacks originate inside the initiating PTY. Bash imports the
+function for the shell process. Zsh reads a private startup file that restores
+the original ZDOTDIR and sources the user's own startup file. User startup code
+can define its own alias or function. Every other invocation retains its native
+arguments. Registration still starts with the authenticated SessionStart.
 
 ## Integration Installation
 
@@ -94,8 +98,8 @@ longer creates temporary settings or a provider-specific watchdog chain.
   previous authorities before clearing the binding projection.
 - Command shims, executable launch snapshots, pre-launch Begin ingress and
   launcher-specific watchdogs are removed from startup and packaging.
-- Both provider fixtures consume installed native configuration and preserve
-  shell-entered arguments. Tests no longer require command interception.
+- Both provider fixtures consume installed native configuration. The manual
+  Codex fixture also exercises argument forwarding through an interactive shell.
 - Dependency checks reject callback/installer dependencies on Host, Worker or
   launchers. Mutation rules permit only the named native generation writers.
 

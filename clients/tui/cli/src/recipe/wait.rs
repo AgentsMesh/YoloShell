@@ -37,10 +37,11 @@ pub(super) async fn dependencies(
     };
     let mut pending = Vec::with_capacity(agent.after.len());
     for name in &agent.after {
+        let folded = name.to_lowercase();
         let run = started
             .iter()
             .filter_map(|start| start.run.as_ref())
-            .find(|run| run.name.eq_ignore_ascii_case(name))
+            .find(|run| run.name.to_lowercase() == folded)
             .ok_or_else(|| anyhow!(RECIPE_DEPENDENCY_RUN_MISSING))?;
         pending.push(Dependency {
             address: run.address,

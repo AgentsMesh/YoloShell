@@ -7,10 +7,8 @@ pub enum CodexExecutableKind {
 }
 
 impl CodexExecutableKind {
-    pub(super) const fn maximum_bytes(self) -> u64 {
-        match self {
-            Self::Runtime => yolo_build_image::MAX_EXECUTABLE_IMAGE_BYTES,
-            Self::Provider => crate::codex_hooks::MAX_PROVIDER_EXECUTABLE_BYTES,
-        }
+    pub(super) fn accepts_length(self, bytes: u64) -> bool {
+        bytes > 0
+            && (self == Self::Provider || bytes <= yolo_build_image::MAX_EXECUTABLE_IMAGE_BYTES)
     }
 }

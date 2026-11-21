@@ -1,9 +1,12 @@
 stages:
+  - verify
   - sync
   - release
 
 workflow:
   rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
     - if: '$CI_COMMIT_TAG =~ /^v[0-9]/'
     - if: '$CI_PIPELINE_SOURCE == "schedule"'
     - if: '$CI_PIPELINE_SOURCE == "web"'
@@ -15,12 +18,77 @@ default:
 variables:
   GIT_DEPTH: "0"
   GITHUB_REPOSITORY: "AgentsMesh/YoloShell"
+  BAZELISK_HOME: "$CI_PROJECT_DIR/.cache/bazelisk"
+
+# Linux gates run on the internal runner. The macOS build gate remains in
+# GitHub Actions; the release jobs below stay tag/schedule/web only.
+.bazel:
+  tags: [linux]
+  before_script:
+    - mkdir -p .cache/bin
+    - |
+      if ! command -v bazel >/dev/null 2>&1; then
+        curl -fsSL -o .cache/bin/bazel \
+          "https://github.com/bazelbuild/bazelisk/releases/download/v1.25.0/bazelisk-linux-amd64"
+        chmod +x .cache/bin/bazel
+        export PATH="$PWD/.cache/bin:$PATH"
+      fi
+
+conformance:
+  extends: .bazel
+  stage: verify
+  timeout: 60m
+  script:
+    - bazel test //build_system/architecture:conformance_test
+      --spawn_strategy=local --test_output=errors --cache_test_results=no
+
+unit:
+  extends: .bazel
+  stage: verify
+  timeout: 60m
+  script:
+    - bazel test
+      //clients/tui/constants:unit_tests
+      //clients/tui/app:unit_tests
+      //clients/tui/cli:unit_tests
+      //core/crates/terminal/metadata:unit_tests
+      //core/crates/application/upgrade/cli:unit_tests
+      --spawn_strategy=local --test_output=errors --cache_test_results=no
+
+integration:
+  extends: .bazel
+  stage: verify
+  timeout: 60m
+  script:
+    - bazel test
+      //core/crates/terminal/metadata:integration_tests
+      //clients/tui/app:integration_tests
+      //clients/tui/cli:integration_tests
+      --spawn_strategy=local --test_output=errors --cache_test_results=no
+
+client-boundary:
+  extends: .bazel
+  stage: verify
+  timeout: 60m
+  script:
+    - bazel build --spawn_strategy=local //build_system/architecture:client_boundary
+
+build-linux:
+  extends: .bazel
+  stage: verify
+  timeout: 90m
+  script:
+    - bazel build --spawn_strategy=local -c opt //core:yolo
 
 sync-public:
   stage: sync
   tags: [linux]
   script:
     - sh scripts/release/sync-public.sh
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^v[0-9]/'
+    - if: '$CI_PIPELINE_SOURCE == "schedule"'
+    - if: '$CI_PIPELINE_SOURCE == "web"'
 
 trigger-release:
   stage: release
@@ -32,3 +100,7 @@ trigger-release:
   script:
     - eval "$(sh scripts/release/variables.sh)"
     - sh scripts/release/trigger-github.sh "$RELEASE_TAG" "$VERSION" "$RELEASE_NAME" "$PRERELEASE" "$CI_COMMIT_SHA"
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^v[0-9]/'
+    - if: '$CI_PIPELINE_SOURCE == "schedule"'
+    - if: '$CI_PIPELINE_SOURCE == "web"'

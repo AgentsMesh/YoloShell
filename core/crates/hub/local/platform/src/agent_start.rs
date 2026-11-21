@@ -61,7 +61,7 @@ pub async fn agent_start(
                     || fields
                         .name
                         .as_ref()
-                        .is_some_and(|name| !existing.name.eq_ignore_ascii_case(name))
+                        .is_some_and(|name| existing.name.to_lowercase() != name.to_lowercase())
                 {
                     return Err(PublicError::Conflict);
                 }
@@ -93,12 +93,16 @@ pub async fn agent_start(
             ),
         },
     };
-    let created = match create_finalized(
-        client,
-        &runtime_agent_start_request(request, command, context),
-    )
-    .await
-    {
+    let creation = runtime_agent_start_request(request, command, context);
+    let previous = launches.and_then(|policies| policies.previous_command(&fields.provider_id));
+    let result = match (create_finalized(client, &creation).await, previous) {
+        (Err(error @ (PublicError::Conflict | PublicError::OutcomeUnknown)), Some(previous)) => {
+            let old_request = runtime_agent_start_request(request, previous, context);
+            crate::launch::recover(client, &old_request, error).await
+        }
+        (result, _) => result,
+    };
+    let created = match result {
         Ok(created) => created,
         Err(error) => {
             if definitely_absent(error) {

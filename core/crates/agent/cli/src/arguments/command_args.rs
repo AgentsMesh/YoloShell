@@ -172,9 +172,9 @@ pub struct RunsArgs {
     /// Filter by run label as key=value.
     #[arg(long, conflicts_with_all = ["state", "provider", "parent", "name"])]
     pub label: Option<String>,
-    /// Resume after this run UUID.
+    /// Resume from the previous page's JSON next cursor, or an entry-Hub run UUID.
     #[arg(long)]
-    pub after: Option<uuid::Uuid>,
+    pub after: Option<yolo_agent_catalog::RunCursor>,
     /// Maximum runs to return.
     #[arg(
         long,

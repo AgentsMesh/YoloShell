@@ -47,7 +47,7 @@ impl Manager {
     }
     pub fn rename(&mut self, tabs: &TabCatalog) {
         if let Some(entry) = tabs
-            .entries()
+            .machine_entries()
             .iter()
             .find(|entry| entry.id == self.selected)
         {

@@ -1,5 +1,5 @@
 use crate::arguments::{WorktreeCommand, WorktreeOptions};
-use crate::commands::{address, call, print, resolve, unexpected};
+use crate::commands::{WorkspaceCursor, address, call, print, print_page, resolve, unexpected};
 use crate::connection::{self, Connection};
 use crate::constants::*;
 use anyhow::{Result, anyhow};
@@ -8,9 +8,9 @@ use yolo_hub_client::LocalClient;
 use yolo_hub_identity::HubId;
 use yolo_hub_rpc_protocol::{Command as Rpc, Reply};
 use yolo_hub_workspace_protocol::{
-    CreateWorktreeFields, CreateWorktreeRequest, ListWorkspacesResult, ListWorktreesFields,
+    CreateWorktreeFields, CreateWorktreeRequest, ListWorktreesFields,
     ListWorktreesRequest, RemoveWorktreeFields, RemoveWorktreeRequest,
-    WORKSPACE_PROTOCOL_SCHEMA_VERSION, WorkspaceAddress, WorkspaceKind, WorkspaceSummary,
+    WORKSPACE_PROTOCOL_SCHEMA_VERSION, WorkspaceAddress, WorkspaceKind,
 };
 
 pub async fn run(options: WorktreeOptions) -> Result<()> {
@@ -66,7 +66,11 @@ pub async fn run(options: WorktreeOptions) -> Result<()> {
         WorktreeCommand::List(args) => {
             let parent = resolve(&mut client, hub, &args.parent).await?;
             let destination = parent.address.hub_id;
-            let after = args.after.map(|id| address(destination, id)).transpose()?;
+            let after = match args.after {
+                Some(WorkspaceCursor::Address(address)) => Some(address),
+                Some(WorkspaceCursor::Id(id)) => Some(address(destination, id)?),
+                None => None,
+            };
             let request = ListWorktreesRequest::new(ListWorktreesFields {
                 schema_version: WORKSPACE_PROTOCOL_SCHEMA_VERSION,
                 parent: parent.address,
@@ -77,27 +81,9 @@ pub async fn run(options: WorktreeOptions) -> Result<()> {
                 Reply::Workspaces { list } => list,
                 _ => return Err(unexpected()),
             };
-            output(&list, args.json)
+            print_page(&list, args.json)
         }
     }
-}
-
-fn output(list: &ListWorkspacesResult, json: bool) -> Result<()> {
-    if json {
-        println!("{}", serde_json::to_string_pretty(list)?);
-    } else {
-        for workspace in &list.workspaces {
-            println!("{}", line(workspace));
-        }
-    }
-    Ok(())
-}
-
-fn line(workspace: &WorkspaceSummary) -> String {
-    format!(
-        "{} {} {} revision={}",
-        workspace.name, workspace.address.workspace_id, workspace.root, workspace.revision
-    )
 }
 
 #[allow(dead_code)]

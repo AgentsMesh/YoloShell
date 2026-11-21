@@ -31,6 +31,21 @@ fn valid_manifest_loads() {
 }
 
 #[test]
+fn an_action_can_run_with_no_required_hub_methods() {
+    let mut value = manifest(vec![Platform::Unix]);
+    value.startup = None;
+    value.actions.push(yolo_trusted_plugin_manifest::Action {
+        id: "status".into(),
+        title: "Status".into(),
+        command: vec!["true".into()],
+    });
+    value.api.required_methods.clear();
+    assert_eq!(parse(&value).unwrap(), value);
+    value.api.optional_methods.push(Method::Hello);
+    assert_eq!(parse(&value).unwrap(), value);
+}
+
+#[test]
 fn reserved_and_empty_platforms_are_rejected() {
     let mut value = manifest(vec![Platform::Linux]);
     value.id = "yolo.test".into();

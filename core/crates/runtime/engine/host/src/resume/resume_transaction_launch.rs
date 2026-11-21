@@ -1,4 +1,4 @@
-use crate::agent::launch::apply_resume_with_registry;
+use crate::agent::launch::{apply_resume_with_registry, matches_previous_resume};
 use super::*;
 
 impl Host {
@@ -111,7 +111,7 @@ impl Host {
                     transaction.intent,
                     self.agent_registry.as_ref(),
                 )?;
-                expected == *launch
+                expected == *launch || matches_previous_resume(launch, binding, self.agent_registry.as_ref())?
             }
         };
         anyhow::ensure!(target_matches, RESUME_EVIDENCE_MISMATCH);

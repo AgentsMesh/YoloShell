@@ -1,5 +1,5 @@
 use crate::arguments::{
-    Arguments, Command, CreateArgs, GetArgs, ListArgs, UpdateArgs, WorkspaceCommand,
+    Arguments, Command, CreateArgs, GetArgs, UpdateArgs, WorkspaceCommand,
 };
 use crate::connection::{self, Connection};
 use crate::constants::*;
@@ -11,35 +11,39 @@ use yolo_hub_client::LocalClient;
 use yolo_hub_identity::{HubId, WorkspaceId};
 use yolo_hub_rpc_protocol::{Command as Rpc, Reply};
 use yolo_hub_workspace_protocol::{
-    CreateWorkspaceFields, CreateWorkspaceRequest, ListWorkspacesFields, ListWorkspacesRequest,
-    MembershipChange, UpdateWorkspaceFields, UpdateWorkspaceRequest, WorkspaceAddress,
-    WorkspaceSummary, WORKSPACE_PROTOCOL_SCHEMA_VERSION,
+    CreateWorkspaceFields, CreateWorkspaceRequest, ListWorkspacesResult,
+    MembershipChange, UpdateWorkspaceFields, UpdateWorkspaceRequest,
+    WORKSPACE_PROTOCOL_SCHEMA_VERSION, WorkspaceAddress, WorkspaceSummary,
 };
 
 pub(crate) use crate::selector::resolve;
 
 pub async fn run(arguments: Arguments) -> Result<()> {
     match arguments.command {
-        Command::Workspace(options) => {
-            let mut client = connection::connect(&Connection {
-                socket: options.socket,
-                hub: options.hub,
-                local_profile: options.local_profile,
-            })
-            .await?;
-            let hub = client.hello().hub_id;
-            match options.command {
-                WorkspaceCommand::Create(args) => create(&mut client, hub, args).await,
-                WorkspaceCommand::Update(args) => update(&mut client, hub, args).await,
-                WorkspaceCommand::Get(args) => get(&mut client, hub, args).await,
-                WorkspaceCommand::List(args) => list(&mut client, hub, args).await,
-                WorkspaceCommand::Members(args) => {
-                    crate::members::members(&mut client, hub, args).await
-                }
-            }
-        }
-        Command::Worktree(options) => crate::worktree::run(options).await,
+        Command::Workspace(options) => run_workspace(options).await,
+        Command::Worktree(options) => run_worktree(options).await,
     }
+}
+
+pub async fn run_workspace(options: crate::arguments::Options) -> Result<()> {
+    let mut client = connection::connect(&Connection {
+        socket: options.socket,
+        hub: options.hub,
+        local_profile: options.local_profile,
+    })
+    .await?;
+    let hub = client.hello().hub_id;
+    match options.command {
+        WorkspaceCommand::Create(args) => create(&mut client, hub, args).await,
+        WorkspaceCommand::Update(args) => update(&mut client, hub, args).await,
+        WorkspaceCommand::Get(args) => get(&mut client, hub, args).await,
+        WorkspaceCommand::List(args) => crate::listing::list(&mut client, hub, args).await,
+        WorkspaceCommand::Members(args) => crate::members::members(&mut client, hub, args).await,
+    }
+}
+
+pub async fn run_worktree(options: crate::arguments::WorktreeOptions) -> Result<()> {
+    crate::worktree::run(options).await
 }
 
 async fn create(client: &mut LocalClient, hub: HubId, args: CreateArgs) -> Result<()> {
@@ -70,13 +74,19 @@ async fn update(client: &mut LocalClient, hub: HubId, args: UpdateArgs) -> Resul
         schema_version: WORKSPACE_PROTOCOL_SCHEMA_VERSION,
         request_id: Uuid::new_v4(),
         address: current.address,
-        expected_revision: args.expected_revision,
+        expected_revision: args.expected_revision.unwrap_or(current.revision),
         name: args.name,
         labels,
         members,
     })?;
     let destination = current.address.hub_id;
-    let workspace = match call(client, destination, Rpc::UpdateWorkspace { change: request }).await? {
+    let workspace = match call(
+        client,
+        destination,
+        Rpc::UpdateWorkspace { change: request },
+    )
+    .await?
+    {
         Reply::Workspace { workspace } => workspace,
         _ => return Err(unexpected()),
     };
@@ -88,25 +98,34 @@ async fn get(client: &mut LocalClient, hub: HubId, args: GetArgs) -> Result<()> 
     print(&workspace, args.json)
 }
 
-async fn list(client: &mut LocalClient, hub: HubId, args: ListArgs) -> Result<()> {
-    let after = match args.after {
-        Some(id) => Some(crate::selector::address_of(client, hub, &id.to_string()).await?),
-        None => None,
-    };
-    let request = ListWorkspacesRequest::new(ListWorkspacesFields {
-        schema_version: WORKSPACE_PROTOCOL_SCHEMA_VERSION,
-        after,
-        limit: args.limit,
-    })?;
-    let list = match call(client, hub, Rpc::ListWorkspaces { request }).await? {
-        Reply::Workspaces { list } => list,
-        _ => return Err(unexpected()),
-    };
-    if args.json {
-        println!("{}", serde_json::to_string_pretty(&list)?);
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum WorkspaceCursor {
+    Address(WorkspaceAddress),
+    Id(Uuid),
+}
+
+impl std::str::FromStr for WorkspaceCursor {
+    type Err = &'static str;
+
+    fn from_str(value: &str) -> Result<Self, Self::Err> {
+        if let Ok(id) = Uuid::parse_str(value) {
+            return Ok(Self::Id(id));
+        }
+        serde_json::from_str(value)
+            .map(Self::Address)
+            .map_err(|_| "expected a workspace UUID or the previous page's JSON next cursor")
+    }
+}
+
+pub(crate) fn print_page(list: &ListWorkspacesResult, json: bool) -> Result<()> {
+    if json {
+        println!("{}", serde_json::to_string_pretty(list)?);
     } else {
         for workspace in &list.workspaces {
             println!("{}", line(workspace));
+        }
+        if let Some(next) = list.next {
+            println!("next={}", serde_json::to_string(&next)?);
         }
     }
     Ok(())

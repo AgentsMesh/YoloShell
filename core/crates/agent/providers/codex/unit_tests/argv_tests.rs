@@ -174,3 +174,14 @@ fn remote_and_malformed_process_shapes_fail_closed() {
         SessionIdentity::Invalid
     );
 }
+
+#[test]
+fn managed_daemon_disabled_launch_is_a_valid_fresh_session() {
+    assert_eq!(
+        direct(&[
+            constants::CONFIG_ARGUMENT,
+            "features.daemon_auto_start=false",
+        ]),
+        SessionIdentity::Fresh
+    );
+}

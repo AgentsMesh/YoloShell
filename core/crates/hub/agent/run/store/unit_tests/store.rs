@@ -6,8 +6,8 @@ const PAGE_LIMIT: u16 = 1;
 fn reserve_is_idempotent_by_start_token() {
     let (_root, _hub, mut store) = fixture();
     let token = Uuid::new_v4();
-    let first = reserve(&mut store, "alpha", token);
-    let second = reserve(&mut store, "alpha", token);
+    let first = reserve(&mut store, "Équipe", token);
+    let second = reserve(&mut store, "équipe", token);
     assert_eq!(first, second);
     assert_eq!(first.revision, FIRST_AGENT_RUN_REVISION);
     assert_eq!(first.state, AgentRunState::Starting);

@@ -114,10 +114,6 @@ impl LocalBackend {
             .agents
             .as_ref()
             .ok_or(ConversationError::UnsupportedProvider)?;
-        // Evidence participates in the observation order but never holds the
-        // projection across Host or Worker I/O; both waits are bounded like a
-        // catalogue read.
-        let _sweep = self.begin_observation().await;
         let view = self
             .bounded_host_read(
                 self.client
@@ -133,14 +129,10 @@ impl LocalBackend {
         .ok()
         .flatten()
         .ok_or(ConversationError::EvidenceUnavailable)?;
-        let mut projection = projection.lock().await;
-        let snapshot = projection
-            .project_with_observation(&view, Some(&observed))
-            .map_err(|_| ConversationError::EvidenceUnavailable)?
-            .ok_or(ConversationError::EvidenceUnavailable)?;
-        if snapshot.cursor().target() != target.agent
-            || snapshot.fields().terminal != target.runtime
-        {
+        let matches = projection.lock().await
+            .matches_observed_execution(target.agent, target.runtime, &view, &observed)
+            .map_err(|_| ConversationError::EvidenceUnavailable)?;
+        if !matches {
             return Err(ConversationError::BindingChanged);
         }
         Ok(observed)

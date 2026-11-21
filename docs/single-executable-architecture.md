@@ -87,11 +87,12 @@ identities. Each must match the single runtime descriptor. A new file on disk
 does not prove that already-running processes have changed their mapped image.
 
 Runtime artifacts use the existing 512 MiB live-image bound across publication,
-native bootstrap and hook-runtime attestation. Provider executables keep their
-256 MiB admission bound. Trusted callers select the image kind from the field or
-process being checked; serialized evidence cannot select its own size policy.
-Both kinds retain complete content hashes, mapped-image checks and filesystem
-identity, owner, link-count and permission validation.
+native bootstrap and hook-runtime attestation. Codex provider executables can
+grow across releases. Yolo hashes the full length observed on the open file in
+64 KiB chunks. Each provider hash uses the hook handshake time budget and
+checks its deadline between reads. A timeout produces an error. The caller
+selects the executable role. Both roles verify the full content hash, mapped
+image, filesystem identity, owner, link count and permissions.
 
 ## Architecture and Acceptance
 

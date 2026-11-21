@@ -80,8 +80,8 @@ mod runtime;
 #[path = "server/server.rs"]
 mod server;
 
-pub(in crate::worker) use ingress_supervisor::CodexHookIngressSupervisor;
 pub(in crate::worker) use control_source::with_control_source;
+pub(in crate::worker) use ingress_supervisor::CodexHookIngressSupervisor;
 #[cfg(test)]
 pub(in crate::worker) use projection::{
     ProjectionRoundProbe, complete_task_for_test as complete_projection_task_for_test,
@@ -89,7 +89,8 @@ pub(in crate::worker) use projection::{
     supervise_closed_for_test as supervise_closed_projection_for_test,
 };
 pub(in crate::worker) use projection::{
-    invalidate_for_shutdown as invalidate_projection_for_shutdown, spawn as spawn_projection,
+    invalidate_for_shutdown as invalidate_projection_for_shutdown, read_stop_turn_end,
+    spawn as spawn_projection,
 };
 
 #[cfg(all(test, feature = "yolo-integration-tests"))]

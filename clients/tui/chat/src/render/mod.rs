@@ -99,11 +99,10 @@ fn composer(frame: &mut Frame<'_>, chat: &Chat, mut area: Rect, input: InputRead
     );
     area.y += CELL;
     area.height = area.height.saturating_sub(CELL);
-    let (rows, _) = wrap::wrap(chat.composer.text(), area.width, MAX_COMPOSER_ROWS);
-    let (prefix, _) = wrap::wrap(
+    let rows = wrap::composer_rows(chat.composer.text(), area.width);
+    let prefix = wrap::composer_rows(
         &chat.composer.text()[..chat.composer.cursor()],
         area.width,
-        MAX_COMPOSER_ROWS,
     );
     let row = prefix.len().saturating_sub(usize::from(CELL));
     let column = prefix

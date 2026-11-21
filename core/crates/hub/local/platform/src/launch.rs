@@ -33,7 +33,7 @@ pub(crate) fn address(hub: HubId, terminal_id: Uuid) -> Result<TerminalAddress, 
     })
 }
 
-async fn recover(
+pub(crate) async fn recover(
     client: &Client,
     request: &CreateTerminal,
     error: PublicError,

@@ -52,6 +52,52 @@ fn args(show: Option<&str>, state: Vec<RunState>) -> RunsArgs {
 }
 
 #[tokio::test]
+async fn runs_resume_at_the_returned_peer_address_and_accept_entry_uuids() {
+    let entry = HubId::new();
+    let foreign = row(HubId::new());
+    let next = foreign.address;
+    let (socket, _directory, server) = peer(entry, move |command| {
+        let Command::ListAgentRuns { request } = command else {
+            panic!("expected a run catalogue page")
+        };
+        assert!(request.fields().after.is_none());
+        Reply::AgentRuns {
+            list: ListAgentRunsResult {
+                runs: vec![foreign.clone()],
+                next: Some(next),
+            },
+        }
+    });
+    let first = run(socket, entry, CliCommand::Runs(args(None, Vec::new()))).await;
+    server.await.unwrap();
+    let json_cursor = first.value["next"].to_string();
+    assert_eq!(first.text.lines().last().unwrap(), format!("next={json_cursor}"));
+    let entry_cursor = AgentRunAddress { hub_id: entry, ..next };
+    for (input, wanted) in [
+        (json_cursor, next),
+        (next.run_id.to_string(), entry_cursor),
+    ] {
+        let (socket, _directory, server) = peer(entry, move |command| {
+            let Command::ListAgentRuns { request } = command else {
+                panic!("expected a run catalogue page")
+            };
+            assert_eq!(request.fields().after, Some(wanted));
+            Reply::AgentRuns {
+                list: ListAgentRunsResult {
+                    runs: Vec::new(),
+                    next: None,
+                },
+            }
+        });
+        let mut args = args(None, Vec::new());
+        args.after = Some(input.parse().unwrap());
+        let page = run(socket, entry, CliCommand::Runs(args)).await;
+        assert!(page.value["next"].is_null());
+        server.await.unwrap();
+    }
+}
+
+#[tokio::test]
 async fn runs_lists_one_page_with_one_filter() {
     let fixture = Fixture::new();
     let hub = fixture.hub;

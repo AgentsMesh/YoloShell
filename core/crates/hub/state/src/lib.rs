@@ -13,7 +13,7 @@ use yolo_paths::namespace_lease::NamespaceLease;
 use yolo_paths::{coordination::CoordinationLock, directory::PrivateDirectory};
 
 use constants::*;
-pub use constants::{HUB_IDENTITY_FILE, HUB_SOCKET_FILE};
+pub use constants::{HUB_IDENTITY_FILE, HUB_SOCKET_FILE, PEER_SOCKET_FILE, STATE_CONTRACT_FILE};
 
 /// Read-only admission probe used by the upgrade coordinator.
 pub fn validate_runtime_contract(path: &Path) -> Result<()> {
@@ -69,7 +69,7 @@ impl HubState {
             record.verify(&binding, &host_home)?;
             record
         };
-        contract::open_or_validate(&namespace, &path, fresh)?;
+        contract::open_or_migrate(&namespace, &path, fresh)?;
         let key =
             Ed25519KeyPair::from_pkcs8(&record.key).map_err(|_| anyhow::anyhow!(KEY_FAILURE))?;
         let socket_namespace = yolo_paths::Paths::new(&path).retain_socket_namespace()?;
@@ -98,10 +98,11 @@ impl HubState {
         yolo_paths::Paths::new(state).hub_socket()
     }
     pub fn hub_id_for(path: &Path, host_home: &Path) -> Result<HubId> {
-        let directory = PrivateDirectory::open(path)?;
+        let path = yolo_paths::platform::platform_path(path);
+        let directory = PrivateDirectory::open(&path)?;
         let namespace = NamespaceLease::from_directories(vec![(STATE_NAMESPACE, directory)])?;
         let record: Record = namespace.read_json(&path.join(HUB_IDENTITY_FILE))?;
-        let binding = Binding::capture(&namespace.directory(path)?)?;
+        let binding = Binding::capture(&namespace.directory(&path)?)?;
         let host_home = yolo_paths::coordination::canonical_logical_path(host_home)?;
         record.verify(&binding, &host_home)?;
         Ok(record.hub_id)
@@ -120,6 +121,11 @@ impl HubState {
     pub fn directory(&self) -> Result<PrivateDirectory> {
         self.verify()?;
         self.namespace.directory(&self.path)
+    }
+    /// The peer listener is derived from Hub state and reached only through SSH.
+    pub fn peer_socket(&self) -> Result<PathBuf> {
+        self.verify()?;
+        Ok(self.directory()?.path().join(PEER_SOCKET_FILE))
     }
     pub fn verify(&self) -> Result<()> {
         self.lock.verify()?;

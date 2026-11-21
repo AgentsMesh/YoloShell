@@ -1,12 +1,10 @@
 use super::fixtures;
 use crate::*;
-use std::net::{Ipv6Addr, SocketAddr, SocketAddrV6};
 
 const HOST_BYTE: &str = "a";
 const EXTRA_BYTE: usize = 1;
-const PEER_PORT: u16 = 32123;
-const FLOW_INFORMATION: u32 = 1;
-const INTERFACE_SCOPE: u32 = 2;
+const PATH_BYTE: &str = "a";
+const MAX_SOCKET_BYTES: usize = 100;
 
 #[test]
 fn profile_host_bound_accepts_the_limit_and_rejects_longer_or_path_like_values() {
@@ -26,33 +24,12 @@ fn profile_host_bound_accepts_the_limit_and_rejects_longer_or_path_like_values()
 }
 
 #[test]
-fn ipv6_loopback_requires_both_scope_and_flow_information_to_be_zero() {
+fn socket_budget_accepts_the_kernel_limit_and_rejects_longer_paths() {
     let mut request = fixtures::request();
-    request.endpoint = SocketAddr::V6(SocketAddrV6::new(
-        Ipv6Addr::LOCALHOST,
-        PEER_PORT,
-        u32::default(),
-        u32::default(),
-    ));
+    request.socket = format!("/{}", PATH_BYTE.repeat(MAX_SOCKET_BYTES - 1)).into();
     request.validate().unwrap();
-    let opened = BrokerHubOpened {
-        request: request.clone(),
-        channel_id: fixtures::CHANNEL,
-    };
-    opened.validate(&request).unwrap();
-    for (flow, scope) in [
-        (FLOW_INFORMATION, u32::default()),
-        (u32::default(), INTERFACE_SCOPE),
-        (FLOW_INFORMATION, INTERFACE_SCOPE),
-    ] {
-        request.endpoint = SocketAddr::V6(SocketAddrV6::new(
-            Ipv6Addr::LOCALHOST,
-            PEER_PORT,
-            flow,
-            scope,
-        ));
-        assert_eq!(request.validate(), Err(BrokerHubError::Endpoint));
-    }
+    request.socket = format!("/{}", PATH_BYTE.repeat(MAX_SOCKET_BYTES)).into();
+    assert_eq!(request.validate(), Err(BrokerHubError::Endpoint));
 }
 
 #[test]

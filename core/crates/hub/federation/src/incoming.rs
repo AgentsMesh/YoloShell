@@ -5,20 +5,21 @@ use anyhow::Result;
 use std::sync::Arc;
 use tokio::time::timeout;
 use yolo_hub_delegation::PeerIdentity;
-use yolo_hub_dispatch::{Dispatcher, Operation};
+use yolo_hub_dispatch::Operation;
 use yolo_hub_peer_protocol::{Call, ExecutionReply, PeerReply, PeerRequest, Purpose, Signed};
+use yolo_hub_peer_io::Duplex;
 use yolo_hub_peer_rpc::{Handler, Response as RpcResponse, RpcError, RpcFuture};
-use yolo_hub_peer_transport::PeerStream;
 use yolo_hub_rpc_protocol::{Reply, Response};
 use yolo_hub_terminal_protocol::PublicError;
 
 impl Federation {
-    pub(crate) async fn handle(
+    pub(crate) async fn serve_peer(
         self: Arc<Self>,
         peer: PeerIdentity,
-        stream: PeerStream,
+        stream: impl Duplex + 'static,
     ) -> Result<()> {
         self.require_open()?;
+        let _consumer = self.enter_consumer(peer);
         let handler = PeerHandler {
             peer,
             generation: OwnedGeneration::new(self)?,

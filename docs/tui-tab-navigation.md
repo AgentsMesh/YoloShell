@@ -18,7 +18,7 @@ state retains selection, focus and layout checkpoints. Layout records never gran
 | Split down | `-` or `"` | Add and focus a lower pane with a new shell |
 | Previous / next Tab | `p` / `n` | Restore that Tab's layout and focused pane |
 | Focus pane | arrows or `o` | Move within the current split tree |
-| Focus sidebar | `s` | Navigate Agent runs and Hubs |
+| Focus sidebar | `s` | Navigate the machine tree |
 | Toggle sidebar | `b` | Show or hide it independently of terminal focus |
 | Existing terminal picker | `g` | Find retained PTYs, including shells without an agent |
 | Manage Tabs | `w` | Select, name, create, or remove a Tab view |
@@ -31,15 +31,19 @@ The Tab strip always shows the catalog's Tab name, including explicit renames.
 The focused program's dynamic terminal title remains in its pane and status line;
 it never hides the Tab's navigation identity.
 
-In the sidebar, Tab switches between Agent runs and Hubs; Enter opens the selected
-agent or scopes to a Hub. `I` shows agent details and `i` interrupts a supported
-agent using its existing exact authority. `c` opens a new Tab, `n` prompts for
-its shell directory, and `/` filters the current view.
+The sidebar is a machine tree: machine roots own their Tabs, agent runs are
+indented children. `Enter` activates the selected machine or agent (opening the
+machine's live terminal, its last live terminal, or a new shell on that machine);
+`←`/`→` or Space collapse and expand a machine. `I` shows agent details and `i`
+interrupts a supported agent using its existing exact authority. `n` prompts for
+a shell directory on the selected machine, and `/` filters the tree. Tabs,
+splits, `Ctrl-B n/p` and the last-Tab rule are scoped to the active machine.
 
 The sidebar starts collapsed so a new shell uses the full terminal width.
-`Ctrl-B s` explicitly opens it and `Ctrl-B b` toggles it; agent arrival or exit
-does not change that choice. An empty layout uses the full inventory view instead
-of reserving a blank terminal area. The sidebar has no Terminals tab.
+`Ctrl-B s` explicitly focuses it and `Ctrl-B b` toggles visibility; agent
+arrival or exit does not change that choice. When the sidebar is visible the
+content column keeps the Tab strip above the panes; hiding it lets the panes
+span the width. The sidebar has no Terminals tab.
 Agent rows use three lines: title, activity and
 directory. Stale/unreachable evidence remains visible; UUIDs, hook provenance and
 resume metadata are available in details. The sidebar uses a bounded width;

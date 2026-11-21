@@ -34,6 +34,15 @@ fn direct(arguments: &[&str]) -> ObservedProcess {
 #[test]
 fn accepts_only_complete_yolo_resume_dialects() {
     let expected = Some(test_support::SESSION_ID.to_owned());
+    for mut flags in [
+        vec![yolo_codex_identity::managed_launch::NO_DAEMON],
+        vec![constants::CONFIG_ARGUMENT, yolo_codex_identity::managed_launch::LEGACY_SETTING],
+    ] {
+        flags.extend([constants::RESUME_ARGUMENT, constants::CWD_ARGUMENT, PROJECT_CWD, test_support::SESSION_ID]);
+        assert_eq!(session_id(&direct(&flags)), expected);
+        flags.push(RESUME_PROMPT);
+        assert!(session_id(&direct(&flags)).is_none());
+    }
     assert_eq!(
         session_id(&direct(&[
             constants::RESUME_ARGUMENT,

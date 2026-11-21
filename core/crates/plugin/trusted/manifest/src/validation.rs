@@ -104,7 +104,6 @@ fn validate(manifest: &TrustedPluginManifest) -> Result<(), ManifestError> {
     }
     let api = &manifest.api;
     if api.protocol_version == u16::MIN
-        || api.required_methods.is_empty()
         || !unique(&api.required_methods)
         || !unique(&api.optional_methods)
         || api

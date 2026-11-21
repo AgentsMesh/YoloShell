@@ -1,11 +1,45 @@
 use crate::{
+    AgentProjection,
     constants::*,
     record::{Entry, Process, Record, Subject},
 };
 use anyhow::{Result, ensure};
 use yolo_agent_contract::{AgentBinding, AgentState};
-use yolo_hub_identity::{AgentId, RuntimeEpoch, TerminalId};
+use yolo_agent_adapter_contract::{DetectionContext, validation::validate_core};
+use yolo_agent_control_contract::NativeControlObservation;
+use yolo_hub_identity::{AgentId, AgentTarget, RuntimeEpoch, RuntimeTarget, TerminalId};
 use yolo_terminal_model::{RecoveryState, TerminalView};
+
+impl AgentProjection {
+    /// Correlate a fresh, authenticated Host/Worker observation with an
+    /// already published execution. Reading content never publishes a cursor.
+    pub fn matches_observed_execution(
+        &self,
+        target: AgentTarget,
+        runtime: RuntimeTarget,
+        view: &TerminalView,
+        observed: &NativeControlObservation,
+    ) -> Result<bool> {
+        self.verify()?;
+        crate::observation::validate_native(view, observed)?;
+        let binding = observed.binding();
+        let context = DetectionContext::new(view.manifest.terminal_id, view.manifest.cwd.clone(), []);
+        validate_core(binding, &context)?;
+        let subject = subject(binding)?;
+        let epoch = RuntimeEpoch::from_uuid(observed.witness().fields().runtime_epoch)?;
+        let Some(entry) = self.record.entries.get(&target.address.agent_id) else {
+            return Ok(false);
+        };
+        Ok(!view.manifest.archived
+            && binding.state.is_active()
+            && !entry.source_exited
+            && self.record.latest.get(&subject.terminal_id) == Some(&target.address.agent_id)
+            && entry.subject == subject
+            && same_execution(entry, epoch, binding)
+            && entry.snapshot.cursor().target() == target
+            && entry.snapshot.fields().terminal == runtime)
+    }
+}
 
 pub(crate) fn subject(binding: &AgentBinding) -> Result<Subject> {
     for path in [&binding.data_home, &binding.evidence_path, &binding.cwd] {

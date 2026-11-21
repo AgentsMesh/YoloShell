@@ -35,7 +35,11 @@ rust_test(
     crate_name = "yolo_workspace_cli_unit_tests",
     crate_root = "src/lib.rs",
     edition = "2024",
-    deps = _DEPS,
+    deps = _DEPS + [
+        "//core/crates/hub/jsonrpc/protocol:yolo_hub_jsonrpc_protocol",
+        "//core/crates/hub/jsonrpc/transport:yolo_hub_jsonrpc_transport",
+        "//core/crates/transport/local/unix:yolo_local_unix",
+    ],
 )
 
 filegroup(

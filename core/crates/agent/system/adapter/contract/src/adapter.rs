@@ -137,5 +137,9 @@ pub trait AgentAdapter: Send + Sync {
         None
     }
     fn resume_plan(&self, binding: &AgentBinding) -> ResumePlan;
+    /// Exact previous command accepted when verifying an already persisted transaction.
+    fn previous_resume_plan(&self, _: &AgentBinding) -> Option<ResumePlan> {
+        None
+    }
     fn validate_binding(&self, binding: &AgentBinding, context: &DetectionContext) -> Result<()>;
 }

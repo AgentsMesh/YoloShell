@@ -6,9 +6,11 @@ mod model;
 mod pointer_selection;
 mod render;
 mod rows;
-mod sections;
 mod selection;
 mod title;
+mod tree;
+mod tree_render;
+mod tree_selection;
 mod viewport;
 mod viewport_evidence;
 
@@ -23,4 +25,5 @@ pub use model::{Inventory, View};
 pub use pointer_selection::InventorySelection;
 pub use render::render_viewport;
 pub use title::agent_title;
+pub use tree::{TreeRow, TreeRowKind, TreeSelection};
 pub use viewport::{InventoryHit, InventoryViewport};

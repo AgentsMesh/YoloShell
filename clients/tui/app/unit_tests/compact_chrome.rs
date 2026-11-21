@@ -84,7 +84,7 @@ fn default_terminal_uses_full_width_with_tab_strip_and_one_status_row() {
     let content = text(&terminal);
     assert!(content.contains("~/work/yolo $ codex"));
     assert!(!content.contains("Agent runs"));
-    assert!(!content.contains("Hubs"));
+    assert!(!content.contains("Machines"));
     assert!(content.contains(&format!("{SHELL} | Control: this UI")));
     for absent in ["Connected", "Terminals:", "Ctrl-b", "Read Only", "┌", "└"] {
         assert!(!content.contains(absent), "{absent}");
@@ -97,14 +97,14 @@ fn healthy_inventory_omits_the_connection_header_and_keeps_exceptions_visible() 
     let mut state = crate::client_capability_support::state();
     state.mode = Mode::Inventory;
     state.sidebar_visible = true;
-    state.inventory.view = yolo_tui_inventory::View::Agents;
+    state.inventory.view = yolo_tui_inventory::View::Tree;
     state.inventory.replace(Some(Vec::new()), Some(Vec::new()));
     state.inventory.current = true;
     state.control_generation = Some(uuid::Uuid::new_v4());
     let (terminal, _) = render(&state);
     let content = text(&terminal);
-    assert!(content.contains("Agent runs | Hubs"), "{content}");
-    assert!(!content.contains("Agent runs:"), "{content}");
+    assert!(content.contains("No machines"), "{content}");
+    assert!(!content.contains("Agent runs | Machines"), "{content}");
     assert!(!content.contains("Connected"), "{content}");
     assert!(!content.contains("Disconnected"), "{content}");
 
@@ -177,6 +177,6 @@ fn hidden_sidebar_keeps_split_terminal_width_with_a_single_shared_divider() {
     screenshot::save(&terminal, "yolo-split.svg");
     crate::tabs::terminal_picker::open(&mut state);
     let (terminal, _) = render(&state);
-    assert!(text(&terminal).contains(crate::tabs::TERMINAL_PICKER_TITLE));
+    assert!(text(&terminal).contains("Terminals"));
     screenshot::save(&terminal, "yolo-session-picker.svg");
 }
