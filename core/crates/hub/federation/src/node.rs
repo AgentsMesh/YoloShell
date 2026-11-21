@@ -1,6 +1,5 @@
 use crate::{
-    constants::*, observation_cache::ObservationCache, peer_diagnostics::ExportDepthDenials,
-    registry::Link,
+    constants::*, status::ConsumerRegistry, observation_cache::ObservationCache, registry::Link,
 };
 use anyhow::{Result, ensure};
 use std::{
@@ -18,10 +17,24 @@ use yolo_hub_federation_directory::OriginBook;
 use yolo_hub_federation_settings::{Configuration, routing_limits};
 use yolo_hub_identity::HubId;
 use yolo_hub_local_backend::LocalBackend;
-use yolo_hub_peer_dialer::{PeerDialer, TcpPeerDialer};
+use yolo_hub_peer_diagnostics::ExportDepthDenials;
+use yolo_hub_peer_dialer::{PeerDialFuture, PeerDialer};
 use yolo_hub_peer_protocol::{Catalogue, Signed};
 use yolo_hub_publication::Publication;
 use yolo_hub_state::HubState;
+
+struct NoDialer;
+
+impl PeerDialer for NoDialer {
+    fn dial<'a>(
+        &'a self,
+        _: yolo_hub_delegation::PeerIdentity,
+        _: &'a yolo_hub_federation_settings::PeerAddress,
+        _: tokio::time::Instant,
+    ) -> PeerDialFuture<'a> {
+        Box::pin(async { anyhow::bail!(NO_DIALER) })
+    }
+}
 
 pub struct Federation {
     pub(crate) state: Arc<HubState>,
@@ -39,8 +52,8 @@ pub struct Federation {
     pub(crate) directory_revision: AtomicU64,
     pub(crate) closing: AtomicBool,
     pub(crate) lifetime: Arc<crate::lifetime::Lifetime>,
-    pub(crate) key: Arc<russh::keys::PrivateKey>,
     pub(crate) dialer: Arc<dyn PeerDialer>,
+    pub(crate) consumers: ConsumerRegistry,
 }
 impl Federation {
     pub async fn new(
@@ -48,7 +61,7 @@ impl Federation {
         backend: LocalBackend,
         config: Configuration,
     ) -> Result<Arc<Self>> {
-        Self::new_with_dialer(state, backend, config, Arc::new(TcpPeerDialer), None).await
+        Self::new_with_dialer(state, backend, config, Arc::new(NoDialer), None).await
     }
 
     pub async fn new_with_dialer(
@@ -85,7 +98,6 @@ impl Federation {
         let (catalogue_wake, _) = watch::channel(0);
         let mut book = OriginBook::new(identity, config.pins(), routing_limits())?;
         let observation_cache = ObservationCache::open(state.clone(), &mut book).await;
-        let key = Arc::new(state.transport_key()?);
         let origin: Arc<dyn Dispatcher> = origin.map_or_else(
             || Arc::new(backend.clone()) as Arc<dyn Dispatcher>,
             |decorator| decorator.decorate(backend.clone()),
@@ -106,8 +118,8 @@ impl Federation {
             directory_revision: AtomicU64::new(0),
             closing: AtomicBool::new(false),
             lifetime: Arc::default(),
-            key,
             dialer,
+            consumers: ConsumerRegistry::default(),
         }))
     }
     pub fn hub_id(&self) -> HubId {

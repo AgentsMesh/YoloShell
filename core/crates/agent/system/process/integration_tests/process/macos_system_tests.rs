@@ -33,5 +33,5 @@ fn system_api_reads_native_process_fields_without_commands() {
 
 #[test]
 fn system_source_rejects_invalid_shell_identity() {
-    assert!(descendants(u32::MAX).is_err());
+    assert!(descendants_with_keys(u32::MAX, &[]).is_err());
 }

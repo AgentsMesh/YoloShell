@@ -8,20 +8,21 @@ use yolo_agent_contract::PROVIDER_CAPABILITY_PREFIX;
 const EXECUTABLE_MODE_MASK: u32 = 0o111;
 
 pub fn provider_capabilities() -> Vec<String> {
-    yolo_agent_providers::builtin_launch_policies()
-        .entries()
-        .filter(|(_, command)| executable_available(command))
-        .map(|(kind, _)| format!("{PROVIDER_CAPABILITY_PREFIX}{}", kind.as_str()))
-        .collect()
+    let mut capabilities = yolo_agent_providers::builtin_provider_runtime()
+        .runtimes()
+        .filter(|provider| provider.launch_executable().is_some_and(executable_available))
+        .map(|provider| format!("{PROVIDER_CAPABILITY_PREFIX}{}", provider.descriptor().kind().as_str()))
+        .collect::<Vec<_>>();
+    capabilities.sort();
+    capabilities
 }
 
-fn executable_available(command: &str) -> bool {
-    if command.contains('/') {
-        return executable_file(Path::new(command));
+fn executable_available(executable: &str) -> bool {
+    if executable.contains('/') {
+        return executable_file(Path::new(executable));
     }
     std::env::var_os("PATH").is_some_and(|paths| {
-        std::env::split_paths(&paths)
-            .any(|directory| executable_file(&directory.join(command)))
+        std::env::split_paths(&paths).any(|directory| executable_file(&directory.join(executable)))
     })
 }
 

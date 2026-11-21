@@ -61,7 +61,7 @@ pub(crate) fn choose(state: &mut State, jobs: &mpsc::Sender<Job>, index: usize) 
 
 fn eligible(state: &mut State, index: usize) -> Option<(AgentSnapshot, LeaseGrant, Uuid, String)> {
     if state.mode != Mode::Inventory
-        || state.inventory.view != View::Agents
+        || state.inventory.view != View::Tree
         || state.inventory.details.is_none()
     {
         state.status = OPEN_DETAILS.into();

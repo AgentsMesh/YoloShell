@@ -29,7 +29,7 @@ pub fn builtin_launch_policies() -> LaunchPolicies {
     let mut policies = LaunchPolicies::none();
     for runtime in builtin_provider_runtime().runtimes() {
         if let Some(command) = runtime.launch_command() {
-            policies.insert(runtime.descriptor().kind().clone(), command);
+            policies.insert_versioned(runtime.descriptor().kind().clone(), command, runtime.previous_launch_command());
         }
     }
     policies

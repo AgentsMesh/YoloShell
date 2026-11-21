@@ -144,20 +144,12 @@ impl AgentAdapter for CodexAdapter {
     }
 
     fn resume_plan(&self, binding: &AgentBinding) -> ResumePlan {
-        let environment = (!binding.data_home.is_empty())
-            .then(|| (constants::DATA_HOME_ENV.into(), binding.data_home.clone()))
-            .into_iter()
-            .collect();
-        ResumePlan {
-            executable: constants::EXECUTABLE.to_owned(),
-            args: vec![
-                constants::RESUME_ARGUMENT.to_owned(),
-                constants::CWD_ARGUMENT.to_owned(),
-                binding.cwd.clone(),
-                binding.provider_session_id.clone(),
-            ],
-            environment,
-        }
+        use yolo_codex_identity::managed_launch::{plain_resume, resume};
+        resume(plain_resume(binding))
+    }
+
+    fn previous_resume_plan(&self, binding: &AgentBinding) -> Option<ResumePlan> {
+        Some(yolo_codex_identity::managed_launch::plain_resume(binding))
     }
 
     fn validate_binding(&self, binding: &AgentBinding, context: &DetectionContext) -> Result<()> {

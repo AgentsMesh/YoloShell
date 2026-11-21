@@ -80,7 +80,6 @@ mod outbox_storage;
 mod outbox_storage_error;
 #[path = "outbox/outbox_validation.rs"]
 mod outbox_validation;
-mod provider_constants;
 #[path = "retirement/retirement_artifact.rs"]
 mod retirement_artifact;
 #[path = "retirement/retirement_constants.rs"]
@@ -179,7 +178,6 @@ pub use outbox_storage::set_before_persist_commit_hook as set_outbox_commit_hook
 #[cfg(any(test, feature = "runtime-component-tests"))]
 pub use outbox_storage::set_before_persist_reproof_hook as set_outbox_reproof_hook;
 pub use outbox_storage_error::is_commit_indeterminate as is_outbox_commit_indeterminate;
-pub use provider_constants::MAX_PROVIDER_EXECUTABLE_BYTES;
 pub use retirement_artifact::{
     CodexRetirementArtifact, CodexRetirementPublication, CodexRetirementSealArtifact,
     CodexRetirementSealPublication,

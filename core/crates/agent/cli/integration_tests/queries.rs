@@ -53,8 +53,7 @@ async fn list_reports_current_agents_with_terminal_names() {
                     include_archived: false,
                     ..
                 },
-                Command::ListAgents { .. },
-                Command::ListHubs { .. }
+                Command::ListAgents { .. }
             ]
         ),
         "the default listing reads live sessions only: {commands:?}"
@@ -103,8 +102,7 @@ async fn list_all_reads_the_archived_catalogue() {
                     include_archived: true,
                     ..
                 },
-                Command::ListAgents { .. },
-                Command::ListHubs { .. }
+                Command::ListAgents { .. }
             ]
         ),
         "an --all listing reads the complete catalogue: {commands:?}"
@@ -172,8 +170,6 @@ async fn read_returns_the_latest_conversation_page() {
         [
             Command::List { .. },
             Command::ListAgents { .. },
-            Command::ListHubs { .. },
-            Command::GetAgent { .. },
             Command::ResolveConversation { .. },
             Command::ReadConversation { .. }
         ]

@@ -146,13 +146,15 @@ fn ancestry_accepts_a_callback_in_its_own_terminal_session() {
         peer.process_group = i32::try_from(PEER).unwrap();
         peer.foreground_group = i32::try_from(PEER).unwrap();
     }
-    let observed = observe_ancestry(&api, shell(), PEER, &[ENVIRONMENT_KEY]).unwrap();
+    let observed = observe_ancestry(&api, shell(), PEER, &[ENVIRONMENT_KEY], false).unwrap();
     assert_eq!(
         observed.iter().map(|process| process.pid).collect::<Vec<_>>(),
         [PEER, LAUNCHER, PROVIDER]
     );
     // The foreground-fenced variant still rejects the detached callback.
     assert!(observe_lineage(&api, ROOT, PEER, &[ENVIRONMENT_KEY]).is_none());
+    let with_root = observe_ancestry(&api, shell(), PEER, &[ENVIRONMENT_KEY], true).unwrap();
+    assert_eq!(with_root.iter().map(|row| row.pid).collect::<Vec<_>>(), [PEER, LAUNCHER, PROVIDER, ROOT]);
 }
 
 #[test]
@@ -163,7 +165,7 @@ fn ancestry_requires_the_exact_custody_shell() {
         .get_mut(&PROVIDER)
         .unwrap()
         .parent_pid = UNRELATED;
-    assert!(observe_ancestry(&api, shell(), PEER, &[ENVIRONMENT_KEY]).is_none());
+    assert!(observe_ancestry(&api, shell(), PEER, &[ENVIRONMENT_KEY], true).is_none());
 
     for (root, peer) in [
         (
@@ -176,6 +178,6 @@ fn ancestry_requires_the_exact_custody_shell() {
         (shell(), ROOT),
         (shell(), UNRELATED),
     ] {
-        assert!(observe_ancestry(&Api::new(), root, peer, &[ENVIRONMENT_KEY]).is_none());
+        assert!(observe_ancestry(&Api::new(), root, peer, &[ENVIRONMENT_KEY], true).is_none());
     }
 }

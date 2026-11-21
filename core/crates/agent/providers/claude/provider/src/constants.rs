@@ -5,6 +5,9 @@
 use yolo_agent_contract::AgentKind;
 use yolo_plugin_provider::{PROVIDER_SCHEMA_VERSION, ProviderDefinition};
 
+mod native_install;
+pub use native_install::native_version;
+
 pub const PROVIDER_ID: &str = "yolo.provider.claude-code";
 pub const KIND: &str = "claude_code";
 pub const CONVERSATION_TOKEN: &str = KIND;

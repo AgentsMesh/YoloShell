@@ -9,9 +9,12 @@ async fn public_reads_are_worker_bound_and_activity_changes_do_not_invalidate_co
     let evidence = Evidence::new();
     evidence.message("native answer");
     let before = &evidence.view;
-    let observed = observation(before, SOURCE_REVISION);
-    let snapshot = observe(&fixture, before, Some(&observed)).await;
+    let mut published = before.clone();
+    published.agent.as_mut().unwrap().updated_at_ms += 1;
+    let observed = observation(&published, SOURCE_REVISION);
+    let snapshot = observe(&fixture, &published, Some(&observed)).await;
     let target = binding(&snapshot);
+    let _catalogue_sweep = fixture.backend.begin_observation().await;
     let command = Command::ResolveConversation { binding: target };
     let (reply, ()) = bounded(async {
         tokio::join!(
@@ -51,6 +54,8 @@ async fn public_reads_are_worker_bound_and_activity_changes_do_not_invalidate_co
     assert!(
         matches!(&page.entries[0].parts[0], ConversationPart::Text { text } if text == "native answer")
     );
+    let projection = fixture.backend.agents.as_ref().unwrap().lock().await;
+    assert_eq!(projection.get(target.agent.address).unwrap(), Some(snapshot));
     fixture.assert_no_pending_connection();
 }
 
@@ -79,6 +84,31 @@ async fn content_is_discarded_if_native_process_changes_during_a_read() {
             error: ConversationError::BindingChanged
         }
     );
+    fixture.assert_no_pending_connection();
+}
+
+#[tokio::test]
+async fn a_new_native_session_in_the_same_terminal_cannot_release_the_previous_conversation() {
+    let fixture = ProtocolFixture::new().with_agents();
+    let evidence = Evidence::new();
+    let before = &evidence.view;
+    let observed = observation(before, SOURCE_REVISION);
+    let snapshot = observe(&fixture, before, Some(&observed)).await;
+    let target = binding(&snapshot);
+    let mut replacement = before.clone();
+    let next = replacement.agent.as_mut().unwrap();
+    next.provider_session_id = uuid::Uuid::new_v4().to_string();
+    next.updated_at_ms += 1;
+    let _catalogue_sweep = fixture.backend.begin_observation().await;
+    let (reply, ()) = bounded(async {
+        tokio::join!(
+            fixture.backend.resolve_conversation(target),
+            two_fences(&fixture, before, &replacement)
+        )
+    }).await;
+    assert_eq!(reply.unwrap(), Reply::ConversationUnavailable { error: ConversationError::BindingChanged });
+    let projection = fixture.backend.agents.as_ref().unwrap().lock().await;
+    assert_eq!(projection.get(target.agent.address).unwrap(), Some(snapshot));
     fixture.assert_no_pending_connection();
 }
 

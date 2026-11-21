@@ -1,7 +1,12 @@
-use super::constants::{COMMAND, HELP_ARGUMENT, PROGRAM};
+use super::constants::{
+    CHECK_RELEASE_SWITCH, CHECK_SWITCH, COMMAND, HELP_ARGUMENT, PROGRAM, RESTART_SWITCH,
+};
 use super::service::ServiceUnit;
 use std::{fs, os::unix::fs::PermissionsExt};
 use tempfile::tempdir;
+
+mod modes;
+mod releases;
 
 #[test]
 fn service_unit_requires_a_digest_pinned_regular_image() {
@@ -49,6 +54,21 @@ fn service_unit_rejects_mutable_or_unpinned_exec_start() {
 }
 
 #[test]
+fn running_the_installer_symlink_resolves_to_the_immutable_image() {
+    let directory = tempdir().unwrap();
+    let executable = directory.path().join("yolo");
+    fs::write(&executable, b"candidate").unwrap();
+    let link = directory.path().join("bin-yolo");
+    std::os::unix::fs::symlink(&executable, &link).unwrap();
+    assert!(super::service::image(&link).is_err());
+    let resolved = fs::canonicalize(&link).unwrap();
+    assert_eq!(
+        super::service::image(&resolved).unwrap(),
+        super::service::image(&executable).unwrap()
+    );
+}
+
+#[test]
 fn update_is_the_only_public_admission_command() {
     use clap::Parser;
     let args = [PROGRAM, COMMAND, HELP_ARGUMENT];
@@ -61,8 +81,30 @@ fn update_is_the_only_public_admission_command() {
 }
 
 #[test]
+fn restart_is_available_without_release_flags() {
+    use clap::Parser;
+    let args = [PROGRAM, COMMAND, RESTART_SWITCH];
+    let parsed = super::Cli::try_parse_from(args).unwrap();
+    let super::Command::Update(options) = parsed.command;
+    assert!(options.restart);
+    assert!(!options.check);
+    assert!(!options.admit);
+    assert!(!options.install_release);
+}
+
+#[test]
+fn restart_refuses_to_combine_with_a_release_check() {
+    use clap::Parser;
+    let args = [PROGRAM, COMMAND, RESTART_SWITCH, CHECK_SWITCH];
+    assert_eq!(
+        super::Cli::try_parse_from(args).unwrap_err().kind(),
+        clap::error::ErrorKind::ArgumentConflict
+    );
+}
+
+#[test]
 fn one_failed_admission_check_cannot_be_hidden_by_later_success() {
-    let executable = std::env::current_exe().unwrap();
+    let executable = std::env::current_exe().unwrap().canonicalize().unwrap();
     let image = super::service::image(&executable).unwrap();
     let mut report = super::report::CheckReport::new(image);
     report.push("first", true, "ok");
@@ -72,29 +114,8 @@ fn one_failed_admission_check_cannot_be_hidden_by_later_success() {
 }
 
 #[test]
-fn selects_stable_and_nightly_releases_and_their_assets() {
-    use super::github_release::{Channel, TARGET_TRIPLE, archive_asset, digest_for, latest, parse};
-    let asset = format!("yolo-0.2.0-{TARGET_TRIPLE}.tar.gz");
-    let json = format!(
-        "[{{\"tag_name\":\"nightly-20261103\",\"prerelease\":true,\"draft\":false,\"published_at\":\"2026-11-03T03:00:00Z\",\"assets\":[]}},{{\"tag_name\":\"v0.2.0\",\"name\":\"Yolo 0.2.0\",\"prerelease\":false,\"draft\":false,\"published_at\":\"2026-11-02T03:00:00Z\",\"assets\":[{{\"name\":\"{asset}\",\"browser_download_url\":\"https://example.test/{asset}\"}},{{\"name\":\"SHA256SUMS\",\"browser_download_url\":\"https://example.test/SHA256SUMS\"}}]}},{{\"tag_name\":\"v0.3.0\",\"prerelease\":false,\"draft\":true,\"assets\":[]}}]"
-    );
-    let releases = parse(&json).unwrap();
-    let stable = latest(&releases, Channel::Stable).unwrap();
-    assert_eq!(stable.tag_name, "v0.2.0");
-    assert_eq!(archive_asset(stable).unwrap().name, asset);
-    let nightly = latest(&releases, Channel::Nightly).unwrap();
-    assert_eq!(nightly.tag_name, "nightly-20261103");
-    let digest = "a".repeat(64);
-    assert_eq!(
-        digest_for(&format!("{digest}  {asset}\n"), &asset).unwrap(),
-        digest
-    );
-    assert!(digest_for("bad  other", &asset).is_err());
-}
-
-#[test]
 fn release_flags_are_selectable_without_local_profile() {
-    use super::constants::{CHANNEL_SWITCH, CHECK_RELEASE_SWITCH, COMMAND, NIGHTLY_VALUE, PROGRAM};
+    use super::constants::{CHANNEL_SWITCH, NIGHTLY_VALUE};
     use clap::Parser;
     let args = [
         PROGRAM,
@@ -105,7 +126,7 @@ fn release_flags_are_selectable_without_local_profile() {
     ];
     let parsed = super::Cli::try_parse_from(args).unwrap();
     let super::Command::Update(options) = parsed.command;
-    assert!(options.check_release);
+    assert!(options.check);
     assert!(!options.install_release);
     assert_eq!(options.channel, super::github_release::Channel::Nightly);
 }
@@ -137,4 +158,22 @@ fn installs_a_release_archive_into_an_immutable_directory() {
             .join("yolo")
     );
     assert_eq!(fs::read(&link).unwrap(), b"#!/bin/sh\n");
+}
+
+#[test]
+fn update_accepts_a_local_profile() {
+    use clap::Parser;
+    use std::path::PathBuf;
+    let args = [
+        PROGRAM,
+        COMMAND,
+        super::constants::LOCAL_PROFILE_SWITCH,
+        "/tmp/yolo-profile.json",
+    ];
+    let parsed = super::Cli::try_parse_from(args).unwrap();
+    let super::Command::Update(options) = parsed.command;
+    assert_eq!(
+        options.local_profile,
+        Some(PathBuf::from("/tmp/yolo-profile.json"))
+    );
 }

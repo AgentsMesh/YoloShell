@@ -15,7 +15,7 @@ pub(in crate::worker) fn with_control_source<T>(
     state: &WorkerState,
     durable: &SessionDurableMutationGuard<'_>,
     expected: Option<&NativeControlWitness>,
-    operation: impl FnOnce(&AgentBinding, &NativeControlWitness, &dyn Fn() -> Result<()>) -> Result<T>,
+    operation: impl FnOnce(&AgentBinding, &NativeControlWitness, Option<&str>, &dyn Fn() -> Result<()>) -> Result<T>,
 ) -> Result<T> {
     durable.require_no_pending_intent()?;
     let runtime = lock_recover(&state.record).clone();
@@ -48,9 +48,11 @@ pub(in crate::worker) fn with_control_source<T>(
     state
         .codex_hook_ingress
         .with_control_route(&authority, |entry| {
-            entry
-                .runtime()
-                .with_control_authority(entry, &authority, state.agent_registry.as_ref(), |lineage, verify_runtime| {
+            entry.runtime().with_control_authority(
+                entry,
+                &authority,
+                state.agent_registry.as_ref(),
+                |lineage, stop_turn, verify_runtime| {
                     let process = authority.provider_process();
                     ensure!(
                         crate::process::process_identity_relation(process.pid, process.start_time)
@@ -113,7 +115,8 @@ pub(in crate::worker) fn with_control_source<T>(
                         durable.namespace().verify()
                     };
                     verify()?;
-                    operation(&binding, &witness, &verify)
-                })
+                    operation(&binding, &witness, stop_turn, &verify)
+                },
+            )
         })
 }

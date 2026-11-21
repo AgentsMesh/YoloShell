@@ -1,6 +1,5 @@
 pub const MAX_HISTORY_PAGES: usize = 8;
 pub const MAX_RENDER_ROWS: usize = 4_096;
-pub(crate) const MAX_PART_ROWS: usize = 32;
 pub(crate) const COMPOSER_ROWS: u16 = 3;
 pub(crate) const MAX_COMPOSER_ROWS: usize = yolo_agent_input::MAX_PROMPT_BYTES + 1;
 pub(crate) const STATUS_ROWS: u16 = 1;
@@ -20,7 +19,6 @@ pub(crate) const READER_OFFLINE: &str = "Conversation connection unavailable";
 pub(crate) const INVALID_RESPONSE: &str = "Conversation response did not match this view";
 pub(crate) const HISTORY_WINDOW: &str = "History window limit reached";
 pub(crate) const PARTIAL_HISTORY: &str = "Some conversation content is unavailable";
-pub(crate) const PART_TRUNCATED: &str = "… more content omitted from this view";
 pub(crate) const USER: &str = "You";
 pub(crate) const ASSISTANT: &str = "Agent";
 pub(crate) const TOOL: &str = "Tool";

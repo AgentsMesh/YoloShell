@@ -1,8 +1,11 @@
 use std::time::Duration;
 pub const DIALER_TEST_TIMEOUT: Duration = Duration::from_secs(15);
-pub const DIALER_HOST: &str = "configured-first.invalid";
-pub const REPLACEMENT_HOST: &str = "configured-second.invalid";
-pub const DIALER_PORT: u16 = 43123;
+pub const FIRST_PROFILE: &str = "configured-first";
+pub const SECOND_PROFILE: &str = "configured-second";
+pub const PROFILE_REVISION: &str =
+    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+pub const FIRST_SOCKET: &str = "/run/user/1000/yolo/first.sock";
+pub const SECOND_SOCKET: &str = "/run/user/1000/yolo/second.sock";
 pub const HOST_DIRECTORY: &str = "host";
 pub const HUB_DIRECTORY: &str = "hub";
 pub const REMOTE_DIRECTORY: &str = "remote";

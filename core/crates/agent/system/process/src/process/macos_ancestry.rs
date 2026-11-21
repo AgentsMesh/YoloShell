@@ -9,11 +9,12 @@ pub(super) fn ancestry_with_keys(
     root: crate::process::ProcessIdentity,
     peer_pid: u32,
     environment_keys: &[&str],
+    include_root: bool,
 ) -> Result<super::FencedDescendants> {
     if !root.matches() {
         return Ok(super::FencedDescendants::RootChanged);
     }
-    let observed = observation_ancestry(&SystemApi, root, peer_pid, environment_keys)
+    let observed = observation_ancestry(&SystemApi, root, peer_pid, environment_keys, include_root)
         .unwrap_or_default();
     if !root.matches() {
         return Ok(super::FencedDescendants::RootChanged);
@@ -29,6 +30,7 @@ fn observation_ancestry(
     root: crate::process::ProcessIdentity,
     peer_pid: u32,
     environment_keys: &[&str],
+    include_root: bool,
 ) -> Result<Vec<ObservedProcess>> {
     if peer_pid == root.pid {
         return Ok(Vec::new());
@@ -58,11 +60,12 @@ fn observation_ancestry(
         current = info.parent_pid;
     }
     budget.reserve_pids(lineage.len())?;
-    let Some((root_info, lineage)) = lineage.split_last() else {
+    let Some((root_info, descendants)) = lineage.split_last() else {
         return Ok(Vec::new());
     };
-    let mut observed = Vec::with_capacity(lineage.len());
-    for info in lineage {
+    let subjects = if include_root { lineage.as_slice() } else { descendants };
+    let mut observed = Vec::with_capacity(subjects.len());
+    for info in subjects {
         let Some(process) =
             super::macos_observe::observe_process(api, *info, &mut budget, environment_keys)?
         else {

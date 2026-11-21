@@ -2,6 +2,7 @@ use super::*;
 use std::os::unix::fs::PermissionsExt;
 
 mod constants;
+mod manual_codex;
 use self::constants::*;
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]

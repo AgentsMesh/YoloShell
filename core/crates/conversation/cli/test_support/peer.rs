@@ -12,6 +12,15 @@ pub fn peer(
     action: Action,
     replies: Vec<Reply>,
 ) -> (Options, tempfile::TempDir, JoinHandle<Vec<Command>>) {
+    delayed_peer(hub, action, replies, std::time::Duration::ZERO)
+}
+
+pub fn delayed_peer(
+    hub: HubId,
+    action: Action,
+    replies: Vec<Reply>,
+    latency: std::time::Duration,
+) -> (Options, tempfile::TempDir, JoinHandle<Vec<Command>>) {
     let directory = tempfile::tempdir().unwrap();
     let socket = directory.path().join("conversation.sock");
     let listener = UnixListener::bind(&socket).unwrap();
@@ -41,13 +50,15 @@ pub fn peer(
             .unwrap();
         let mut commands = Vec::new();
         for reply in replies {
+            let deadline = Instant::now() + TIMEOUT;
             let Incoming::Message(request) = framed.receive::<Request>(deadline).await.unwrap()
             else {
                 panic!()
             };
             commands.push(request.fields().command.clone());
+            tokio::time::sleep(latency).await;
             framed
-                .send(&Response::new(&request, reply).unwrap(), deadline)
+                .send(&Response::new(&request, reply).unwrap(), Instant::now() + TIMEOUT)
                 .await
                 .unwrap();
         }

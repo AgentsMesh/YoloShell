@@ -79,6 +79,22 @@ pub fn apply_resume_with_registry(
     Ok(())
 }
 
+/// A previously journaled launch can complete with its provider's historical
+/// command. Both the command bytes and the environment come from the binding.
+pub fn matches_previous_resume(
+    spec: &WorkerLaunchSpec,
+    binding: &AgentBinding,
+    registry: &AgentRegistry,
+) -> Result<bool> {
+    let Some(plan) = registry.adapter(&binding.kind)
+        .and_then(|adapter| adapter.previous_resume_plan(binding))
+    else {
+        return Ok(false);
+    };
+    validate_launch_environment(&plan.environment)?;
+    Ok(spec.environment == plan.environment && spec.initial_input.as_ref() == Some(&encode_command(&plan)))
+}
+
 #[cfg(test)]
 #[cfg(any(not(test), feature = "yolo-unit-tests"))]
 #[path = "../unit_tests/launch_tests.rs"]

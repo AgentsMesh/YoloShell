@@ -13,6 +13,6 @@ pub fn snapshot() -> ConfigurationSnapshot {
             configuration: yolo_hub_federation_settings::Configuration::default(),
         },
         applied: true,
-        listen_address: None,
+        peer_socket: Some("/run/user/1000/yolo/hub/peer.sock".into()),
     }
 }

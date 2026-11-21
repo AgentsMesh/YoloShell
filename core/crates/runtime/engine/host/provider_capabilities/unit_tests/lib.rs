@@ -14,8 +14,14 @@ fn provider_capabilities_are_prefixed_sorted_and_unique() {
     sorted.sort();
     sorted.dedup();
     assert_eq!(values, sorted);
-    assert!(values
-        .iter()
-        .all(|value| value.starts_with(PROVIDER_CAPABILITY_PREFIX)));
-    assert!(!values.iter().any(|value| value == PROVIDER_CAPABILITY_PREFIX));
+    assert!(
+        values
+            .iter()
+            .all(|value| value.starts_with(PROVIDER_CAPABILITY_PREFIX))
+    );
+    assert!(
+        !values
+            .iter()
+            .any(|value| value == PROVIDER_CAPABILITY_PREFIX)
+    );
 }

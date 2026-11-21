@@ -50,8 +50,7 @@ impl CodexExecutableIdentity {
                 && self.mode & UNTRUSTED_WRITE_MASK == 0
                 && trusted_owner
                 && self.links == EXPECTED_LINK_COUNT
-                && self.length > 0
-                && self.length <= kind.maximum_bytes(),
+                && kind.accepts_length(self.length),
             EXECUTABLE_INVALID
         );
         Ok(())

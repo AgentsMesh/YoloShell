@@ -28,7 +28,7 @@ pub fn prepare(harness: &Harness) -> (PathBuf, PathBuf, PathBuf) {
     .unwrap();
     std::fs::set_permissions(&binary, std::fs::Permissions::from_mode(EXECUTABLE_MODE)).unwrap();
     let data = home.join(CLAUDE_DATA_DIRECTORY);
-    let provider = &yolo_hook_installation_catalog::CLAUDE;
+    let provider = crate::support::claude_install_spec();
     let preview = yolo_hook_installation::inspect(provider, &data).unwrap();
     yolo_hook_installation::install(provider, &data, &preview.revision).unwrap();
     let first = home.join(FIRST_DIRECTORY);

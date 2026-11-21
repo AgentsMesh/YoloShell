@@ -10,7 +10,7 @@ pub(crate) fn sidebar(state: &mut State) {
     state.sidebar_visible = true;
     state.mode = Mode::Inventory;
     if state.inventory.view == View::Terminals {
-        state.inventory.view = View::Agents;
+        state.inventory.view = View::Tree;
     }
     state.presentation = Default::default();
 }

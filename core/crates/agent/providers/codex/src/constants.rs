@@ -8,6 +8,8 @@ pub const SESSION_META_TYPE: &str = "session_meta";
 pub const SESSION_ID_KEY: &str = "id";
 pub const CWD_KEY: &str = "cwd";
 pub const SOURCE_KEY: &str = "source";
+pub const THREAD_SOURCE_KEY: &str = "thread_source";
+pub const USER_THREAD_SOURCE: &str = "user";
 pub const SUBAGENT_SOURCE_KEY: &str = "subagent";
 pub const CLI_SOURCE: &str = "cli";
 /// `codex exec` writes the same main-session metadata with `source: "exec"`.
@@ -21,7 +23,7 @@ pub const TURN_ABORTED_EVENT: &str = "turn_aborted";
 pub const TURN_ID_KEY: &str = "turn_id";
 pub const AGENT_ID_KEY: &str = "agent_id";
 pub const TURN_TAIL_BYTES: u64 = 256 * 1024;
-pub const RESUME_ARGUMENT: &str = "resume";
+pub use yolo_codex_identity::{CWD_ARGUMENT, DATA_HOME_ENV, RESUME_ARGUMENT};
 pub const FORK_ARGUMENT: &str = "fork";
 pub const YOLO_ARGUMENT: &str = "--yolo";
 pub const CONFIG_ARGUMENT: &str = "--config";
@@ -33,7 +35,6 @@ pub const OPTION_TERMINATOR: &str = "--";
 pub const LONG_OPTION_PREFIX: &str = "--";
 pub const LONG_OPTION_ASSIGNMENT: char = '=';
 pub const OPTION_PREFIX: char = '-';
-pub const CWD_ARGUMENT: &str = "-C";
 pub const LONG_CWD_ARGUMENT: &str = "--cd";
 pub const CWD_ARGUMENTS: &[&str] = &[CWD_ARGUMENT, LONG_CWD_ARGUMENT];
 pub const BOOLEAN_ARGUMENTS: &[&str] = &[
@@ -42,6 +43,7 @@ pub const BOOLEAN_ARGUMENTS: &[&str] = &[
     BYPASS_HOOK_TRUST_ARGUMENT,
     "--include-non-interactive",
     "--no-alt-screen",
+    yolo_codex_identity::NO_DAEMON,
     "--oss",
     "--search",
     "--strict-config",
@@ -70,7 +72,6 @@ pub const REMOTE_ARGUMENTS: &[&str] = &["--remote", "--remote-auth-token-env"];
 pub const EXECUTABLE: &str = "codex";
 pub const PROMPT_INTERRUPT_KEY: &[u8] = b"\x1b";
 pub use yolo_codex_identity::KIND;
-pub const DATA_HOME_ENV: &str = "CODEX_HOME";
 pub const DEFAULT_DATA_HOME_DIR: &str = ".codex";
 pub const EVIDENCE_DIR: &str = "sessions";
 pub const SESSION_INDEX_FILE: &str = "session_index.jsonl";
@@ -106,8 +107,6 @@ pub const REAL_ORIGINATOR: &str = "codex_cli_rs";
 pub const REAL_CLI_VERSION_KEY: &str = "cli_version";
 #[cfg(test)]
 pub const REAL_SESSION_LINEAGE_ID_KEY: &str = "session_id";
-#[cfg(test)]
-pub const REAL_THREAD_SOURCE_KEY: &str = "thread_source";
 #[cfg(test)]
 pub const REAL_MODEL_PROVIDER_KEY: &str = "model_provider";
 #[cfg(test)]

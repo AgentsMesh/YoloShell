@@ -4,18 +4,19 @@ use tokio::sync::watch;
 use yolo_hub_rpc_protocol::Command;
 
 #[tokio::test]
-async fn activation_preserves_ephemeral_listener_and_exact_replay_receipt() {
+async fn activation_preserves_the_hub_peer_socket_and_exact_replay_receipt() {
     let Fixture {
         directory: _directory,
-        state: _state,
+        state,
         hub,
         service,
     } = Fixture::new().await;
     let (stop, stopped) = watch::channel(false);
     let task = tokio::spawn(service.run(stopped));
     let initial = call(&hub, Command::GetConfiguration {}).await.unwrap();
-    let mut update = change(&initial);
-    update.configuration.listen = Some("127.0.0.1:0".parse().unwrap());
+    let expected = state.peer_socket().unwrap();
+    assert_eq!(initial.peer_socket.as_ref(), Some(&expected));
+    let update = change(&initial);
     let applied = call(
         &hub,
         Command::Configure {
@@ -25,7 +26,7 @@ async fn activation_preserves_ephemeral_listener_and_exact_replay_receipt() {
     .await
     .unwrap();
     assert!(applied.applied);
-    assert_ne!(applied.listen_address.unwrap().port(), 0);
+    assert_eq!(applied.peer_socket.as_ref(), Some(&expected));
     let replay = call(&hub, Command::Configure { change: update })
         .await
         .unwrap();
@@ -38,7 +39,7 @@ async fn activation_preserves_ephemeral_listener_and_exact_replay_receipt() {
     )
     .await
     .unwrap();
-    assert_eq!(next.listen_address, applied.listen_address);
+    assert_eq!(next.peer_socket, applied.peer_socket);
     assert!(next.state.revision > applied.state.revision);
     stop.send_replace(true);
     task.await.unwrap().unwrap();
@@ -72,22 +73,6 @@ async fn concurrent_changes_have_one_winner_and_stale_revision_never_overwrites(
 }
 
 #[tokio::test]
-async fn occupied_new_listener_does_not_disrupt_existing_generation() {
-    let mut fixture = Fixture::new().await;
-    let occupied = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
-    let initial = fixture.service.snapshot().unwrap();
-    let mut update = change(&initial);
-    update.configuration.listen = Some(occupied.local_addr().unwrap());
-    assert_eq!(
-        fixture.service.change(update).await,
-        Err(PublicError::Conflict)
-    );
-    assert_eq!(fixture.service.snapshot().unwrap(), initial);
-    assert!(fixture.hub.generation.read().await.is_some());
-    fixture.service.retire().await.unwrap();
-}
-
-#[tokio::test]
 async fn persisted_configuration_survives_service_restart_and_seed_conflicts_fail_closed() {
     let mut fixture = Fixture::new().await;
     let initial = fixture.service.snapshot().unwrap();
@@ -103,8 +88,13 @@ async fn persisted_configuration_survives_service_restart_and_seed_conflicts_fai
     service.retire().await.unwrap();
     drop(service);
     drop(hub);
+    let remote = HubState::open(
+        &fixture.directory.path().join("different-remote"),
+        &fixture.directory.path().join("different-home"),
+    )
+    .unwrap();
     let different = Configuration {
-        listen: Some("127.0.0.1:0".parse().unwrap()),
+        trusted_origins: vec![remote.peer_identity()],
         ..Configuration::default()
     };
     assert!(

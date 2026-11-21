@@ -1,3 +1,4 @@
+use super::evidence_path::AnchoredEvidence;
 use super::{CodexAdapter, evidence_reader, metadata};
 use crate::agent::AgentEvidence;
 use anyhow::Result;
@@ -17,10 +18,26 @@ impl CodexAdapter {
         if !metadata::main_rollout_path(path) {
             return Ok(None);
         }
-        let Some(head) = evidence_reader::read_with_hook(data_home, path, after_read)? else {
+        let Some(mut anchor) = AnchoredEvidence::open(data_home, path)? else {
             return Ok(None);
         };
-        let Some(metadata) = metadata::RolloutMetadata::from_head(path, &head, agent_cwd) else {
+        Self::read_evidence(&mut anchor, path, agent_cwd, data_home, after_read)
+    }
+
+    pub(super) fn read_evidence(
+        anchor: &mut AnchoredEvidence,
+        path: &Path,
+        agent_cwd: &Path,
+        data_home: &Path,
+        after_read: impl FnOnce(),
+    ) -> Result<Option<AgentEvidence>> {
+        let head = evidence_reader::read_complete_head(anchor.file_mut())?;
+        after_read();
+        if head != evidence_reader::read_complete_head(anchor.file_mut())? || !anchor.verify()? {
+            return Ok(None);
+        }
+        let records = evidence_reader::parse_bytes(&head);
+        let Some(metadata) = metadata::RolloutMetadata::from_head(path, &records, agent_cwd) else {
             return Ok(None);
         };
         Ok(Some(AgentEvidence {

@@ -29,11 +29,19 @@ impl LocalBackend {
         &self,
         command: &Command,
     ) -> Option<Result<yolo_hub_rpc_protocol::Reply, PublicError>> {
-        let reply = self.platform.as_ref()?.dispatch(command).await?;
-        Some(match reply {
-            Ok(reply) => self.annotate_run_reply(reply).await,
-            Err(error) => Err(error),
-        })
+        let platform = self.platform.as_ref()?;
+        if matches!(
+            command,
+            Command::GetAgentRun { .. } | Command::ListAgentRuns { .. }
+        ) && let Err(error) = self.refresh_runs().await
+        {
+            return Some(Err(error));
+        }
+        let mut reply = platform.dispatch(command).await?;
+        if let Ok(reply @ (Reply::AgentRun { .. } | Reply::AgentRuns { .. })) = &mut reply {
+            reply.annotate_run_current(&self.observed_targets().await);
+        }
+        Some(reply)
     }
 
     pub(crate) async fn catalogue_views(
@@ -81,6 +89,7 @@ impl LocalBackend {
         let applied = self
             .apply_catalogue(sweep, false, SweepPolicy::Catalogue)
             .await?;
+        self.reconcile_runs(&applied.views, archived).await?;
         let views = match applied.views {
             Ok(views) => views,
             Err(error) => return Err(map_error(error)),

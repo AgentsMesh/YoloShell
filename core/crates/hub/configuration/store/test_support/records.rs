@@ -21,12 +21,10 @@ pub fn identity() -> PeerIdentity {
 
 pub fn configuration() -> Configuration {
     Configuration {
-        listen: None,
-        peers: Vec::new(),
-        file_roots: Vec::new(),
         trusted_origins: vec![
             PeerIdentity::new(HubId::new(), [OTHER_KEY_BYTE; ED25519_PUBLIC_KEY_BYTES]).unwrap(),
         ],
+        ..Configuration::default()
     }
 }
 

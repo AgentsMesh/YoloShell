@@ -18,6 +18,11 @@ impl Fixture {
     pub fn new(action: StartupAction) -> Self {
         let mut state = crate::client_capability_support::state();
         let hub = HubId::new();
+        state.entry_hub = hub;
+        state.tabs = yolo_tui_tab::TabCatalog::new(
+            hub,
+            yolo_tui_tab::LocalTabView::default(),
+        );
         startup::install(&mut state, hub, action);
         let (jobs, incoming) = mpsc::channel(crate::constants::QUEUE_CAPACITY);
         Self {

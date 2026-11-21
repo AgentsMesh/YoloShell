@@ -10,20 +10,22 @@ bazel_export=$(sh scripts/release/ensure-bazel.sh) || exit 1
 eval "$bazel_export"
 [ -n "${BAZEL:-}" ] || { echo "Bazel is unavailable" >&2; exit 1; }
 
-output_root=${YOLO_BAZEL_OUTPUT_ROOT:-}
-if [ -n "$output_root" ]; then
-  "$BAZEL" --batch --output_user_root="$output_root" build \
-    --spawn_strategy=local -c opt //core:yolo
+if [ -n "${YOLO_BAZEL_OUTPUT_ROOT:-}" ]; then
+  set -- --batch "--output_user_root=$YOLO_BAZEL_OUTPUT_ROOT"
 else
-  "$BAZEL" build --spawn_strategy=local -c opt //core:yolo
+  set --
 fi
-binary=bazel-bin/core/crates/application/yolo/yolo
+"$BAZEL" "$@" build --spawn_strategy=local -c opt //core:yolo
+bin_dir=$("$BAZEL" "$@" info --spawn_strategy=local -c opt bazel-bin)
+binary=$bin_dir/core/crates/application/yolo/yolo
 [ -x "$binary" ] || { echo "release binary is missing: $binary" >&2; exit 1; }
-mkdir -p dist/.package
-cp "$binary" dist/.package/yolo
-chmod 755 dist/.package/yolo
+mkdir -p dist
+package=$(mktemp -d "$root/dist/.package.XXXXXX")
+trap 'rm -rf "$package"' EXIT
+trap 'exit 1' INT TERM
+cp "$binary" "$package/yolo"
+chmod 755 "$package/yolo"
 asset="dist/yolo-$VERSION-$triple.tar.gz"
-COPYFILE_DISABLE=1 tar -czf "$asset" -C dist/.package yolo
-rm -rf dist/.package
-[ -z "$output_root" ] || rm -rf "$output_root"
+COPYFILE_DISABLE=1 tar -czf "$package/archive.tar.gz" -C "$package" yolo
+mv -f "$package/archive.tar.gz" "$asset"
 printf '%s\n' "$asset"

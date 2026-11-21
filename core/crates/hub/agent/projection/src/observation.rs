@@ -1,5 +1,5 @@
 use crate::constants::*;
-use anyhow::{Context, Result};
+use anyhow::{Context, Result, ensure};
 use yolo_agent_contract::{AgentBinding, AgentRecoveryAvailability, AgentState};
 use yolo_agent_control_contract::{NativeControlObservation, NativeInteractionKind};
 use yolo_agent_provider_contract::ProjectionPolicy;
@@ -10,6 +10,19 @@ use yolo_hub_agent_protocol::{
     RecoveryStatus,
 };
 use yolo_terminal_model::{RecoveryState, TerminalRuntimeStatus, TerminalView};
+
+pub(crate) fn validate_native(view: &TerminalView, observed: &NativeControlObservation) -> Result<()> {
+    let fields = observed.witness().fields();
+    ensure!(
+        view.agent.as_ref() == Some(observed.binding())
+            && fields.terminal_id == view.manifest.terminal_id
+            && view.runtime.as_ref().is_some_and(|runtime| {
+                fields.runtime_epoch == runtime.runtime_epoch && fields.worker_id == runtime.worker_id
+            }),
+        INVALID_BINDING
+    );
+    Ok(())
+}
 
 pub(crate) fn normalize(
     fields: &mut AgentSnapshotFields,

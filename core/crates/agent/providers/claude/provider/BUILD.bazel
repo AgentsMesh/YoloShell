@@ -33,7 +33,7 @@ _POLICY_SOURCES = [
 
 rust_library(
     name = "yolo_claude_identity",
-    srcs = ["src/constants.rs"],
+    srcs = ["src/constants.rs", "src/native_install.rs"],
     crate_name = "yolo_claude_identity",
     crate_root = "src/constants.rs",
     edition = "2024",

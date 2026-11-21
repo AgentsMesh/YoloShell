@@ -14,15 +14,18 @@ pub struct AgentRunAddress {
 }
 
 /// Fill each run's `current` from the observed terminal-to-execution pairs.
-pub fn annotate_current(
-    runs: &mut [AgentRunSummary],
-    observed: &[(TerminalId, AgentTarget)],
-) {
+pub fn annotate_current(runs: &mut [AgentRunSummary], observed: &[(TerminalId, AgentTarget)]) {
     let current: BTreeMap<TerminalId, AgentTarget> = observed.iter().copied().collect();
     for run in runs {
         run.current = run
             .terminal
-            .and_then(|terminal| current.get(&terminal.terminal_id).copied());
+            .filter(|_| run.state == AgentRunState::Launched)
+            .and_then(|terminal| {
+                current
+                    .get(&terminal.terminal_id)
+                    .copied()
+                    .filter(|target| target.address.hub_id == terminal.hub_id)
+            });
     }
 }
 
@@ -33,7 +36,7 @@ pub enum AgentRunState {
     Starting,
     /// The terminal was created; the provider binding may still be awaiting.
     Launched,
-    /// The run's terminal was stopped through `agent_stop`.
+    /// The Host confirmed the terminal ended or was archived, or the launch was cancelled.
     Stopped,
 }
 
@@ -70,6 +73,23 @@ pub enum AgentRunSelector {
     Name(String),
 }
 
+impl AgentRunSelector {
+    pub fn matches(&self, run: &AgentRunSummary) -> bool {
+        match self {
+            Self::Address(address) => run.address == *address,
+            Self::Name(name) => run.matches_name(name),
+        }
+    }
+}
+
+impl AgentRunSummary {
+    fn matches_name(&self, name: &str) -> bool {
+        let folded = name.to_lowercase();
+        self.name.to_lowercase() == folded
+            || self.aliases.iter().any(|alias| alias.to_lowercase() == folded)
+    }
+}
+
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "field", rename_all = "snake_case", deny_unknown_fields)]
 pub enum AgentRunFilter {
@@ -85,14 +105,7 @@ impl AgentRunFilter {
     pub fn matches(&self, run: &AgentRunSummary) -> bool {
         match self {
             Self::Terminal { address } => run.terminal == Some(*address),
-            Self::Name { value } => {
-                let folded = value.to_lowercase();
-                run.name.to_lowercase() == folded
-                    || run
-                        .aliases
-                        .iter()
-                        .any(|alias| alias.to_lowercase() == folded)
-            }
+            Self::Name { value } => run.matches_name(value),
             Self::Parent { address } => run.parent == Some(*address),
             Self::State { is } => is.contains(&run.state),
             Self::Provider { id } => run.provider_id.eq_ignore_ascii_case(id),

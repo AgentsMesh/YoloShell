@@ -9,18 +9,7 @@ pub(crate) fn matches_target(reply: &Reply, command: &Command) -> Option<bool> {
                 && run.revision == change.fields().expected_revision.saturating_add(1)
         }
         (Reply::AgentRun { run }, Command::GetAgentRun { request }) => {
-            match &request.fields().selector {
-                yolo_hub_agent_run_protocol::AgentRunSelector::Address(address) => {
-                    run.address == *address
-                }
-                yolo_hub_agent_run_protocol::AgentRunSelector::Name(name) => {
-                    run.name.eq_ignore_ascii_case(name)
-                        || run
-                            .aliases
-                            .iter()
-                            .any(|alias| alias.eq_ignore_ascii_case(name))
-                }
-            }
+            request.fields().selector.matches(run)
         }
         (Reply::AgentRuns { list }, Command::ListAgentRuns { request }) => {
             let limit = request.fields().limit as usize;
@@ -36,19 +25,7 @@ pub(crate) fn matches_target(reply: &Reply, command: &Command) -> Option<bool> {
                     .is_none_or(|next| list.runs.last().is_some_and(|run| run.address == next))
         }
         (Reply::AgentStop { stop }, Command::AgentStop { request }) => {
-            match &request.fields().selector {
-                yolo_hub_agent_run_protocol::AgentRunSelector::Address(address) => {
-                    stop.run.address == *address
-                }
-                yolo_hub_agent_run_protocol::AgentRunSelector::Name(name) => {
-                    stop.run.name.eq_ignore_ascii_case(name)
-                        || stop
-                            .run
-                            .aliases
-                            .iter()
-                            .any(|alias| alias.eq_ignore_ascii_case(name))
-                }
-            }
+            request.fields().selector.matches(&stop.run)
         }
         _ => return None,
     })

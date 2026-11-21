@@ -41,7 +41,10 @@ pub(super) const SOCKET_LIFECYCLE_LOCK_TIMEOUT: std::time::Duration =
 #[cfg(target_os = "macos")]
 pub(super) const ISOLATED_TEST_SOCKET_PARENT: &str = "/private/tmp";
 #[cfg(all(unix, not(target_os = "macos")))]
-pub(super) const ISOLATED_TEST_SOCKET_PARENT: &str = "/tmp";
+pub(super) const ISOLATED_TEST_SOCKET_PARENT: &str = match option_env!("YOLO_TEST_SOCKET_PARENT") {
+    Some(parent) if cfg!(feature = "adversarial-test-hooks") => parent,
+    _ => "/tmp",
+};
 pub(super) const ISOLATED_TEST_SOCKET_PREFIX: &str = "yn-";
 pub(super) const ISOLATED_TEST_SOCKET_TOKEN_HEX_LENGTH: usize = 8;
 pub(super) const ISOLATED_TEST_SOCKET_CREATION_ATTEMPTS: usize = 8;

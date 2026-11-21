@@ -48,8 +48,8 @@ fn context_inspection_and_resume_plan_preserve_provider_identity() {
 
     let binding = binding(&fixture, &evidence);
     assert_eq!(
-        adapter.resume_plan(&binding),
-        ResumePlan {
+        adapter.previous_resume_plan(&binding),
+        Some(ResumePlan {
             executable: constants::EXECUTABLE.into(),
             args: vec![
                 constants::RESUME_ARGUMENT.into(),
@@ -62,8 +62,9 @@ fn context_inspection_and_resume_plan_preserve_provider_identity() {
                 fixture.data_home.display().to_string(),
             )]
             .into(),
-        }
+        })
     );
+    assert_eq!(adapter.resume_plan(&binding), yolo_codex_identity::managed_launch::resume(adapter.previous_resume_plan(&binding).unwrap()));
     adapter
         .validate_binding(&binding, &fixture.context())
         .unwrap();

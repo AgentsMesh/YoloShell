@@ -65,6 +65,15 @@ impl Answer {
         }
     }
     pub fn reply(self, call: &Call) -> Result<Reply, PublicError> {
+        self.reply_observing_hello(call, |_| {})
+    }
+
+    /// Reports a pinned peer's correlated Hello version even when that version prevents admission.
+    pub fn reply_observing_hello(
+        self,
+        call: &Call,
+        observe_version: impl FnOnce(u16),
+    ) -> Result<Reply, PublicError> {
         if self.jsonrpc != JSONRPC_VERSION || self.id.as_ref() != Some(&call.id) {
             return Err(PublicError::InvalidRequest);
         }
@@ -73,6 +82,12 @@ impl Answer {
             (None, Some(error)) => result::decode_error(error)?,
             _ => return Err(PublicError::InvalidPayload),
         };
+        if let Reply::Hello { hello } = &reply
+            && hello.version != 0
+            && hello.valid_for_origin(call.fields().destination)
+        {
+            observe_version(hello.version);
+        }
         Response::new(call, call.fields().destination, reply.clone()).validate_for(call)?;
         Ok(reply)
     }

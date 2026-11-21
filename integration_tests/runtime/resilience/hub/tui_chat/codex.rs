@@ -18,7 +18,7 @@ async fn codex_stop_keeps_pty_usable_without_granting_another_chat_prompt() {
         &host,
         &hub,
         &marker,
-        &yolo_hook_installation_catalog::CODEX,
+        crate::support::codex_install_spec(),
     )
     .await;
     let initial = support::current(&hub, target).await;

@@ -72,7 +72,7 @@ async fn a_mismatched_extractor_returns_a_classified_error() {
     let (result, ()) = tokio::join!(
         pages::collect(
             &mut client,
-            deadline(),
+            deadline,
             |after| Command::List {
                 include_archived: false,
                 after,

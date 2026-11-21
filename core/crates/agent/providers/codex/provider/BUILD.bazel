@@ -15,6 +15,8 @@ _POLICY_DEPS = [
     "//core/crates/agent/providers/codex:yolo_codex",
     "//core/crates/agent/providers/codex/hooks/contract:yolo_codex_hook_contract",
     "//core/crates/agent/system/hooks/installation/contract:yolo_hook_installation_contract",
+    "//core/crates/agent/system/hooks/installation:yolo_hook_installation",
+    "//core/crates/persistence/paths:yolo_paths",
     "//core/crates/agent/system/provider/contract:yolo_agent_provider_contract",
     "//core/crates/agent/system/provider/runtime:yolo_agent_provider_runtime",
     "//core/crates/conversation/protocol:yolo_conversation_protocol",
@@ -22,19 +24,23 @@ _POLICY_DEPS = [
     "//core/crates/conversation/source:yolo_conversation_source",
     "//core/crates/conversation/transcript:yolo_conversation_transcript",
     "@crates//:anyhow",
+    "@crates//:portable-pty",
+    "@crates//:tempfile",
+    "@crates//:tracing",
 ]
 
 _POLICY_SOURCES = [
     "src/conversation.rs",
     "src/install.rs",
     "src/lib.rs",
+    "src/manual_shell.rs",
     "src/package.rs",
     "src/turn_end.rs",
 ]
 
 rust_library(
     name = "yolo_codex_identity",
-    srcs = ["src/constants.rs"],
+    srcs = ["src/constants.rs", "src/managed_launch.rs"],
     crate_name = "yolo_codex_identity",
     crate_root = "src/constants.rs",
     edition = "2024",

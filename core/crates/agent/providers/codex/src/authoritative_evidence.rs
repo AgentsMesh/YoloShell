@@ -1,6 +1,6 @@
 use super::evidence_path::AnchoredEvidence;
-use super::{CodexAdapter, evidence_reader, metadata};
-use crate::agent::{AgentEvidence, AgentState};
+use super::{CodexAdapter, metadata};
+use crate::agent::AgentEvidence;
 use crate::paths::identity::ObjectIdentity;
 use anyhow::Result;
 use std::path::{Path, PathBuf};
@@ -72,22 +72,14 @@ impl CodexAdapter {
         let Some(objects) = anchor.object_identities()? else {
             return Ok(None);
         };
-        let head = evidence_reader::read_complete_head(anchor.file_mut())?;
-        after_read();
-        if !anchor.verify()? || anchor.object_identities()?.as_ref() != Some(&objects) {
-            return Ok(None);
-        }
-        let Some(metadata) = metadata::RolloutMetadata::from_head(path, &head, agent_cwd) else {
+        let Some(evidence) = Self::read_evidence(&mut anchor, path, agent_cwd, data_home, after_read)? else {
             return Ok(None);
         };
+        if anchor.object_identities()?.as_ref() != Some(&objects) {
+            return Ok(None);
+        }
         Ok(Some(AuthoritativeCodexEvidence {
-            evidence: AgentEvidence {
-                provider_session_id: metadata.session_id,
-                cwd: metadata.cwd,
-                path: path.to_path_buf(),
-                data_home: data_home.to_path_buf(),
-                state: AgentState::Unknown,
-            },
+            evidence,
             anchor,
             objects,
             agent_cwd: agent_cwd.to_path_buf(),

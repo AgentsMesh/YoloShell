@@ -1,58 +1,46 @@
-use anyhow::Result;
-use std::net::{SocketAddr, TcpListener};
-use yolo_hub_listener_binding::{ListenerBindings, persistent};
-use yolo_hub_management_protocol::ConfigurationState;
+use anyhow::{Context, Result};
+use std::time::Duration;
+use yolo_hub_state::HubState;
+use yolo_paths::socket_activation::{self, SocketPublication};
 
-pub(crate) fn restore(
-    bindings: &mut ListenerBindings,
-    configuration: &ConfigurationState,
-) -> Result<Option<TcpListener>> {
-    let requested = configuration.configuration.listen;
-    let saved = bindings.address(configuration)?;
-    let listener = prepare(saved.or(requested))?;
-    if persistent(requested) && saved.is_none() {
-        bindings.establish(
-            configuration,
-            address(&listener)?
-                .ok_or_else(|| anyhow::anyhow!(crate::constants::LISTENER_MISSING))?,
-        )?;
-    }
-    verify(bindings, configuration, &listener)?;
-    Ok(listener)
+const PROBE_TIMEOUT: Duration = Duration::from_secs(1);
+const LIVE: &str = "another Hub owns this peer socket";
+const BIND: &str = "Hub peer socket could not be published";
+
+/// The Hub's only peer entry point: a private Unix socket in Hub state.
+/// The outer SSH login decides who can reach it; peer policy still decides
+/// which Hub identities may use it.
+pub(crate) struct PeerListener {
+    listener: std::os::unix::net::UnixListener,
+    publication: Option<SocketPublication>,
 }
 
-pub(crate) fn verify(
-    bindings: &ListenerBindings,
-    configuration: &ConfigurationState,
-    listener: &Option<TcpListener>,
-) -> Result<()> {
-    bindings.verify(configuration)?;
-    if persistent(configuration.configuration.listen) {
-        anyhow::ensure!(
-            bindings.address(configuration)? == address(listener)?,
-            crate::constants::LISTENER_MISSING
-        );
-    }
-    Ok(())
-}
-
-pub(crate) fn prepare(address: Option<SocketAddr>) -> Result<Option<TcpListener>> {
-    address
-        .map(|address| {
-            let listener = TcpListener::bind(address)?;
-            listener.set_nonblocking(true)?;
-            Ok(listener)
+impl PeerListener {
+    pub(crate) async fn publish(state: &HubState) -> Result<Self> {
+        let path = state.peer_socket()?;
+        let (listener, publication) =
+            socket_activation::publish(state.directory()?, &path, PROBE_TIMEOUT, LIVE).await?;
+        let listener = listener
+            .into_std()
+            .context(BIND)?;
+        listener.set_nonblocking(true).context(BIND)?;
+        Ok(Self {
+            listener,
+            publication: Some(publication),
         })
-        .transpose()
+    }
+
+    pub(crate) fn activate(&self) -> Result<tokio::net::UnixListener> {
+        Ok(tokio::net::UnixListener::from_std(
+            self.listener.try_clone().context(BIND)?,
+        )?)
+    }
 }
 
-pub(crate) fn activate(listener: &Option<TcpListener>) -> Result<Option<tokio::net::TcpListener>> {
-    listener
-        .as_ref()
-        .map(|listener| Ok(tokio::net::TcpListener::from_std(listener.try_clone()?)?))
-        .transpose()
-}
-
-pub(crate) fn address(listener: &Option<TcpListener>) -> Result<Option<SocketAddr>> {
-    Ok(listener.as_ref().map(TcpListener::local_addr).transpose()?)
+impl Drop for PeerListener {
+    fn drop(&mut self) {
+        if let Some(publication) = self.publication.take() {
+            let _ = publication.withdraw();
+        }
+    }
 }

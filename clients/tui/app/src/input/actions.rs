@@ -158,7 +158,7 @@ pub fn handle(state: &mut State, jobs: &mpsc::Sender<Job>, hub: HubId, event: Ev
         return false;
     }
     if matches!(state.mode, Mode::Search | Mode::Directory) {
-        entry(state, jobs, hub, key.code);
+        entry(state, jobs, key.code);
         return false;
     }
     if matches!(
@@ -175,17 +175,7 @@ pub fn handle(state: &mut State, jobs: &mpsc::Sender<Job>, hub: HubId, event: Ev
         crate::shell_actions::current_directory(state, jobs, hub);
         return false;
     }
-    if key.code == KeyCode::Char('n') && key.modifiers.is_empty() {
-        // The inventory handler owns the transition into the directory form;
-        // this shortcut only prefills that form with the destination cwd.
-        let origin = crate::shell_actions::destination(state, hub);
-        let _ = crate::inventory_actions::handle(state, jobs, key.code);
-        if state.mode == Mode::Directory {
-            state.entry = crate::shell_actions::directory(state, origin);
-        }
-        return false;
-    }
-    if state.inventory.view == yolo_tui_inventory::View::Agents
+    if state.inventory.view == yolo_tui_inventory::View::Tree
         && key.code == KeyCode::Char(crate::interrupt_constants::KEY)
         && key.modifiers.is_empty()
     {

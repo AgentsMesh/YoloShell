@@ -26,3 +26,28 @@ pub(super) const EXPECTED_LOCALE: &str = "C.UTF-8";
 pub(super) const EXPECTED_LOCALE: &str = "en_US.UTF-8";
 pub(super) const LOCALE_COMMAND: &[u8] =
     b"printf '%s%s:%s:%s:%s\\n' YOLO_ LOCALE \"${LC_ALL-unset}\" \"${LC_CTYPE-unset}\" \"${LANG-unset}\"\n";
+pub(super) const MANUAL_HOOK_INSTALL: &[&str] = &["hook", "install", "codex", "--yes", "--config-home"];
+pub(super) const MANUAL_PROVIDER: &str = "codex";
+pub(super) const MANUAL_BIN: &str = "bin";
+pub(super) const MANUAL_BIN_ENV: &str = "YOLO_MANUAL_TEST_BIN";
+pub(super) const MANUAL_CODEX_CONFIG: &str = "private-codex";
+pub(super) const MANUAL_CODEX_TRACE: &str = "manual-argv";
+pub(super) const MANUAL_TRACE_ENV: &str = "YOLO_MANUAL_TEST_TRACE";
+pub(super) const MANUAL_USER_HOME: &str = "HOME";
+pub(super) const MANUAL_ZDOTDIR: &str = "ZDOTDIR";
+pub(super) const MANUAL_EXPORTED_FUNCTION: &str = "BASH_FUNC_codex%%";
+pub(super) const MANUAL_SESSION: &str = "manual-codex";
+pub(super) const MANUAL_PROVIDER_HOME: &str = "CODEX_HOME";
+pub(super) const MANUAL_PATH_COMMAND: &[u8] = b"export PATH=\"$YOLO_MANUAL_TEST_BIN:$PATH\"\n";
+pub(super) const MANUAL_CODEX_COMMAND: &[u8] = b"codex --yolo\n";
+pub(super) const MANUAL_EXPECTED_TRACE: &str = "<--no-daemon><--yolo>\n";
+pub(super) const MANUAL_POLL: std::time::Duration = std::time::Duration::from_millis(25);
+#[cfg(target_os = "macos")]
+pub(super) const MANUAL_TEST_SHELL: &str = "/bin/zsh";
+#[cfg(not(target_os = "macos"))]
+pub(super) const MANUAL_TEST_SHELL: &str = "/bin/bash";
+pub(super) const MANUAL_CODEX_PROGRAM: &str = r#"#!/bin/sh
+if [ "$1" = "--no-daemon" ] && [ "$2" = "--version" ]; then exit 0; fi
+printf '<%s>' "$@" >> "$YOLO_MANUAL_TEST_TRACE"
+printf '\n' >> "$YOLO_MANUAL_TEST_TRACE"
+"#;

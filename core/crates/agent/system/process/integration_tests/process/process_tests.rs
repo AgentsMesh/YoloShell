@@ -133,6 +133,24 @@ fn fenced_descendants_returns_candidates_when_root_remains_stable() {
 }
 
 #[test]
+fn callback_ancestry_observes_the_exact_root_only_when_requested() {
+    let root = ProcessIdentity::capture(std::process::id()).unwrap();
+    let mut command = Command::new(TEST_SLEEP_EXECUTABLE);
+    command.arg(TEST_SLEEP_DURATION);
+    let mut peer = crate::process::spawn_waitable_test_child(command);
+    let source = RuntimeProcessSource::new([]);
+    let ordinary = source.fenced_callback_ancestry(root, peer.id());
+    let rooted = source.capture_callback_ancestry(root, peer.id(), true);
+    peer.kill().unwrap();
+    peer.wait().unwrap();
+    let FencedDescendants::Stable(ordinary) = ordinary.unwrap() else { panic!("unstable root") };
+    let FencedDescendants::Stable(rooted) = rooted.unwrap() else { panic!("unstable root") };
+    assert_eq!(ordinary.iter().map(|row| row.pid).collect::<Vec<_>>(), [peer.id()]);
+    assert_eq!(rooted.iter().map(|row| row.pid).collect::<Vec<_>>(), [peer.id(), root.pid]);
+    assert!(rooted.last().unwrap().identity_matches(root.pid, root.start_time));
+}
+
+#[test]
 fn callback_lineage_default_preserves_mock_descendants_and_root_identity_fences() {
     let root = ProcessIdentity::capture(std::process::id()).unwrap();
     let expected = vec![candidate()];

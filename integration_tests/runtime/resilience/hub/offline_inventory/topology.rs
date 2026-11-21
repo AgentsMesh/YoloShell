@@ -1,6 +1,6 @@
 use super::constants::*;
 use crate::hub::{
-    federation_support::{RunningNode, TEMP_ROOT, exports, listener, peer},
+    federation_support::{RunningNode, TEMP_ROOT, exports, peer, peer_at_socket},
     local_startup_support::retain_fixture_host,
     relay_crash::process::{self, RelayProcess},
 };
@@ -71,21 +71,18 @@ impl Topology {
         let entry = HubState::open(&entry_path, entry_host.home.path())
             .unwrap()
             .peer_identity();
-        let relay = HubState::open(&relay_path, relay_host.home.path())
-            .unwrap()
-            .peer_identity();
+        let relay_state = HubState::open(&relay_path, relay_host.home.path()).unwrap();
+        let relay = relay_state.peer_identity();
+        let relay_socket = relay_state.peer_socket().unwrap();
+        drop(relay_state);
         let origin_state = Arc::new(
             HubState::open(&path.join(ORIGIN_DIRECTORY), origin_host.home.path()).unwrap(),
         );
         let origin = origin_state.peer_identity();
-        let relay_listener = listener().await;
-        let relay_address = relay_listener.local_addr().unwrap();
-        let origin_listener = listener().await;
         let origin_config = Configuration {
-            listen: Some(origin_listener.local_addr().unwrap()),
-            peers: vec![peer(
+            peers: vec![peer_at_socket(
                 relay,
-                Some(relay_address),
+                relay_socket.clone(),
                 false,
                 vec![exports(origin.hub(), true)],
             )],
@@ -93,11 +90,10 @@ impl Topology {
         };
         let entry_config = Configuration {
             trusted_origins: vec![origin],
-            peers: vec![peer(relay, Some(relay_address), true, vec![])],
+            peers: vec![peer_at_socket(relay, relay_socket.clone(), true, vec![])],
             ..Configuration::default()
         };
         let relay_config = Configuration {
-            listen: Some(relay_address),
             peers: vec![
                 peer(
                     entry,
@@ -113,9 +109,8 @@ impl Topology {
         let relay_location = Location::new(&relay_host, relay_path, &relay_config);
         assert_eq!(entry_location.peer, entry);
         assert_eq!(relay_location.peer, relay);
-        drop(relay_listener);
         let origin =
-            RunningNode::start(&origin_host, origin_state, origin_config, origin_listener).await;
+            RunningNode::start(&origin_host, origin_state, origin_config).await;
         Self {
             entry_host,
             relay_host,

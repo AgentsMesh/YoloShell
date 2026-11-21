@@ -115,6 +115,8 @@ async fn natural_exit_keeps_vt_snapshot_attachable_until_archive_retires_worker(
             cwd: harness.home.path().to_path_buf(),
             cols: Some(80),
             rows: Some(24),
+            initial_input: None,
+            context: None,
         })
         .await
         .unwrap();

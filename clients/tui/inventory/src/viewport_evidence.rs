@@ -1,7 +1,7 @@
 use crate::{Inventory, InventorySelection};
 use std::collections::BTreeMap;
 use yolo_hub_agent_protocol::AgentSnapshot;
-use yolo_hub_identity::TerminalAddress;
+use yolo_hub_identity::{HubId, TerminalAddress};
 use yolo_hub_rpc_protocol::HubSummary;
 use yolo_hub_terminal_protocol::TerminalSummary;
 
@@ -9,7 +9,7 @@ use yolo_hub_terminal_protocol::TerminalSummary;
 pub(crate) enum RowEvidence {
     Terminal(TerminalSummary),
     Agent(AgentSnapshot, Option<TerminalSummary>),
-    Hub(HubSummary),
+    Machine(HubId, Option<HubSummary>),
 }
 impl RowEvidence {
     pub fn capture(
@@ -26,7 +26,9 @@ impl RowEvidence {
                     terminals.get(&agent.fields().terminal.address).cloned(),
                 )
             }
-            InventorySelection::Hub(hub) => Self::Hub(inventory.hubs.get(&hub)?.clone()),
+            InventorySelection::Machine(hub) => {
+                Self::Machine(hub, inventory.machines.get(&hub).cloned())
+            }
         })
     }
 
@@ -41,7 +43,7 @@ impl RowEvidence {
                 inventory.agents.get(&expected.cursor().target()) == Some(expected)
                     && terminals.get(&expected.fields().terminal.address) == session.as_ref()
             }
-            Self::Hub(expected) => inventory.hubs.get(&expected.hub_id) == Some(expected),
+            Self::Machine(hub, expected) => inventory.machines.get(hub) == expected.as_ref(),
         }
     }
 }

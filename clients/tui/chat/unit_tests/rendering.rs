@@ -152,12 +152,31 @@ fn roles_long_parts_unicode_and_narrow_views_stay_bounded() {
     }
     let mut big = page(&chat, &[3]);
     big.entries[0].parts = vec![ConversationPart::Text {
-        text: "x".repeat(MAX_RENDER_ROWS),
+        text: format!("{}\nfinal line", "x".repeat(MAX_RENDER_ROWS)),
     }];
     load(&mut chat, big);
     let (text, view) = support::render(&chat, WIDTH, HEIGHT);
-    assert!(text.contains("more content omitted"));
+    assert!(text.contains("final line"));
     assert!(view.total_rows <= MAX_RENDER_ROWS);
     chat.scroll(usize::MAX, true);
     assert_eq!(support::render(&chat, WIDTH, HEIGHT).1.first_row, 0);
+}
+
+#[test]
+fn a_single_long_tool_result_keeps_the_newest_rows_of_the_transcript_window() {
+    let (mut chat, _) = ready();
+    let mut transcript = page(&chat, &[1]);
+    transcript.entries[0].parts = vec![ConversationPart::ToolResult {
+        call_id: TOOL_CALL.into(),
+        output: format!("first row\n{}last row", "x\n".repeat(MAX_RENDER_ROWS)),
+        is_error: false,
+    }];
+    load(&mut chat, transcript);
+    let (tail, viewport) = support::render(&chat, WIDTH, HEIGHT);
+    assert_eq!(viewport.total_rows, MAX_RENDER_ROWS);
+    assert!(tail.contains("last row"));
+    chat.scroll(usize::MAX, true);
+    let (head, viewport) = support::render(&chat, WIDTH, HEIGHT);
+    assert_eq!(viewport.first_row, 0);
+    assert!(!head.contains("first row"));
 }

@@ -55,7 +55,7 @@ impl Server {
                 Fault::Generation => request.binding.connection_generation += OFFSET,
                 Fault::Profile => request.binding.profile.host_id.push('x'),
                 Fault::Peer => request.peer = yolo_broker_hub_test_support::request().peer,
-                Fault::Endpoint => request.endpoint.set_port(super::hub_fixture::WRONG_PORT),
+                Fault::Endpoint => request.socket = super::hub_fixture::WRONG_SOCKET.into(),
                 _ => {}
             }
             let opened = BrokerHubOpened {

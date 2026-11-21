@@ -24,7 +24,8 @@ pub(super) fn capture(
     executable: &super::native_executable::HookExecutable,
     source: &dyn ProcessSource,
 ) -> Result<Admission> {
-    let FencedDescendants::Stable(processes) = source.fenced_callback_ancestry(shell, peer_pid)? else {
+    let FencedDescendants::Stable(processes) =
+        source.capture_callback_ancestry(shell, peer_pid, scope.agent.pid == shell.pid)? else {
         anyhow::bail!(INVALID);
     };
     #[cfg(target_os = "linux")]
@@ -40,13 +41,7 @@ pub(super) fn capture(
     };
     let result = select(peer_pid, shell, scope, executable.path(), &processes)?;
     executable.verify_process(peer_pid)?;
-    ensure!(
-        result.peer.matches()
-            && result
-                .agent
-                .identity_matches(scope.agent.pid, scope.agent.start_time),
-        INVALID
-    );
+    ensure!(result.peer.matches(), INVALID);
     Ok(result)
 }
 
@@ -102,7 +97,7 @@ fn select(
             }
         }
         lineage.push(current.clone());
-        if current.parent_pid == shell.pid {
+        if current.pid == shell.pid || (current.parent_pid == shell.pid && scope.agent.pid != shell.pid) {
             break;
         }
         current = processes
@@ -111,7 +106,7 @@ fn select(
             .context(INVALID)?;
     }
     let agent = agent.context(INVALID)?;
-    ensure!(agent.is_foreground(), INVALID);
+    ensure!(agent.is_foreground() && (agent.pid != shell.pid || agent.start_time == shell.start_time), INVALID);
     for process in [&agent, peer] {
         let environment = process.environment.as_ref().context(INVALID)?;
         ensure!(

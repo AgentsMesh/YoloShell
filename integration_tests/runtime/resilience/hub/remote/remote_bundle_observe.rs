@@ -29,7 +29,10 @@ pub async fn configuration(
     snapshot.validate().unwrap();
     assert!(snapshot.applied);
     assert_eq!(snapshot.state.identity, receipt.fields().peer);
-    assert_eq!(snapshot.listen_address, Some(receipt.fields().endpoint));
+    assert_eq!(
+        snapshot.peer_socket.as_ref(),
+        Some(&receipt.fields().peer_socket)
+    );
     assert_eq!(
         snapshot.state.revision,
         receipt.fields().configuration_revision

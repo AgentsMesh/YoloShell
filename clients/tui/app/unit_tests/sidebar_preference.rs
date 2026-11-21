@@ -26,7 +26,7 @@ fn explicitly_open_sidebar_stays_visible_when_empty_and_when_terminal_regains_fo
     let (mut state, _) = drawing_support::state();
     tabs::sidebar(&mut state);
     state.inventory.replace(Some(Vec::new()), None);
-    state.inventory.view = View::Agents;
+    state.inventory.view = View::Tree;
     let (_, sidebar) = drawing_support::render(&state, COLUMNS, ROWS);
     assert!(state.sidebar_visible);
     assert!(sidebar.inventory.is_some());
@@ -42,9 +42,8 @@ fn an_empty_layout_uses_inventory_width_without_forgetting_sidebar_preference() 
     tabs::sidebar(&mut state);
     let (_, view) = drawing_support::render(&state, COLUMNS, ROWS);
     assert!(state.sidebar_visible);
-    assert!(view.bounds.is_empty());
-    assert!(view.panes.is_empty());
-    assert_eq!(view.inventory.unwrap().area().width, COLUMNS);
+    assert!(!view.bounds.is_empty());
+    assert!(view.inventory.unwrap().area().width < COLUMNS);
 }
 
 #[test]

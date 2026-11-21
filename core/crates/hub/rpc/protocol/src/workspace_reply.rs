@@ -16,22 +16,12 @@ pub(crate) fn matches_target(reply: &Reply, command: &Command) -> Option<bool> {
                     workspace.address == *address
                 }
                 yolo_hub_workspace_protocol::WorkspaceSelector::Name(name) => {
-                    workspace.name.eq_ignore_ascii_case(name)
+                    workspace.name.to_lowercase() == name.to_lowercase()
                 }
             }
         }
         (Reply::Workspaces { list }, Command::ListWorkspaces { request }) => {
-            let limit = request.fields().limit as usize;
-            list.workspaces.len() <= limit
-                && list
-                    .workspaces
-                    .windows(2)
-                    .all(|pair| pair[0].address < pair[1].address)
-                && list.next.is_none_or(|next| {
-                    list.workspaces
-                        .last()
-                        .is_some_and(|workspace| workspace.address == next)
-                })
+            valid_page(list, request.fields().after, request.fields().limit)
         }
         (Reply::Workspace { workspace }, Command::CreateWorktree { request }) => {
             workspace.address.workspace_id.as_uuid() == request.fields().workspace_id
@@ -39,22 +29,33 @@ pub(crate) fn matches_target(reply: &Reply, command: &Command) -> Option<bool> {
         }
         (Reply::Completed {}, Command::RemoveWorktree { .. }) => true,
         (Reply::Workspaces { list }, Command::ListWorktrees { request }) => {
-            let limit = request.fields().limit as usize;
-            list.workspaces.len() <= limit
-                && list
-                    .workspaces
-                    .windows(2)
-                    .all(|pair| pair[0].address < pair[1].address)
+            valid_page(list, request.fields().after, request.fields().limit)
                 && list
                     .workspaces
                     .iter()
                     .all(|workspace| workspace.parent == Some(request.fields().parent))
-                && list.next.is_none_or(|next| {
-                    list.workspaces
-                        .last()
-                        .is_some_and(|workspace| workspace.address == next)
-                })
         }
         _ => return None,
     })
+}
+
+fn valid_page(
+    list: &yolo_hub_workspace_protocol::ListWorkspacesResult,
+    after: Option<yolo_hub_identity::WorkspaceAddress>,
+    limit: u16,
+) -> bool {
+    list.workspaces.len() <= usize::from(limit)
+        && list
+            .workspaces
+            .first()
+            .is_none_or(|first| after.is_none_or(|after| first.address > after))
+        && list
+            .workspaces
+            .windows(2)
+            .all(|pair| pair[0].address < pair[1].address)
+        && list.next.is_none_or(|next| {
+            list.workspaces
+                .last()
+                .is_some_and(|last| last.address == next)
+        })
 }

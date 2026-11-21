@@ -9,7 +9,7 @@ use crate::reject::rejected;
 use anyhow::{Result, bail};
 use tokio::time::Instant;
 use yolo_hub_agent_run_protocol::{
-    AGENT_RUN_PROTOCOL_SCHEMA_VERSION, AgentRunFilter, AgentRunSelector, AgentRunState,
+    AGENT_RUN_PROTOCOL_SCHEMA_VERSION, AgentRunFilter, AgentRunState,
     GetAgentRunFields, GetAgentRunRequest, ListAgentRunsFields, ListAgentRunsRequest,
 };
 use yolo_hub_client::{ClientError, LocalClient};
@@ -17,9 +17,7 @@ use yolo_hub_identity::HubId;
 use yolo_hub_rpc_protocol::{Command, Reply};
 use yolo_hub_terminal_protocol::PublicError;
 
-pub fn selector(hub: HubId, value: &str) -> Result<AgentRunSelector> {
-    yolo_agent_catalog::run_selector(hub, value)
-}
+pub use yolo_agent_catalog::run_selector as selector;
 
 pub async fn runs(client: &mut LocalClient, args: RunsArgs) -> Result<Outcome> {
     let hub = client.hello().hub_id;
@@ -28,7 +26,7 @@ pub async fn runs(client: &mut LocalClient, args: RunsArgs) -> Result<Outcome> {
     }
     let request = ListAgentRunsRequest::new(ListAgentRunsFields {
         schema_version: AGENT_RUN_PROTOCOL_SCHEMA_VERSION,
-        after: args.after.map(|id| yolo_agent_catalog::run_address(hub, id)).transpose()?,
+        after: args.after.map(|cursor| cursor.address(hub)).transpose()?,
         limit: args.limit,
         filter: filter(hub, &args)?,
     })?;
@@ -44,16 +42,18 @@ pub async fn runs(client: &mut LocalClient, args: RunsArgs) -> Result<Outcome> {
         }
         Err(error) => return Err(error.into()),
     };
-    let text = list
+    let mut lines = list
         .runs
         .iter()
         .map(yolo_agent_catalog::text)
-        .collect::<Vec<_>>()
-        .join("\n");
+        .collect::<Vec<_>>();
+    if let Some(next) = list.next {
+        lines.push(format!("next={}", serde_json::to_string(&next)?));
+    }
     Ok(Outcome::success(
         args.output.json,
         serde_json::to_value(&list)?,
-        text,
+        lines.join("\n"),
     ))
 }
 

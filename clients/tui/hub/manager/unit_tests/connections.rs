@@ -4,6 +4,9 @@ use crate::{
     model::{Action, Page},
 };
 use crossterm::event::KeyCode;
+#[path = "../test_support/ssh_constants.rs"]
+mod constants;
+use constants::*;
 
 #[test]
 fn peer_creation_editing_and_dial_direction_are_draft_only() {
@@ -17,18 +20,20 @@ fn peer_creation_editing_and_dial_direction_are_draft_only() {
         FieldId::Key,
         &crate::wire_fields::key_text(pin),
     );
-    field(&mut manager, FieldId::Host, "localhost");
-    field(&mut manager, FieldId::Port, "2222");
+    field(&mut manager, FieldId::Ssh, PROFILE);
+    field(&mut manager, FieldId::Socket, SOCKET);
     save(&mut manager);
     assert!(manager.form.is_none() && manager.dirty() && !manager.pending());
     let peer = manager.draft.as_ref().unwrap().peer(pin.hub()).unwrap();
     assert!(peer.consume && peer.exports.is_empty());
-    assert_eq!(peer.dial.as_ref().unwrap().host, "localhost");
+    let dial = peer.dial.as_ref().unwrap();
+    assert_eq!(dial.ssh_target(), Some(PROFILE));
+    assert_eq!(dial.socket().to_str(), Some(SOCKET));
     activate(&mut manager, Action::Page(Page::Peer(pin.hub())));
     activate(&mut manager, Action::EditPeer(pin.hub()));
     field(&mut manager, FieldId::Key, "ff");
-    field(&mut manager, FieldId::Host, "");
-    field(&mut manager, FieldId::Port, "");
+    field(&mut manager, FieldId::Ssh, "");
+    field(&mut manager, FieldId::Socket, "");
     let form = manager.form.as_mut().unwrap();
     form.focused = form
         .fields
@@ -57,8 +62,8 @@ fn malformed_identity_duplicate_peer_and_invalid_dial_are_atomic_rejections() {
     for (id, value) in [
         (FieldId::Hub, "invalid"),
         (FieldId::Key, "00"),
-        (FieldId::Host, "bad host"),
-        (FieldId::Port, "0"),
+        (FieldId::Ssh, "bad host"),
+        (FieldId::Socket, "relative.sock"),
     ] {
         let mut manager = manager();
         let pin = peer_identity();
@@ -70,8 +75,8 @@ fn malformed_identity_duplicate_peer_and_invalid_dial_are_atomic_rejections() {
             FieldId::Key,
             &crate::wire_fields::key_text(pin),
         );
-        field(&mut manager, FieldId::Host, "localhost");
-        field(&mut manager, FieldId::Port, "2222");
+        field(&mut manager, FieldId::Ssh, PROFILE);
+        field(&mut manager, FieldId::Socket, SOCKET);
         field(&mut manager, id, value);
         save(&mut manager);
         assert!(manager.form.is_some() && !manager.dirty());
@@ -109,15 +114,20 @@ fn removing_peer_requires_confirmation_and_preserves_runtime_independent_configu
 }
 
 #[test]
-fn listener_validates_addresses_and_reload_does_not_silently_discard_drafts() {
+fn peer_socket_edits_reject_partial_pairs_and_reload_does_not_silently_discard_drafts() {
     let mut manager = manager();
-    activate(&mut manager, Action::Listener);
-    field(&mut manager, FieldId::Listen, "bad-address");
+    let pin = peer_identity();
+    add_peer(&mut manager, pin);
+    activate(&mut manager, Action::Page(Page::Peer(pin.hub())));
+    activate(&mut manager, Action::EditPeer(pin.hub()));
+    let before = manager.draft.clone();
+    field(&mut manager, FieldId::Ssh, PROFILE);
     save(&mut manager);
-    assert!(!manager.dirty());
-    field(&mut manager, FieldId::Listen, "[::1]:0");
+    assert_eq!(manager.draft, before);
+    field(&mut manager, FieldId::Socket, SOCKET);
     save(&mut manager);
     assert!(manager.dirty());
+    manager.page(crate::model::Page::Root);
     activate(&mut manager, Action::Reload);
     key(&mut manager, KeyCode::Esc);
     assert!(manager.dirty() && !manager.pending());
@@ -132,12 +142,16 @@ fn listener_validates_addresses_and_reload_does_not_silently_discard_drafts() {
 #[test]
 fn saving_an_unchanged_form_does_not_claim_unsaved_configuration() {
     let mut manager = manager();
-    activate(&mut manager, Action::Listener);
+    let pin = peer_identity();
+    add_peer(&mut manager, pin);
+    manager.base.as_mut().unwrap().state.configuration = manager.draft.clone().unwrap();
+    activate(&mut manager, Action::Page(Page::Peer(pin.hub())));
+    activate(&mut manager, Action::EditPeer(pin.hub()));
     save(&mut manager);
     assert!(!manager.dirty());
     assert_eq!(manager.status, crate::constants::READY);
     manager.base.as_mut().unwrap().applied = false;
-    activate(&mut manager, Action::Listener);
+    activate(&mut manager, Action::EditPeer(pin.hub()));
     save(&mut manager);
     assert!(!manager.dirty());
     assert_eq!(manager.status, crate::constants::INACTIVE);

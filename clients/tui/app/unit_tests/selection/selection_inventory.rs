@@ -30,7 +30,6 @@ fn inventory_escape_resumes_frozen_output_without_clearing_filter_scope_or_layou
     // Once selection is gone, the next Escape retains normal inventory behavior.
     fixture.key(KeyCode::Esc, KeyModifiers::NONE);
     assert!(fixture.state.filter.is_empty());
-    assert!(fixture.state.inventory.scope.is_none());
     assert_eq!(*fixture.state.tab_layout(), layout);
     fixture.no_input();
 }

@@ -12,7 +12,7 @@ use yolo_hub_terminal_protocol::TerminalSummary;
 
 pub(crate) async fn collect<S, T, K>(
     client: &mut Client<S>,
-    deadline: Instant,
+    deadline: impl Fn() -> Instant,
     command: impl Fn(Option<K>) -> Command,
     extract: impl Fn(Reply) -> Option<(Vec<T>, Option<K>)>,
 ) -> Result<Vec<T>, CatalogError>
@@ -23,7 +23,7 @@ where
     let mut values = Vec::new();
     let mut after = None;
     for _ in 0..MAX_CATALOG_PAGES {
-        let reply = client.call(hub, command(after), deadline).await?;
+        let reply = client.call(hub, command(after), deadline()).await?;
         let (page, next) = extract(reply).ok_or(CatalogError::UnexpectedReply)?;
         values.extend(page);
         if next.is_none() {

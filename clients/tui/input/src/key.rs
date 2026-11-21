@@ -36,14 +36,15 @@ fn encode_key_modes(
     }
     match key.code {
         KeyCode::Char(character) if key.modifiers.contains(KeyModifiers::CONTROL) => {
-            let normalized = character.to_ascii_uppercase();
-            if normalized == '?' {
-                output.push(DELETE);
-            } else if normalized == ' ' || ('@'..='_').contains(&normalized) {
-                output.push(normalized as u8 & CONTROL_MASK);
-            } else {
-                return Err(InputError::UnsupportedKey);
-            }
+            let byte = match character.to_ascii_uppercase() {
+                ' ' | '2' => 0,
+                // Crossterm decodes the Unix FS through US bytes as Ctrl+4 through Ctrl+7.
+                digit @ '3'..='7' => ESCAPE + (digit as u8 - b'3'),
+                '?' | '8' => DELETE,
+                ascii @ '@'..='_' => ascii as u8 & CONTROL_MASK,
+                _ => return Err(InputError::UnsupportedKey),
+            };
+            output.push(byte);
         }
         KeyCode::Char(character) => {
             let mut buffer = [0; std::mem::size_of::<char>()];

@@ -168,7 +168,8 @@ impl Command {
             Self::GetPlatformSnapshot { .. }
             | Self::ListPlatformEvents { .. }
             | Self::SubscribeEvents { .. }
-            | Self::GetConfiguration {} => None,
+            | Self::GetConfiguration {}
+            | Self::ListConsumers {} => None,
             Self::ListFileRoots { .. } => None,
         };
         if owner.is_some_and(|owner| owner != origin) {

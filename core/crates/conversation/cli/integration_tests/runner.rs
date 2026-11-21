@@ -42,6 +42,24 @@ async fn current_agent_commands_use_public_discovery_and_never_native_paths() {
 }
 
 #[tokio::test]
+async fn current_agent_read_gives_each_successful_rpc_its_own_timeout() {
+    let hub = HubId::new();
+    let descriptor = descriptor(hub);
+    let expected = Reply::ConversationRead { reading: reading(&descriptor) };
+    let action = Action::Read { agent: Some(descriptor.binding.agent.address.agent_id), origin: None };
+    let replies = vec![
+        Reply::Agent { agent: agent(&descriptor) },
+        Reply::Conversation { conversation: descriptor },
+        expected.clone(),
+    ];
+    let (options, _directory, server) = super::peer::delayed_peer(
+        hub, action, replies, super::constants::PHASE_LATENCY,
+    );
+    assert_eq!(run(options, None).await.unwrap(), expected);
+    assert_eq!(server.await.unwrap().len(), super::constants::READ_REQUEST_COUNT);
+}
+
+#[tokio::test]
 async fn typed_read_and_watch_preserve_machine_readable_failures() {
     for watch in [false, true] {
         let hub = HubId::new();

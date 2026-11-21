@@ -1,8 +1,5 @@
 use crate::constants::*;
-use ratatui::{
-    style::Style,
-    text::{Line, Span},
-};
+use ratatui::{style::Style, text::Span};
 
 pub(super) fn safe(text: &str) -> String {
     text.chars()
@@ -16,23 +13,30 @@ pub(super) fn safe(text: &str) -> String {
         .collect()
 }
 
-/// Every output row is safe to print directly; transcript ANSI never reaches the terminal.
-pub(super) fn wrap(text: &str, width: u16, limit: usize) -> (Vec<String>, bool) {
-    if width == 0 || limit == 0 {
-        return (Vec::new(), !text.is_empty());
-    }
+pub(super) fn composer_rows(text: &str, width: u16) -> Vec<String> {
     let mut rows = Vec::new();
+    for_each_row(text, width, |row| {
+        rows.push(row);
+        rows.len() < MAX_COMPOSER_ROWS
+    });
+    rows
+}
+
+/// Emits sanitized rows until the consumer has enough.
+pub(super) fn for_each_row(text: &str, width: u16, mut emit: impl FnMut(String) -> bool) {
+    if width == 0 {
+        return;
+    }
     for source in text.split('\n') {
         let sanitized = safe(&source.replace('\t', TAB_REPLACEMENT));
         let span = Span::raw(sanitized.as_str());
         let mut line = String::new();
         let mut used = 0;
         for grapheme in span.styled_graphemes(Style::default()) {
-            let size = Line::raw(grapheme.symbol).width();
+            let size = Span::raw(grapheme.symbol).width();
             if used + size > usize::from(width) && !line.is_empty() {
-                rows.push(std::mem::take(&mut line));
-                if rows.len() == limit {
-                    return (rows, true);
+                if !emit(std::mem::take(&mut line)) {
+                    return;
                 }
                 used = 0;
             }
@@ -44,10 +48,8 @@ pub(super) fn wrap(text: &str, width: u16, limit: usize) -> (Vec<String>, bool) 
                 used += usize::from(CELL);
             }
         }
-        if rows.len() == limit {
-            return (rows, true);
+        if !emit(line) {
+            return;
         }
-        rows.push(line);
     }
-    (rows, false)
 }

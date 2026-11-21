@@ -6,6 +6,7 @@ use sha2::{Digest, Sha256};
 use std::fs::File;
 use std::io::Read;
 use std::os::unix::fs::MetadataExt;
+use std::path::Path;
 use yolo_paths::identity::ObjectIdentity;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
@@ -25,17 +26,23 @@ pub(crate) struct Snapshot {
 }
 
 impl Identity {
-    fn inspect(file: &File) -> Result<Self> {
+    fn inspect(file: &File, path: &Path) -> Result<Self> {
         let metadata = file.metadata()?;
         ensure!(
             metadata.is_file() && metadata.nlink() == SINGLE_LINK,
-            UNSAFE_CONFIG
+            "{} must be a regular, single-link hook configuration file",
+            path.display()
         );
-        ensure!(metadata.uid() == unsafe { libc::geteuid() }, UNSAFE_CONFIG);
+        ensure!(
+            metadata.uid() == unsafe { libc::geteuid() },
+            "hook configuration owner mismatch: {}",
+            path.display()
+        );
         let mode = metadata.mode() & PERMISSION_MASK;
         ensure!(
             mode & (UNSAFE_WRITE_MODE | SPECIAL_MODE) == 0,
-            UNSAFE_CONFIG
+            "unsafe hook file permissions on {} (mode {mode:04o}). Set this file to mode 0600",
+            path.display()
         );
         ensure!(metadata.len() <= MAX_CONFIG_BYTES, INVALID_CONFIG);
         Ok(Self {
@@ -59,13 +66,17 @@ pub(crate) fn read(directory: &Directory, name: &str) -> Result<Snapshot> {
     directory.verify()?;
     let (bytes, identity) = match unix::open_file(directory.file(), name) {
         Ok(file) => {
-            yolo_paths::private_acl::require_empty(&file, &directory.path().join(name))?;
-            let identity = Identity::inspect(&file)?;
+            let path = directory.path().join(name);
+            yolo_paths::private_acl::require_empty(&file, &path)?;
+            let identity = Identity::inspect(&file, &path)?;
             let mut bytes = Vec::new();
             (&file).take(MAX_CONFIG_BYTES + 1).read_to_end(&mut bytes)?;
-            ensure!(Identity::inspect(&file)? == identity, CONFIG_CHANGED);
+            ensure!(Identity::inspect(&file, &path)? == identity, CONFIG_CHANGED);
             let named = unix::open_file(directory.file(), name)?;
-            ensure!(Identity::inspect(&named)? == identity, CONFIG_CHANGED);
+            ensure!(
+                Identity::inspect(&named, &path)? == identity,
+                CONFIG_CHANGED
+            );
             (bytes, Some(identity))
         }
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => (Vec::new(), None),

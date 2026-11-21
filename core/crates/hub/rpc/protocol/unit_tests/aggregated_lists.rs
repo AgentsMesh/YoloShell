@@ -73,3 +73,39 @@ fn aggregated_lists_accept_foreign_origins_but_reject_disorder() {
         Err(PublicError::InvalidPayload)
     );
 }
+
+#[test]
+fn a_workspace_or_worktree_page_must_advance_beyond_the_requested_cursor() {
+    use yolo_hub_workspace_protocol::{ListWorkspacesRequest, ListWorktreesRequest};
+    let workspace = foreign_workspace();
+    let mut fields = list_workspaces().fields().clone();
+    fields.after = Some(workspace.address);
+    let worktree = worktree_summary();
+    let mut trees = list_worktrees().fields().clone();
+    trees.after = Some(worktree.address);
+    for (command, row) in [
+        (
+            Command::ListWorkspaces {
+                request: ListWorkspacesRequest::new(fields).unwrap(),
+            },
+            workspace,
+        ),
+        (
+            Command::ListWorktrees {
+                request: ListWorktreesRequest::new(trees).unwrap(),
+            },
+            worktree,
+        ),
+    ] {
+        let request = request(command);
+        let page = ListWorkspacesResult {
+            next: Some(row.address),
+            workspaces: vec![row],
+        };
+        let reply = Response::new(&request, hub(HUB_ID), Reply::Workspaces { list: page });
+        assert_eq!(
+            reply.validate_for(&request),
+            Err(PublicError::InvalidPayload)
+        );
+    }
+}

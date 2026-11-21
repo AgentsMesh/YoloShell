@@ -34,3 +34,4 @@ mod sftp_wire;
 pub use broker_command_fixture::{
     BROKER_COMMAND_CANCELLATION_PROGRAM, BrokerCommandCleanupFixture,
 };
+pub use broker_hub_fixture::HubPeerTarget;

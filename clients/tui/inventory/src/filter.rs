@@ -17,8 +17,7 @@ impl Inventory {
             .filter(|(address, session)| {
                 let fields = session.fields();
                 let phase = self.phase(**address, fields);
-                self.in_scope(address.hub_id)
-                    && self
+                self
                         .workspace
                         .is_none_or(|workspace| fields.workspace == Some(workspace))
                     && (self.history || !terminal_is_dead(phase))
@@ -50,9 +49,6 @@ impl Inventory {
         self.agents
             .iter()
             .filter(|(target, snapshot)| {
-                if !self.in_scope(target.address.hub_id) {
-                    return false;
-                }
                 let fields = snapshot.fields();
                 let session = terminals
                     .get(&fields.terminal.address)
@@ -93,13 +89,13 @@ impl Inventory {
             .collect()
     }
 
-    /// Hubs is the scope selector itself, so the current scope never hides other hubs.
-    pub fn visible_hubs(&self, filter: &str) -> Vec<HubId> {
-        if !self.hubs_supported {
+    /// Machines is the scope selector itself, so the current scope never hides other machines.
+    pub fn visible_machines(&self, filter: &str) -> Vec<HubId> {
+        if !self.machines_supported {
             return Vec::new();
         }
         let filter = normalized(filter);
-        self.hubs
+        self.machines
             .iter()
             .filter(|(hub, summary)| {
                 matches(

@@ -93,9 +93,8 @@ fn decode_identities(response: &[u8]) -> Result<Vec<AgentIdentity>, RemoteError>
     let mut identities = Vec::with_capacity(count);
     for _ in 0..count {
         let key_blob = take_string(&mut encoded)?;
-        let comment = str::from_utf8(take_string(&mut encoded)?)
-            .map_err(|_| protocol_error())?
-            .to_owned();
+        // OpenSSH labels are byte strings. Only the key blob participates in signing.
+        let comment = String::from_utf8_lossy(take_string(&mut encoded)?).into_owned();
         identities.push(decode_identity(key_blob, comment)?);
     }
     if !encoded.is_empty() {

@@ -17,6 +17,7 @@ pub fn open(options: &Options) -> Result<TabStore> {
 pub fn restore(store: &TabStore) -> State {
     let tab = &store.document().tabs.active().view;
     let mut state = State::default();
+    state.entry_hub = store.document().entry_hub;
     state.replace_tabs(store.document().tabs.clone());
     state.selected = state.focused_terminal();
     let document = state.document.restore(&state.tabs);

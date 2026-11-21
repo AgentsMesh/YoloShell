@@ -1,5 +1,6 @@
 mod agent_control_rights;
 mod connections;
+mod consumers;
 mod files;
 mod files_conflicts;
 #[path = "../test_support/files.rs"]

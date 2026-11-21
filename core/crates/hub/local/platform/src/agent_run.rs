@@ -8,6 +8,10 @@ use yolo_hub_identity::{HubId, TerminalAddress, WorkspaceAddress};
 use yolo_hub_terminal_protocol::PublicError;
 use yolo_paths::directory::PrivateDirectory;
 
+#[path = "agent_run_observation.rs"]
+mod observation;
+pub(crate) use observation::{run_name, terminal_observation};
+
 /// Hub-owned durable run identity. The store owns naming and revisions; the
 /// terminal and provider binding remain observed Host/Worker facts.
 pub struct AgentRunService {
@@ -104,7 +108,10 @@ impl AgentRunService {
             .map_err(StoreError::into_public)
     }
 
-    pub(crate) async fn get(&self, request: &GetAgentRunRequest) -> Result<AgentRunSummary, PublicError> {
+    pub(crate) async fn get(
+        &self,
+        request: &GetAgentRunRequest,
+    ) -> Result<AgentRunSummary, PublicError> {
         self.store
             .lock()
             .await
@@ -125,14 +132,22 @@ impl AgentRunService {
             .ok_or(PublicError::NotFound)
     }
 
-    pub async fn mark_stopped(
+    pub(crate) async fn mark_stopped_if_current(
         &self,
         address: AgentRunAddress,
+        terminal: TerminalAddress,
+        expected_runtime: Option<uuid::Uuid>,
+        expected_observed_runtime: Option<Option<uuid::Uuid>>,
     ) -> Result<AgentRunSummary, PublicError> {
         self.store
             .lock()
             .await
-            .mark_stopped(address)
+            .mark_stopped_if_current(
+                address,
+                Some(terminal),
+                expected_runtime,
+                expected_observed_runtime,
+            )
             .map_err(StoreError::into_public)
     }
 
@@ -177,17 +192,5 @@ impl AgentRunService {
             .await
             .update(request)
             .map_err(StoreError::into_public)
-    }
-}
-
-pub fn run_name(provider_id: &str, start_token: uuid::Uuid) -> String {
-    let suffix = &start_token.simple().to_string()[..8];
-    format!("{provider_id}-{suffix}")
-}
-
-pub fn selector_address(selector: &AgentRunSelector) -> Option<AgentRunAddress> {
-    match selector {
-        AgentRunSelector::Address(address) => Some(*address),
-        AgentRunSelector::Name(_) => None,
     }
 }

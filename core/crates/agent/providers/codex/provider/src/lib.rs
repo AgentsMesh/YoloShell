@@ -7,6 +7,7 @@ pub use identity::{CONVERSATION_TOKEN, DISPLAY_NAME, INSTALL_TOKEN};
 
 mod conversation;
 mod install;
+pub mod manual_shell;
 mod package;
 mod turn_end;
 

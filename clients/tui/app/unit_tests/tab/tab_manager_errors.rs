@@ -121,3 +121,30 @@ fn rejected_named_creation_rolls_back_its_own_name_and_placeholder() {
     assert!(fixture.state.creations.recovery.is_empty());
     assert!(fixture.incoming.try_recv().is_err());
 }
+
+#[test]
+fn named_creation_can_reuse_the_vacant_active_tab_at_the_machine_tab_limit() {
+    let mut fixture = Fixture::new();
+    for number in 1..yolo_tui_tab::MAX_TABS {
+        fixture.state.tabs.create(&format!("Build {number}")).unwrap();
+    }
+    fixture.state.activate_tab_collection();
+    let vacant = fixture.state.tabs.active().clone();
+    open(&mut fixture);
+    key(&mut fixture, KeyCode::Char('n'));
+    event(&mut fixture, Event::Paste(vacant.name));
+    key(&mut fixture, KeyCode::Enter);
+
+    assert!(fixture.state.tab_manager.is_none());
+    assert_eq!(fixture.state.tabs.active().id, vacant.id);
+    assert_eq!(fixture.state.tabs.entries().len(), yolo_tui_tab::MAX_TABS);
+    assert_eq!(fixture.original_binding(), Some(fixture.expected));
+    assert!(matches!(
+        fixture.incoming.try_recv().unwrap(),
+        crate::network::Job::Call {
+            command: yolo_hub_rpc_protocol::Command::Create { .. },
+            ..
+        }
+    ));
+    assert!(fixture.incoming.try_recv().is_err());
+}

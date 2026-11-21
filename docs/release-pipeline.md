@@ -22,7 +22,7 @@ SHA256SUMS
 
 Linux archives are built in pinned Debian bullseye containers (glibc 2.31) on
 GitHub's Ubuntu amd64 and arm64 runners. The macOS archive is built natively on
-the Apple Silicon `macos-15` runner.
+the Apple Silicon `macos-26` runner.
 
 ## GitLab stage
 
@@ -32,8 +32,9 @@ the Apple Silicon `macos-15` runner.
    release tag, version, name, prerelease flag and source commit, then polls
    the workflow until it completes.
 
-The GitLab runner only needs `git`, `curl`, `perl` and `python3`; it does not
-need a compiler or Docker.
+GitLab verification jobs run in the pinned Linux amd64 build image on a
+Kubernetes runner. The deployment runner uses `git`, `curl`, `perl` and
+`python3` to export the tree and dispatch the GitHub workflow.
 
 ## GitHub Actions workflow
 
@@ -74,10 +75,12 @@ The release body and README point at:
 curl -fsSL https://raw.githubusercontent.com/AgentsMesh/YoloShell/main/scripts/install.sh | sh
 ```
 
-`yolo update --check-release` reads the GitHub release API;
-`yolo update --install-release` downloads the matching archive, verifies
-`SHA256SUMS`, installs an immutable image under `~/.local/lib/yolo/<sha>/yolo`
-and atomically updates `~/.local/bin/yolo`. `--channel nightly` selects the
-newest prerelease. The updater never restarts Host/Hub services; run
-`yolo update` for the existing live-service admission check before restarting
-them.
+`yolo update` reads the GitHub release API, downloads the matching archive and
+verifies `SHA256SUMS`, installs a newer immutable image under
+`~/.local/lib/yolo/<sha>/yolo`, atomically updates `~/.local/bin/yolo`, restarts
+the local Host and Hub when needed, and probes live service admission.
+`--check` is read-only, `--no-restart` installs without activating, and
+`--channel nightly` selects the newest published nightly. The updater examines
+all release pages for the selected repository and compares publication times
+within the requested channel. It compares a nightly tag with the date and
+revision embedded in the executable so checking an installed nightly is idempotent.

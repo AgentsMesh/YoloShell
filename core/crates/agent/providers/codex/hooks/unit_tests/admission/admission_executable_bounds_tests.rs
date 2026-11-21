@@ -9,56 +9,68 @@ mod support;
 use bounds::*;
 
 #[test]
-fn runtime_and_provider_limits_are_checked_against_real_file_metadata() {
+fn provider_accepts_the_packaged_codex_and_larger_images() {
     let fixture = support::Fixture::new();
-    for (kind, maximum) in [
-        (
-            CodexExecutableKind::Provider,
-            crate::codex_hooks::MAX_PROVIDER_EXECUTABLE_BYTES,
-        ),
-        (
-            CodexExecutableKind::Runtime,
-            yolo_build_image::MAX_EXECUTABLE_IMAGE_BYTES,
-        ),
-    ] {
-        for length in [u64::default(), maximum, maximum + BOUNDARY_STEP] {
-            let file = resize(&fixture.request.hook_executable, length);
-            assert_eq!(
-                CodexExecutableIdentity::inspect(&file.metadata().unwrap(), kind).is_ok(),
-                length == maximum
-            );
-            if length != maximum {
-                assert_invalid(CodexExecutableAttestation::capture(
-                    &fixture.request.hook_executable,
-                    kind,
-                ));
-            }
+    for length in [320_248_296, ABOVE_RUNTIME_LIMIT] {
+        let file = resize(&fixture.request.real_executable, length);
+        CodexExecutableIdentity::inspect(&file.metadata().unwrap(), CodexExecutableKind::Provider)
+            .unwrap();
+    }
+    let empty = resize(&fixture.request.real_executable, 0);
+    assert_invalid(CodexExecutableIdentity::inspect(
+        &empty.metadata().unwrap(),
+        CodexExecutableKind::Provider,
+    ));
+}
+
+#[test]
+fn runtime_size_limit_is_checked_against_real_file_metadata() {
+    let fixture = support::Fixture::new();
+    let maximum = yolo_build_image::MAX_EXECUTABLE_IMAGE_BYTES;
+    for length in [0, maximum, ABOVE_RUNTIME_LIMIT] {
+        let file = resize(&fixture.request.hook_executable, length);
+        assert_eq!(
+            CodexExecutableIdentity::inspect(
+                &file.metadata().unwrap(),
+                CodexExecutableKind::Runtime
+            )
+            .is_ok(),
+            length == maximum
+        );
+        if length != maximum {
+            assert_invalid(CodexExecutableAttestation::capture(
+                &fixture.request.hook_executable,
+                CodexExecutableKind::Runtime,
+            ));
         }
     }
 }
 
 #[test]
-fn a_runtime_sized_proof_cannot_be_reused_as_provider_authority_or_hide_tail_changes() {
+fn large_provider_hash_includes_the_tail_and_the_runtime_field_enforces_its_own_limit() {
     let fixture = support::Fixture::new();
-    let file = resize(&fixture.request.hook_executable, RUNTIME_SIZED_EXECUTABLE);
+    let file = resize(&fixture.request.real_executable, ABOVE_RUNTIME_LIMIT);
     let record = fixture.record();
     record.validate_for(&fixture.identity).unwrap();
-    let original = record.hook_executable();
+    let original = record.real_executable();
+    original
+        .verify_current(CodexExecutableKind::Provider)
+        .unwrap();
     assert_invalid(CodexExecutableAttestation::capture(
         original.path(),
-        CodexExecutableKind::Provider,
+        CodexExecutableKind::Runtime,
     ));
-    assert_invalid(original.validate_for(original.path(), CodexExecutableKind::Provider));
-    assert_invalid(original.verify_current(CodexExecutableKind::Provider));
+    assert_invalid(original.validate_for(original.path(), CodexExecutableKind::Runtime));
+    assert_invalid(original.verify_current(CodexExecutableKind::Runtime));
     assert_invalid(
-        original.verify_mapped_process(std::process::id(), CodexExecutableKind::Provider),
+        original.verify_mapped_process(std::process::id(), CodexExecutableKind::Runtime),
     );
 
     // Field ownership supplies the kind after deserialization. No serialized
     // assertion can turn provider evidence into trusted runtime evidence.
     let mut forged = record.clone();
-    forged.request.real_executable = original.path().to_path_buf();
-    forged.real_executable = original.clone();
+    forged.request.hook_executable = original.path().to_path_buf();
+    forged.hook_executable = original.clone();
     let decoded: CodexAdmissionRecord =
         serde_json::from_slice(&serde_json::to_vec(&forged).unwrap()).unwrap();
     assert_invalid(decoded.validate_for(&fixture.identity));
@@ -69,17 +81,15 @@ fn a_runtime_sized_proof_cannot_be_reused_as_provider_authority_or_hide_tail_cha
     encoded[KIND_FIELD] = RUNTIME_KIND.into();
     assert!(serde_json::from_value::<CodexExecutableAttestation>(encoded).is_err());
 
-    file.write_all_at(
-        &[CHANGED_LAST_BYTE],
-        RUNTIME_SIZED_EXECUTABLE - BOUNDARY_STEP,
-    )
-    .unwrap();
+    file.write_all_at(&[CHANGED_LAST_BYTE], ABOVE_RUNTIME_LIMIT - BOUNDARY_STEP)
+        .unwrap();
     assert!(
         original
-            .verify_current(CodexExecutableKind::Runtime)
+            .verify_current(CodexExecutableKind::Provider)
             .is_err()
     );
     let replacement =
-        CodexExecutableAttestation::capture(original.path(), CodexExecutableKind::Runtime).unwrap();
+        CodexExecutableAttestation::capture(original.path(), CodexExecutableKind::Provider)
+            .unwrap();
     assert_ne!(replacement.content_digest(), original.content_digest());
 }

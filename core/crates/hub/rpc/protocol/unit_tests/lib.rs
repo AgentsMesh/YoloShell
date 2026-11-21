@@ -19,6 +19,7 @@ mod files;
 mod fixtures;
 mod hubs;
 mod management;
+mod name_selectors;
 mod observation;
 mod operation;
 mod operation_timeout;

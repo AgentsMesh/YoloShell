@@ -16,7 +16,7 @@ pub fn render(frame: &mut Frame<'_>, manager: &Manager, tabs: &TabCatalog, area:
     .split(area);
     frame.render_widget(Paragraph::new(format!("{TITLE}\n{HELP}")), areas[0]);
     let rows = tabs
-        .entries()
+        .machine_entries()
         .iter()
         .map(|entry| {
             format!(
@@ -31,7 +31,7 @@ pub fn render(frame: &mut Frame<'_>, manager: &Manager, tabs: &TabCatalog, area:
         })
         .collect::<Vec<_>>();
     let mut selection = ListState::default().with_selected(
-        tabs.entries()
+        tabs.machine_entries()
             .iter()
             .position(|entry| entry.id == manager.selected),
     );

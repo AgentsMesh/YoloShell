@@ -12,8 +12,10 @@ and validation during deserialization. It does not read retired formats.
 On Linux, Btrfs uses its filesystem UUID and kernel export handle. The opaque
 handle includes the subvolume identity, so a normal Btrfs snapshot has a
 different proof even when inode and birth time are copied. ext4, XFS and tmpfs
-use the kernel filesystem UUID ioctl and export handles when available. A
-kernel or filesystem without either capability is explicitly unsupported.
+use the kernel filesystem UUID ioctl and export handles when available. On
+older kernels ext4 supplies the same UUID through `EXT4_IOC_GETFSUUID` on
+the retained descriptor. Capturing an identity requires both the UUID and
+the export handle.
 tmpfs evidence lasts for its filesystem instance; it does not promise that
 tmpfs data survives a reboot. virtiofs has no supported backend here.
 

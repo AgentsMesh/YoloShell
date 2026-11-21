@@ -20,10 +20,7 @@ impl NativeHookContext {
     }
 
     pub(crate) fn configure(&self, command: &mut CommandBuilder) {
-        command.env(
-            crate::codex_hooks::NATIVE_HOOK_EXECUTABLE_ENV,
-            &self.executable,
-        );
+        command.env(crate::codex_hooks::NATIVE_HOOK_EXECUTABLE_ENV, &self.executable);
         command.env(crate::codex_hooks::NATIVE_HOOK_HOME_ENV, &self.home);
         command.env(crate::codex_hooks::SOCKET_ENV, &self.codex_socket);
     }

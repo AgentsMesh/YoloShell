@@ -6,13 +6,16 @@ pub const ABOUT: &str =
 pub const CONTROLS: &str = concat!(
     "Ctrl-B c opens a tab with a shell; v or % splits right; - or \" splits down.\n",
     "Ctrl-B n/p switches tabs; o or arrows focuses a pane; w opens the tab manager.\n",
-    "Ctrl-B s focuses the Agent runs/Hubs sidebar; b toggles it; g opens the existing-terminal picker.\n",
+    "Ctrl-B s focuses the machine tree sidebar; b toggles it; g opens the existing-terminal picker.\n",
     "Ctrl-B x closes a pane view; X closes a tab view. Shells keep running; g reopens them.\n",
     "Ctrl-B R opens focused-terminal recovery; Ctrl-B Ctrl-B sends a literal Ctrl-B.\n",
     "Ctrl-B m switches an agent pane between Terminal and Chat; Escape returns to Terminal.\n",
     "Ctrl-B d detaches. Ordinary keys (including q) go to the shell.\n",
     "Detaching leaves shells and agents running. An agent can finish while its shell remains usable.\n",
-    "Also: yolo agent --help · yolo protocol describe · yolo conversation --help."
+    "Commands: yolo terminal|client|layout for terminals, yolo server for local services,\n",
+    "yolo machine|agent for machines and agents, yolo hook to install agent hooks.\n",
+    "Root connection options may precede or follow a command; run yolo <command>\n",
+    "--help for details."
 );
 pub const TERMINALS_COMMAND: &str = "terminals";
 pub const CATALOG_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(10);
@@ -48,21 +51,17 @@ pub const PRIVATE_REMOTE_FILE_REQUIRED: &str =
 pub const CONNECTION_GROUP: &str = "connection";
 pub const INVALID_PATH: &str = "Local profile paths must contain valid non-control text";
 pub(crate) const INVALID_LAYOUT: &str = "Layout identity must be a non-nil UUID";
-pub const PLATFORM_SNAPSHOT_UNSUPPORTED: &str = "this Hub does not advertise platform snapshots";
-pub const PLATFORM_EVENTS_UNSUPPORTED: &str = "this Hub does not advertise platform events";
-pub const PLATFORM_EVENTS_SUBSCRIBE_UNSUPPORTED: &str =
-    "this Hub does not advertise event subscriptions";
-pub const UNEXPECTED_EVENT_SUBSCRIPTION_REPLY: &str = "Hub returned a non-subscription reply";
-pub const UNEXPECTED_EVENTS_REPLY: &str = "Hub returned an unexpected platform event reply";
 pub const TERMINAL_TEXT_UNSUPPORTED: &str = "this Hub does not advertise terminal text reads";
 pub const TERMINAL_TEXT_NO_RUNTIME: &str = "the selected terminal has no live runtime";
 pub const UNEXPECTED_TEXT_REPLY: &str = "Hub returned an unexpected terminal text reply";
-pub const UNEXPECTED_SNAPSHOT_REPLY: &str = "Hub returned an unexpected snapshot reply";
-pub const DEFAULT_SNAPSHOT_LIMIT: u16 = 128;
-pub const MAX_SNAPSHOT_LIMIT: u16 = 128;
-pub const DEFAULT_EVENTS_LIMIT: u16 = 64;
-pub const MAX_EVENTS_LIMIT: u16 = 256;
 pub const AUDIT_LOCAL_ONLY: &str = "audit reads require the local profile";
+pub const MANAGEMENT_LOCAL_ONLY: &str =
+    "Machine commands require the local Hub (use --local-profile or --socket/--hub)";
+pub const STARTING_LOCAL_SERVICES: &str = "ensuring local Host and Hub are running...";
+pub const LIFECYCLE_LOCAL_ONLY: &str =
+    "local service lifecycle commands operate on the local profile only";
+pub const MANAGEMENT_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(10);
+/// Pairing spans an SSH handshake and a remote configuration activation.
 
 pub const RECIPE_SCHEMA_VERSION: u16 = 1;
 pub const SCHEMA_VERSION_FIELD: &str = "schema_version";

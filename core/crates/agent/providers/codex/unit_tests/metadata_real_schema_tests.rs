@@ -6,7 +6,6 @@ const TIMESTAMP_KEY: &str = "timestamp";
 const TIMESTAMP: &str = "2026-08-05T12:00:00.000Z";
 const ORIGINATOR_KEY: &str = "originator";
 const CLI_VERSION: &str = "0.146.0";
-const ROOT_THREAD_SOURCE: &str = "user";
 const NESTED_THREAD_SOURCE: &str = "subagent";
 const MODEL_PROVIDER: &str = "openai";
 const TEXT_KEY: &str = "text";
@@ -20,6 +19,25 @@ const FIRST_AGENT_NAME: &str = "reviewer";
 const SECOND_AGENT_NAME: &str = "worker";
 const AGENT_ROLE: &str = "reviewer";
 const REVIEW_SOURCE: &str = "review";
+const DAEMON_SOURCE: &str = "vscode";
+const TUI_ORIGINATOR: &str = "codex-tui";
+
+#[test]
+fn a_daemon_created_user_thread_can_be_resumed_by_the_terminal() {
+    let fixture = test_support::Fixture::new();
+    let path = fixture.evidence(test_support::SESSION_ID);
+    let mut record = base_metadata(
+        &fixture, test_support::SESSION_ID, json!(DAEMON_SOURCE), constants::USER_THREAD_SOURCE,
+    );
+    record[constants::PAYLOAD_KEY][ORIGINATOR_KEY] = json!(TUI_ORIGINATOR);
+    assert!(RolloutMetadata::from_head(&path, &[record.clone()], &fixture.cwd).is_some());
+
+    record[constants::PAYLOAD_KEY][constants::THREAD_SOURCE_KEY] = json!(NESTED_THREAD_SOURCE);
+    assert!(RolloutMetadata::from_head(&path, &[record.clone()], &fixture.cwd).is_none());
+    record[constants::PAYLOAD_KEY][constants::SOURCE_KEY] = json!(constants::CLI_SOURCE);
+    record[constants::PAYLOAD_KEY][constants::THREAD_SOURCE_KEY] = json!({});
+    assert!(RolloutMetadata::from_head(&path, &[record], &fixture.cwd).is_none());
+}
 
 #[test]
 fn real_0146_head_selects_cli_among_thread_spawn_sessions() {
@@ -69,7 +87,7 @@ fn root_metadata(fixture: &test_support::Fixture) -> Value {
         fixture,
         test_support::SESSION_ID,
         json!(constants::CLI_SOURCE),
-        ROOT_THREAD_SOURCE,
+        constants::USER_THREAD_SOURCE,
     )
 }
 
@@ -115,7 +133,7 @@ fn base_metadata(
     payload[ORIGINATOR_KEY] = json!(constants::REAL_ORIGINATOR);
     payload[constants::REAL_CLI_VERSION_KEY] = json!(CLI_VERSION);
     payload[constants::REAL_SESSION_LINEAGE_ID_KEY] = json!(test_support::SESSION_ID);
-    payload[constants::REAL_THREAD_SOURCE_KEY] = json!(thread_source);
+    payload[constants::THREAD_SOURCE_KEY] = json!(thread_source);
     payload[constants::REAL_MODEL_PROVIDER_KEY] = json!(MODEL_PROVIDER);
     payload[constants::REAL_BASE_INSTRUCTIONS_KEY] = json!({(TEXT_KEY): SANITIZED_INSTRUCTIONS});
     payload[constants::REAL_HISTORY_MODE_KEY] = json!(HISTORY_MODE);

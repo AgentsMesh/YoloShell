@@ -14,9 +14,6 @@ const ADMISSION_INVALID: &str = "Codex invocation admission record is invalid";
 #[path = "../../unit_tests/admission/admission_executable_bounds_tests.rs"]
 mod bounds_tests;
 #[cfg(all(test, feature = "yolo-unit-tests"))]
-#[path = "../../unit_tests/admission/admission_digest_tests.rs"]
-mod digest_tests;
-#[cfg(all(test, feature = "yolo-unit-tests"))]
 #[path = "../../unit_tests/admission/admission_record_tests.rs"]
 mod tests;
 

@@ -1,6 +1,7 @@
 use super::{constants::*, fixture::*};
 use yolo_hub_federation_settings::{ExportPolicy, Peer, PeerAddress};
 use yolo_hub_remote_setup_protocol::*;
+use yolo_remote_provisioning_protocol::ProvisionOutcome;
 
 #[test]
 fn linking_preserves_existing_policy_and_is_noop_only_for_the_exact_ssh_route() {
@@ -12,10 +13,12 @@ fn linking_preserves_existing_policy_and_is_noop_only_for_the_exact_ssh_route() 
     assert_eq!(change.expected_revision, baseline.state.revision);
     let peer = change.configuration.peers.first().unwrap().clone();
     assert!(peer.consume && peer.exports.is_empty());
-    assert!(matches!(
-        peer.dial.as_ref().unwrap().transport,
-        yolo_hub_federation_settings::DialTransport::Ssh { .. }
-    ));
+    let dial = peer.dial.as_ref().unwrap();
+    assert_eq!(dial.profile_id(), Some(request.profile().unwrap().profile_id()));
+    let ProvisionOutcome::Ready { enrollment, .. } = &provision.fields().outcome else {
+        panic!()
+    };
+    assert_eq!(dial.socket(), enrollment.fields().peer_socket.as_path());
     let mut connected = baseline.clone();
     connected.state.configuration = change.configuration;
     assert!(configuration_contains_link(&connected, &provision).unwrap());
@@ -44,10 +47,8 @@ fn linking_preserves_existing_policy_and_is_noop_only_for_the_exact_ssh_route() 
         link.configuration.peers[0].exports,
         current.state.configuration.peers[0].exports
     );
-    current.state.configuration.peers[0].dial = Some(PeerAddress::tcp(
-        OTHER_HOST,
-        std::num::NonZeroU16::new(OTHER_PORT).unwrap(),
-    ));
+    current.state.configuration.peers[0].dial =
+        Some(PeerAddress::profile(OTHER_PROFILE, OTHER_SOCKET.into()).unwrap());
     assert!(plan_link(&current, &request, &provision).is_err());
 }
 

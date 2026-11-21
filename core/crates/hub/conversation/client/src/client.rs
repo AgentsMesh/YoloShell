@@ -14,21 +14,25 @@ pub async fn resolve_current<S: AsyncRead + AsyncWrite + Unpin>(
     address: AgentAddress,
     deadline: Instant,
 ) -> Result<ConversationDescriptor, ConversationClientError> {
+    let binding = current_binding(client, address, deadline).await?;
+    resolve(client, binding, deadline).await
+}
+
+pub async fn current_binding<S: AsyncRead + AsyncWrite + Unpin>(
+    client: &mut Client<S>,
+    address: AgentAddress,
+    deadline: Instant,
+) -> Result<ConversationBinding, ConversationClientError> {
     let Reply::Agent { agent } = client
         .call(address.hub_id, Command::GetCurrentAgent { address }, deadline)
         .await?
     else {
         return Err(ConversationClientError::UnexpectedReply);
     };
-    resolve(
-        client,
-        ConversationBinding {
-            agent: agent.cursor().target(),
-            runtime: agent.fields().terminal,
-        },
-        deadline,
-    )
-    .await
+    Ok(ConversationBinding {
+        agent: agent.cursor().target(),
+        runtime: agent.fields().terminal,
+    })
 }
 
 /// Revalidates the requested agent execution and discovers its terminal association.

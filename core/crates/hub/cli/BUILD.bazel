@@ -38,6 +38,7 @@ rust_library(
         "//core/crates/transport/client:yolo_client",
         "//core/crates/hub/local/startup:yolo_hub_local_startup",
         "//core/crates/hub/management/runtime:yolo_hub_management_runtime",
+        "//core/crates/hub/peer/dialer:yolo_hub_peer_dialer",
         "//core/crates/hub/remote/startup:yolo_hub_remote_startup",
         "//core/crates/transport/remote/provisioning/protocol:yolo_remote_provisioning_protocol",
         "//core/crates/hub/ssh/profile/runtime:yolo_hub_ssh_profile_runtime",

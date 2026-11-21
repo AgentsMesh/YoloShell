@@ -66,7 +66,7 @@ impl WorkerState {
             self,
             fence.durable(),
             Some(&request.witness),
-            |binding, witness, verify| {
+            |binding, witness, stop_turn, verify| {
                 let ready = || -> anyhow::Result<()> {
                     fence.verify()?;
                     verify()?;
@@ -75,7 +75,11 @@ impl WorkerState {
                         request.generation,
                         &request.writer_capability,
                     )?;
-                    let _ = input.verify(self, binding, witness)?;
+                    input.verify_pty(self, witness)?;
+                    anyhow::ensure!(
+                        super::prompt_readiness::observe(self, binding, stop_turn).0,
+                        SOURCE_CHANGED
+                    );
                     Ok(())
                 };
                 ready()?;

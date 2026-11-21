@@ -10,9 +10,9 @@ impl State {
         let (tabs, admission) = crate::tab_binding::admit(self, tabs);
         self.tab_revision = self.tab_revision.saturating_add(1);
         self.tabs = tabs;
+        self.inventory.remember_workspace_machines(self.tabs.entries().iter().map(|entry| entry.machine).collect());
         admission
     }
-
     pub(crate) fn sync_active_tab_view(&mut self) {
         let view = if matches!(self.mode, Mode::Terminal | Mode::Chat) {
             TabViewMode::Terminal
@@ -42,7 +42,7 @@ impl State {
             .filter(|entry| entry.id != self.tabs.active().id)
             .flat_map(|entry| entry.view.layout.panes())
             .chain(self.tab_layout().panes())
-            .filter_map(|pane| pane.terminal)
+            .filter_map(|pane| pane.terminal.filter(|address| !crate::constants::is_self_terminal(address.terminal_id.as_uuid())))
             .collect()
     }
 

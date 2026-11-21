@@ -55,9 +55,9 @@ fn dependencies_produce_a_stable_topological_order() {
     let mut document = document();
     document.agents = vec![
         agent("codex", Some("second")),
-        agent("codex", Some("first")),
+        agent("codex", Some("Équipe")),
     ];
-    document.agents[0].after = vec!["first".into()];
+    document.agents[0].after = vec!["équipe".into()];
     assert_eq!(compute(&document).unwrap(), vec![1, 0]);
 
     let mut cycle = document.clone();
@@ -69,11 +69,11 @@ fn dependencies_produce_a_stable_topological_order() {
     assert!(compute(&unknown).is_err());
 
     let mut duplicate = document.clone();
-    duplicate.agents[0].after = vec!["first".into(), "FIRST".into()];
+    duplicate.agents[0].after = vec!["équipe".into(), "ÉQUIPE".into()];
     assert!(compute(&duplicate).is_err());
 
     let mut own = document;
-    own.agents[1].after = vec!["first".into()];
+    own.agents[1].after = vec!["équipe".into()];
     assert!(compute(&own).is_err());
 }
 
@@ -145,7 +145,7 @@ fn schema_bounds_and_required_location_are_enforced() {
 fn agents_are_uniquely_named_and_tokens_are_not_nil() {
     let directory = TempDir::new().unwrap();
     let mut duplicate = document();
-    duplicate.agents = vec![agent("codex", Some("same")), agent("codex", Some("SAME"))];
+    duplicate.agents = vec![agent("codex", Some("Équipe")), agent("codex", Some("équipe"))];
     assert!(read(&file(&directory, &duplicate)).is_err());
 
     let mut nil = document();

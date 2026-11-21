@@ -1,7 +1,7 @@
 use super::RunningNode;
 use crate::hub::catalog_gate::{CatalogGate, GatedDispatcher};
 use std::sync::Arc;
-use tokio::{net::TcpListener, sync::watch};
+use tokio::sync::watch;
 use yolo_hub_federation::Federation;
 use yolo_hub_federation_settings::Configuration;
 use yolo_hub_local_backend::LocalBackend;
@@ -12,13 +12,19 @@ impl RunningNode {
     pub async fn start_prepared(
         state: Arc<HubState>,
         config: Configuration,
-        listener: TcpListener,
         backend: LocalBackend,
     ) -> Self {
         let socket = state.socket_path();
-        let node = Federation::new(state.clone(), backend, config)
-            .await
-            .unwrap();
+        let (listener, publication) = super::publish(&state).await;
+        let node = Federation::new_with_dialer(
+            state.clone(),
+            backend,
+            config,
+            Arc::new(super::DirectUnixDialer),
+            None,
+        )
+        .await
+        .unwrap();
         let catalog_gate = CatalogGate::new();
         let server = HubServer::bind_dispatcher(
             state,
@@ -39,6 +45,7 @@ impl RunningNode {
             stop,
             local: Some(local),
             network: Some(network),
+            _publication: publication,
         }
     }
 }

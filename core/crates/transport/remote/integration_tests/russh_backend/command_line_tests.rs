@@ -5,6 +5,18 @@ use std::ffi::OsString;
 use std::os::unix::ffi::OsStringExt;
 
 #[test]
+fn quoted_empty_argument_keeps_its_position() {
+    let program = "/usr/bin/printf";
+    let policy = CommandPolicy::new([program.into()]).unwrap();
+    let args = ["<%s>", "first", "", "last"].map(String::from).to_vec();
+    let command = policy.authorize(CommandRequest::new(program, args)).unwrap();
+    assert_eq!(
+        command_line(&command).unwrap(),
+        "'/usr/bin/printf' '<%s>' 'first' '' 'last'"
+    );
+}
+
+#[test]
 fn quotes_shell_metacharacters_and_single_quotes() {
     let policy = CommandPolicy::new(["/usr/bin/printf".into()]).unwrap();
     let command = policy

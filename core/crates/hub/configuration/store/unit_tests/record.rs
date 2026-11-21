@@ -7,7 +7,7 @@ fn record() -> Record {
         schema_version: crate::constants::PRIVATE_RECORD_SCHEMA,
         directory: directory_identity(),
         state: state(identity()),
-        listener_binding_initialized: false,
+        _legacy_listener_binding: false,
     }
 }
 

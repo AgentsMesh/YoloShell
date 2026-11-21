@@ -68,13 +68,31 @@ fn characters_controls_release_and_unsupported_keys_are_distinct() {
     );
     for key in [
         KeyEvent::new(KeyCode::Null, KeyModifiers::NONE),
-        KeyEvent::new(KeyCode::Char('2'), KeyModifiers::CONTROL),
+        KeyEvent::new(KeyCode::Char('9'), KeyModifiers::CONTROL),
         KeyEvent::new(KeyCode::Char('a'), KeyModifiers::SUPER),
     ] {
         assert_eq!(
             encode_key(key, parser.screen()),
             Err(InputError::UnsupportedKey)
         );
+    }
+}
+
+#[test]
+fn terminal_control_digits_roundtrip_their_ascii_control_bytes() {
+    let parser = vt100::Parser::new(ROWS, COLUMNS, 0);
+    for (digit, expected) in [
+        ('2', 0x00),
+        ('3', 0x1b),
+        ('4', 0x1c),
+        ('5', 0x1d),
+        ('6', 0x1e),
+        ('7', 0x1f),
+        ('8', 0x7f),
+    ] {
+        let key = KeyEvent::new(KeyCode::Char(digit), KeyModifiers::CONTROL);
+        assert_eq!(encode_key(key, parser.screen()).unwrap(), [expected]);
+        assert_eq!(encode_key_default(key).unwrap(), [expected]);
     }
 }
 

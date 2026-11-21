@@ -12,7 +12,7 @@ pub(crate) fn compute(document: &RecipeDocument) -> Result<Vec<usize>> {
     let mut names = BTreeMap::new();
     for (index, agent) in document.agents.iter().enumerate() {
         if let Some(name) = agent.name.as_deref() {
-            names.insert(name.to_ascii_lowercase(), index);
+            names.insert(name.to_lowercase(), index);
         }
     }
     let mut pending = vec![0_usize; document.agents.len()];
@@ -20,7 +20,7 @@ pub(crate) fn compute(document: &RecipeDocument) -> Result<Vec<usize>> {
     for (index, agent) in document.agents.iter().enumerate() {
         let mut seen = BTreeSet::new();
         for dependency in &agent.after {
-            let key = dependency.to_ascii_lowercase();
+            let key = dependency.to_lowercase();
             if dependency.trim().is_empty() || !seen.insert(key.clone()) {
                 bail!(INVALID_RECIPE_DAG);
             }

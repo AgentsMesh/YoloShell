@@ -53,7 +53,9 @@ pub(crate) async fn run_session(
     checkpoint.complete(&namespace, &paths, Stage::Pty)?;
     checkpoint.enter(&namespace, &paths, Stage::ChildProcess)?;
     let gate_spec = bootstrap_child_spec(&launch, gate_token)?;
-    let command = bootstrap_command(&launch, &gate_spec, Some(claude_hook.environment()), Some(provider_hook.environment()), Some(&hook_context))?;
+    let mut command = bootstrap_command(&launch, &gate_spec, Some(claude_hook.environment()), Some(provider_hook.environment()), Some(&hook_context))?;
+    let _shell_environment =
+        yolo_codex_provider::manual_shell::configure(&mut command.command, &launch.command, &launch.args);
     let child = spawn_tracked_pty_root(
         pair.slave.as_ref(),
         command,

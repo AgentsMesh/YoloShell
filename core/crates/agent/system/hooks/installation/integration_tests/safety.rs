@@ -89,7 +89,14 @@ fn group_writable_configuration_is_rejected_not_normalized() {
     let home = private_directory();
     let path = original(home.path(), &catalog::CLAUDE);
     permissions(&path, UNSAFE_FILE);
-    assert!(inspect(&catalog::CLAUDE, home.path()).is_err());
+    let message = inspect(&catalog::CLAUDE, home.path())
+        .unwrap_err()
+        .to_string();
+    assert!(message.contains(&path.display().to_string()), "{message}");
+    assert!(
+        message.contains("0664") && message.contains("0600"),
+        "{message}"
+    );
     assert_eq!(
         fs::metadata(&path).unwrap().permissions().mode() & PERMISSION_MASK,
         UNSAFE_FILE
@@ -123,5 +130,10 @@ fn special_files_and_unsafe_ancestors_are_rejected() {
     let home = root.path().join("provider");
     fs::create_dir(&home).unwrap();
     permissions(root.path(), UNSAFE_DIRECTORY);
-    assert!(inspect(&catalog::CLAUDE, &home).is_err());
+    let message = inspect(&catalog::CLAUDE, &home).unwrap_err().to_string();
+    assert!(
+        message.contains(&root.path().display().to_string()),
+        "{message}"
+    );
+    assert!(message.contains("0775"), "{message}");
 }

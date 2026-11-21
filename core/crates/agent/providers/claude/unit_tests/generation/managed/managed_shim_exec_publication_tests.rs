@@ -25,6 +25,15 @@ fn exact_shim_exec_transition_accepts_supported_successors_and_states() {
         vec![ABSOLUTE_NODE.to_owned(), CLAUDE_ENTRYPOINT.to_owned()],
     );
     assert!(node.accepts());
+    let release = std::env::home_dir()
+        .unwrap()
+        .join(".local/share/claude/versions/2.1.318");
+    let versioned = Case::new(
+        AgentState::Running,
+        release.to_str().unwrap(),
+        vec![crate::claude::constants::EXECUTABLE.into()],
+    );
+    assert!(versioned.accepts());
     assert!(Case::resumed(AgentState::Running, SessionStartSource::Resume).accepts());
     assert!(Case::resumed(AgentState::Running, SessionStartSource::Fork).accepts());
 }

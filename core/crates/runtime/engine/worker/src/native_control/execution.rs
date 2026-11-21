@@ -66,7 +66,7 @@ impl WorkerState {
             self,
             fence.durable(),
             Some(&request.witness),
-            |binding, witness, verify_source| {
+            |binding, witness, _, verify_source| {
                 fence.verify()?;
                 verify_source()?;
                 let delivery = self

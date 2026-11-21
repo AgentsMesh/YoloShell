@@ -3,6 +3,25 @@ use super::*;
 mod constants;
 use constants::PUBLIC_PEER_FIELDS;
 
+#[cfg(target_os = "macos")]
+#[test]
+fn read_only_upgrade_probes_recognize_the_same_hub_through_the_system_tmp_alias() {
+    let root = tempfile::tempdir_in("/tmp").unwrap();
+    let path = root.path().join(STATE_DIRECTORY);
+    let host_home = root.path().join(HOST_DIRECTORY);
+    let state = HubState::open(&path, &host_home).unwrap();
+    let contract = path.join(STATE_CONTRACT_FILE);
+    let before = std::fs::read(&contract).unwrap();
+    for spelling in [&path, &path.canonicalize().unwrap()] {
+        assert_eq!(
+            HubState::hub_id_for(spelling, &host_home).unwrap(),
+            state.hub_id()
+        );
+        validate_runtime_contract(spelling).unwrap();
+    }
+    assert_eq!(std::fs::read(contract).unwrap(), before);
+}
+
 #[test]
 fn inspection_is_read_only_and_works_while_the_service_holds_its_singleton() {
     let (_root, path, host) = fixture();

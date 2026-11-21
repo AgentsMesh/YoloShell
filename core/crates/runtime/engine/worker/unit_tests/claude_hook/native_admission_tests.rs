@@ -100,6 +100,23 @@ fn native_shell_callback_is_admitted_without_launcher_context() {
 }
 
 #[test]
+fn claude_can_replace_the_exact_foreground_shell_by_exec() {
+    let (shell, mut scope, mut processes) = fixture();
+    let root = processes.iter_mut().find(|row| row.pid == AGENT_PID).unwrap();
+    root.pid = shell.pid;
+    root.start_time = shell.start_time;
+    root.parent_pid = shell.pid - 1;
+    let wrapper = processes.iter_mut().find(|row| row.pid == WRAPPER_PID).unwrap();
+    wrapper.parent_pid = shell.pid;
+    scope.agent.pid = shell.pid;
+    scope.agent.start_time = shell.start_time;
+    let admit = |scope| select(PEER_PID, shell, scope, Path::new(HOOK), &processes);
+    assert_eq!(admit(scope).unwrap().agent.pid, shell.pid);
+    scope.agent.start_time += 1;
+    assert!(admit(scope).is_err());
+}
+
+#[test]
 fn pid_reuse_foreign_epoch_and_background_agent_are_rejected() {
     let (shell, mut scope, mut processes) = fixture();
     scope.agent.start_time += u64::from(u8::MAX);

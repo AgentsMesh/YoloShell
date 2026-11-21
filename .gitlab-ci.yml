@@ -1,9 +1,12 @@
 stages:
+  - verify
   - sync
   - release
 
 workflow:
   rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
     - if: '$CI_COMMIT_TAG =~ /^v[0-9]/'
     - if: '$CI_PIPELINE_SOURCE == "schedule"'
     - if: '$CI_PIPELINE_SOURCE == "web"'
@@ -15,12 +18,93 @@ default:
 variables:
   GIT_DEPTH: "0"
   GITHUB_REPOSITORY: "AgentsMesh/YoloShell"
+  BAZELISK_HOME: "$CI_PROJECT_DIR/.cache/bazelisk"
+
+# Linux gates run on the internal runner. The macOS build gate remains in
+# GitHub Actions; the release jobs below stay tag/schedule/web only.
+.bazel:
+  tags: [k8s]
+  # Use the amd64 release build image for its native C/C++ toolchain.
+  image: docker.io/library/rust@sha256:57a1fe202c77d0a56ea72baa67981509cc75df1d99f904dac875732b188f7e1f
+  before_script:
+    - mkdir -p .cache/bin
+    - |
+      if ! command -v bazel >/dev/null 2>&1; then
+        curl -fsSL -o .cache/bin/bazel \
+          "https://github.com/bazelbuild/bazelisk/releases/download/v1.25.0/bazelisk-linux-amd64"
+        chmod +x .cache/bin/bazel
+        export PATH="$PWD/.cache/bin:$PATH"
+      fi
+
+conformance:
+  extends: .bazel
+  stage: verify
+  timeout: 60m
+  script:
+    - bazel test //build_system/architecture:conformance_test
+      --spawn_strategy=local --test_output=errors --cache_test_results=no
+
+unit:
+  extends: .bazel
+  stage: verify
+  timeout: 60m
+  script:
+    - bazel test
+      //clients/tui/constants:unit_tests
+      //clients/tui/app:unit_tests
+      //clients/tui/cli:unit_tests
+      //core/crates/terminal/metadata:unit_tests
+      //core/crates/application/upgrade/cli:unit_tests
+      --spawn_strategy=local --test_output=errors --cache_test_results=no
+
+integration:
+  extends: .bazel
+  stage: verify
+  timeout: 60m
+  script:
+    - |
+      # Durable state fixtures need the mounted build volume's filesystem identity.
+      # GitLab creates its per-pod emptyDir with mode 0777 for the build and helper.
+      if awk -v path="$CI_BUILDS_DIR" '$5 == path && $4 ~ /\/kubernetes\.io~empty-dir\// { found = 1 } END { exit !found }' /proc/self/mountinfo; then
+        chmod +t "$CI_BUILDS_DIR"
+      fi
+      test_root=$(mktemp -d "$CI_BUILDS_DIR/yolo-tests.XXXXXX")
+      trap 'rm -rf "$test_root"' EXIT
+      # Bazel's local spawn strategy takes TMPDIR from its own client environment.
+      export TMPDIR="$test_root"
+      stat -f -c 'Integration fixture filesystem %T' "$test_root"
+      bazel test \
+        //core/crates/terminal/metadata:integration_tests \
+        //clients/tui/app:integration_tests \
+        //clients/tui/cli:integration_tests \
+        --@rules_rust//rust/settings:extra_exec_rustc_env=YOLO_TEST_SOCKET_PARENT="$CI_BUILDS_DIR" \
+        --@rules_rust//rust/settings:extra_rustc_env=YOLO_TEST_SOCKET_PARENT="$CI_BUILDS_DIR" \
+        --test_env=TMPDIR --test_tmpdir="$test_root/bazel" \
+        --spawn_strategy=local --test_output=errors --cache_test_results=no
+
+client-boundary:
+  extends: .bazel
+  stage: verify
+  timeout: 60m
+  script:
+    - bazel build --spawn_strategy=local //build_system/architecture:client_boundary
+
+build-linux:
+  extends: .bazel
+  stage: verify
+  timeout: 90m
+  script:
+    - bazel build --spawn_strategy=local -c opt //core:yolo
 
 sync-public:
   stage: sync
   tags: [linux]
   script:
     - sh scripts/release/sync-public.sh
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^v[0-9]/'
+    - if: '$CI_PIPELINE_SOURCE == "schedule"'
+    - if: '$CI_PIPELINE_SOURCE == "web"'
 
 trigger-release:
   stage: release
@@ -32,3 +116,7 @@ trigger-release:
   script:
     - eval "$(sh scripts/release/variables.sh)"
     - sh scripts/release/trigger-github.sh "$RELEASE_TAG" "$VERSION" "$RELEASE_NAME" "$PRERELEASE" "$CI_COMMIT_SHA"
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^v[0-9]/'
+    - if: '$CI_PIPELINE_SOURCE == "schedule"'
+    - if: '$CI_PIPELINE_SOURCE == "web"'

@@ -60,6 +60,9 @@ pub enum Reply {
     Configuration {
         snapshot: yolo_hub_management_protocol::ConfigurationSnapshot,
     },
+    Consumers {
+        consumers: Vec<crate::ConsumerSummary>,
+    },
     Hubs {
         hubs: Vec<HubSummary>,
         next: Option<HubId>,

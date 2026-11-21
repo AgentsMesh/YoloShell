@@ -77,7 +77,7 @@ fn pause_first_hook(home: &Path, release: &Path) {
         libc::c_int::default()
     );
     let preview =
-        yolo_hook_installation::inspect(&yolo_hook_installation_catalog::CODEX, home).unwrap();
+        yolo_hook_installation::inspect(crate::support::codex_install_spec(), home).unwrap();
     let mut document: serde_json::Value =
         serde_json::from_slice(&std::fs::read(&preview.path).unwrap()).unwrap();
     let groups = document[PACKAGED_SETTINGS_HOOKS_FIELD][CODEX_SESSION_START_EVENT]

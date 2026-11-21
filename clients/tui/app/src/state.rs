@@ -2,7 +2,7 @@ use crate::constants::*;
 use std::{collections::BTreeMap, time::Instant};
 use uuid::Uuid;
 use yolo_builtin_client_contract::CapabilityNegotiation;
-use yolo_hub_identity::TerminalAddress;
+use yolo_hub_identity::{HubId, TerminalAddress};
 use yolo_hub_terminal_protocol::{LeaseGrant, TerminalCommand, TerminalSummary, WriterPrincipal};
 use yolo_presentation_layout::Layout;
 use yolo_tui_inventory::Inventory;
@@ -20,7 +20,6 @@ pub enum Mode {
     ConfirmRecreate,
     HubConfiguration,
 }
-
 pub struct Writer {
     pub grant: LeaseGrant,
     pub expires: Instant,
@@ -38,6 +37,7 @@ pub struct State {
     /// under one aggregate prevents a stale UI projection from diverging from
     /// the persisted catalog.
     pub(crate) tabs: yolo_tui_tab::TabCatalog,
+    pub(crate) entry_hub: HubId,
     pub(crate) tab_revision: u64,
     pub(crate) tab_manager: Option<yolo_tui_tab_manager::Manager>,
     pub(crate) shared_layout: Option<crate::layout_sync::Sync>,
@@ -88,17 +88,15 @@ pub struct State {
     pub(crate) hub_manager: Option<yolo_tui_hub_manager::Manager>,
 }
 impl State {
-    /// Whether the control channel has completed its Hello handshake. This is
-    /// independent of the status line, which also carries transient hints and
-    /// errors and therefore cannot gate lifecycle recovery UI.
+    /// Whether the control channel completed its Hello handshake.
     pub(crate) fn connection_ready(&self) -> bool {
         self.client_capabilities.is_some() && self.client_startup_failure.is_none()
     }
 }
-
 impl Default for State {
     fn default() -> Self {
-        let tabs = yolo_tui_tab::TabCatalog::default();
+        let entry_hub = HubId::new();
+        let tabs = yolo_tui_tab::TabCatalog::new(entry_hub, yolo_tui_tab::LocalTabView::default());
         Self {
             terminals: BTreeMap::new(),
             selected: None,
@@ -107,6 +105,7 @@ impl Default for State {
             form_input: Default::default(),
             mode: Mode::Inventory,
             tabs,
+            entry_hub,
             tab_revision: 0,
             tab_manager: None,
             shared_layout: None,

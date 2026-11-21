@@ -142,7 +142,7 @@ fn validate(document: &RecipeDocument) -> Result<()> {
         }
         if let Some(name) = agent.name.as_deref()
             && (!valid_text(name, MAX_RECIPE_NAME_BYTES)
-                || !names.insert(name.to_ascii_lowercase()))
+                || !names.insert(name.to_lowercase()))
         {
             bail!(INVALID_RECIPE_NAME);
         }

@@ -17,6 +17,7 @@ pub(crate) async fn exchange<S: AsyncRead + AsyncWrite + Unpin>(
     channel: &mut Framed<S>,
     request: &Request,
     deadline: Instant,
+    observe_version: impl FnOnce(u16),
 ) -> Result<Reply, ExchangeFailure> {
     let mutation = request.fields().command.mutates();
     let call = Call::from_request(request.clone());
@@ -46,7 +47,9 @@ pub(crate) async fn exchange<S: AsyncRead + AsyncWrite + Unpin>(
             .await
             .map_err(ClientError::from)
     } else {
-        response.reply(&call).map_err(ClientError::InvalidResponse)
+        response
+            .reply_observing_hello(&call, observe_version)
+            .map_err(ClientError::InvalidResponse)
     };
     let reply = result.map_err(|error| ExchangeFailure {
         error: if mutation {

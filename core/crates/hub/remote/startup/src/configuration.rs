@@ -34,10 +34,6 @@ pub(crate) fn plan(
         PIN_MISMATCH
     );
     let mut configuration = snapshot.state.configuration.clone();
-    match configuration.listen {
-        Some(address) => ensure!(address.ip().is_loopback(), CONFIGURATION_CONFLICT),
-        None => configuration.listen = Some((std::net::Ipv4Addr::LOCALHOST, DYNAMIC_PORT).into()),
-    }
     let policy = ExportPolicy {
         origin: remote.hub(),
         rights: expected.rights.clone(),
@@ -68,12 +64,7 @@ pub(crate) fn plan(
     }
     configuration.validate(remote)?;
     if configuration == snapshot.state.configuration {
-        ensure!(
-            snapshot
-                .listen_address
-                .is_some_and(|address| address.ip().is_loopback()),
-            LISTENER_UNAVAILABLE
-        );
+        ensure!(snapshot.peer_socket.is_some(), PEER_SOCKET_UNAVAILABLE);
         return Ok(None);
     }
     let change = ConfigurationChange {

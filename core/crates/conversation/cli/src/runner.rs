@@ -13,12 +13,23 @@ use yolo_local_profile::LocalProfile;
 
 const REQUEST_TIMEOUT: Duration = Duration::from_secs(5);
 
+fn deadline() -> Instant {
+    Instant::now() + REQUEST_TIMEOUT
+}
+
+async fn resolve_current(
+    client: &mut LocalClient,
+    address: AgentAddress,
+) -> Result<yolo_conversation_protocol::ConversationDescriptor, ConversationClientError> {
+    let binding = conversation::current_binding(client, address, deadline()).await?;
+    conversation::resolve(client, binding, deadline()).await
+}
+
 pub(crate) async fn run(
     options: Options,
     request: Option<ConversationReadRequest>,
 ) -> anyhow::Result<Reply> {
-    let deadline = Instant::now() + REQUEST_TIMEOUT;
-    let (mut client, hub) = connect(&options, deadline).await?;
+    let (mut client, hub) = connect(&options, deadline()).await?;
     let result: Result<Reply, ConversationClientError> = async {
         match options.action {
             Action::Resolve { agent, origin } => {
@@ -27,8 +38,7 @@ pub(crate) async fn run(
                     agent_id: agent,
                 };
                 Ok(Reply::Conversation {
-                    conversation: conversation::resolve_current(&mut client, address, deadline)
-                        .await?,
+                    conversation: resolve_current(&mut client, address).await?,
                 })
             }
             Action::Read {
@@ -39,8 +49,7 @@ pub(crate) async fn run(
                     hub_id: origin.unwrap_or(hub),
                     agent_id: agent,
                 };
-                let descriptor =
-                    conversation::resolve_current(&mut client, address, deadline).await?;
+                let descriptor = resolve_current(&mut client, address).await?;
                 let request = ConversationReadRequest {
                     address: descriptor.address,
                     binding: descriptor.binding,
@@ -50,19 +59,19 @@ pub(crate) async fn run(
                     since_generation: None,
                 };
                 Ok(Reply::ConversationRead {
-                    reading: conversation::read(&mut client, request, deadline).await?,
+                    reading: conversation::read(&mut client, request, deadline()).await?,
                 })
             }
             Action::Read { agent: None, .. } => {
                 let request = request.ok_or(ConversationError::InvalidRequest)?;
                 Ok(Reply::ConversationRead {
-                    reading: conversation::read(&mut client, request, deadline).await?,
+                    reading: conversation::read(&mut client, request, deadline()).await?,
                 })
             }
             Action::Watch { wait_ms } => {
                 let request = request.ok_or(ConversationError::InvalidRequest)?;
                 Ok(Reply::ConversationRead {
-                    reading: conversation::watch(&mut client, request, wait_ms, deadline).await?,
+                    reading: conversation::watch(&mut client, request, wait_ms, deadline() + Duration::from_millis(u64::from(wait_ms))).await?,
                 })
             }
         }

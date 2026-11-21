@@ -36,10 +36,13 @@ pub(crate) async fn run(
         tokio::process::ChildStdout::from_std(child.take_stdout().context(OUTPUT_MISSING)?)?;
     let (bytes, ()) = timeout_at(deadline, async {
         let bytes = capture(stdout).await?;
-        child
+        if child
             .wait_for_clean_exit(deadline.into_std())
             .await
-            .context(START_FAILED)?;
+            .is_err()
+        {
+            return Err(anyhow::anyhow!(START_FAILED));
+        }
         Ok::<_, anyhow::Error>((bytes, ()))
     })
     .await

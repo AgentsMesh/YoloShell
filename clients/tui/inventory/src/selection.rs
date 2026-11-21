@@ -1,4 +1,4 @@
-use crate::{Inventory, View};
+use crate::{Inventory, InventorySelection, TreeSelection, View};
 use std::collections::BTreeMap;
 use yolo_hub_agent_protocol::{Freshness, Lifecycle, Reachability};
 use yolo_hub_identity::{RuntimeTarget, TerminalAddress};
@@ -12,7 +12,6 @@ impl Inventory {
         terminals: &BTreeMap<TerminalAddress, TerminalSummary>,
     ) {
         let agents = self.visible_agents(filter, terminals);
-        let hubs = self.visible_hubs(filter);
         // A live detail view must not outlive the agent it describes. History
         // keeps the row (and its recovery path) available explicitly.
         if self
@@ -21,8 +20,17 @@ impl Inventory {
         {
             self.details = None;
         }
-        reconcile(&mut self.selected_agent, &agents);
-        reconcile(&mut self.selected_hub, &hubs);
+        let visible = self.tree_selections(filter, terminals);
+        let current = self.tree_selected.map(tree_value);
+        if current.is_none_or(|value| !visible.contains(&value)) {
+            let preferred = visible
+                .iter()
+                .find(|value| matches!(value, InventorySelection::Agent(_)))
+                .or_else(|| visible.first())
+                .copied();
+            self.tree_selected = preferred.and_then(tree_selection);
+        }
+        self.sync_tree_projections();
     }
 
     pub fn move_selection(
@@ -33,14 +41,7 @@ impl Inventory {
     ) {
         match self.view {
             View::Terminals => {}
-            View::Agents => {
-                let visible = self.visible_agents(filter, terminals);
-                move_selection(&mut self.selected_agent, &visible, forward);
-            }
-            View::Hubs => {
-                let visible = self.visible_hubs(filter);
-                move_selection(&mut self.selected_hub, &visible, forward);
-            }
+            View::Tree => self.move_tree_selection(forward, filter, terminals),
         }
     }
 
@@ -52,9 +53,6 @@ impl Inventory {
             return None;
         }
         let target = self.selected_agent?;
-        if !self.in_scope(target.address.hub_id) {
-            return None;
-        }
         let agent = self.agents.get(&target)?.fields();
         if agent.cursor.target() != target
             || matches!(agent.lifecycle, Lifecycle::Exited { .. })
@@ -86,17 +84,17 @@ fn reconcile<T: Copy + Eq>(selected: &mut Option<T>, visible: &[T]) {
     }
 }
 
-fn move_selection<T: Copy + Eq>(selected: &mut Option<T>, visible: &[T], forward: bool) {
-    let Some(index) =
-        selected.and_then(|selected| visible.iter().position(|item| *item == selected))
-    else {
-        *selected = visible.first().copied();
-        return;
-    };
-    let next = if forward {
-        index.saturating_add(1).min(visible.len().saturating_sub(1))
-    } else {
-        index.saturating_sub(1)
-    };
-    *selected = visible.get(next).copied();
+fn tree_value(selection: TreeSelection) -> InventorySelection {
+    match selection {
+        TreeSelection::Machine(hub) => InventorySelection::Machine(hub),
+        TreeSelection::Agent(target) => InventorySelection::Agent(target),
+    }
+}
+
+fn tree_selection(value: InventorySelection) -> Option<TreeSelection> {
+    match value {
+        InventorySelection::Machine(hub) => Some(TreeSelection::Machine(hub)),
+        InventorySelection::Agent(target) => Some(TreeSelection::Agent(target)),
+        InventorySelection::Terminal(_) => None,
+    }
 }

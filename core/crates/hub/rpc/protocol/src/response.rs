@@ -16,6 +16,18 @@ pub struct Hello {
     pub methods: Vec<Method>,
 }
 
+impl Hello {
+    pub fn valid_for_origin(&self, origin: HubId) -> bool {
+        self.hub_id == origin
+            && self.methods.len() <= OPERATIONS.len()
+            && self
+                .methods
+                .iter()
+                .enumerate()
+                .all(|(i, method)| !self.methods[..i].contains(method))
+    }
+}
+
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Response {

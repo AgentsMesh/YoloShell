@@ -3,10 +3,10 @@
 
 mod constants;
 pub(crate) mod merge;
+mod pull;
 #[cfg(test)]
 #[path = "../unit_tests/lib.rs"]
 mod unit_tests;
-mod pull;
 
 use anyhow::{Context, Result, ensure};
 use std::path::PathBuf;
@@ -59,6 +59,8 @@ pub async fn run(profile: &LocalProfile, request: Request<'_>) -> Result<()> {
         ensure!(request.after.is_none(), AUDIT_AFTER_WITH_MERGE);
         return merge::run(request.merge, request.limit, request.json, request.trust);
     }
+    let _ = yolo_hub_state::HubState::inspect_identity(&profile.state, &profile.host_home)?
+        .context(NO_LOCAL_HUB)?;
     let entries = read(&profile.state.join(AUDIT_FILE))?;
     let entries = entries
         .into_iter()

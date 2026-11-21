@@ -1,6 +1,6 @@
 use super::constants::{
     AGENT_SOCKET, BROKEN_AGENT_SOCKET, CERTIFICATE_AGENT_SOCKET, SINGLE_AGENT_IDENTITY,
-    SSH_AGENT_EMPTY_COMMENT, SSH_AGENT_NO_FLAGS, SSH_AGENT_SIGN_REQUEST_MESSAGE,
+    SSH_AGENT_KEY_COMMENT, SSH_AGENT_NO_FLAGS, SSH_AGENT_SIGN_REQUEST_MESSAGE,
     SSH_AGENT_SIGN_RESPONSE_MESSAGE,
 };
 use crate::remote::constants::{
@@ -99,7 +99,7 @@ fn certificate_response(
             SSH_AGENT_IDENTITIES_ANSWER_MESSAGE.encode(&mut response)?;
             SINGLE_AGENT_IDENTITY.encode(&mut response)?;
             certificate.encode(&mut response)?;
-            SSH_AGENT_EMPTY_COMMENT.encode(&mut response)?;
+            SSH_AGENT_KEY_COMMENT.encode(&mut response)?;
         }
         SSH_AGENT_SIGN_REQUEST_MESSAGE => {
             let requested = Vec::<u8>::decode(&mut payload)?;

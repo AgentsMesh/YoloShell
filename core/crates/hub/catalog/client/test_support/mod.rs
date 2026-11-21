@@ -10,6 +10,7 @@ use yolo_hub_rpc_protocol::{Command, HUB_PROTOCOL_VERSION, Hello, Method, Reply}
 
 pub const PIPE_CAPACITY: usize = 16_384;
 pub const TIMEOUT: std::time::Duration = std::time::Duration::from_secs(5);
+pub const PAGE_LATENCY: std::time::Duration = std::time::Duration::from_secs(3);
 pub const FIRST_HUB: u128 = 1;
 pub const NEXT_HUB: u128 = 2;
 

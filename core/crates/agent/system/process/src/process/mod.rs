@@ -70,6 +70,16 @@ pub trait ProcessSource: Send + Sync {
         self.fenced_descendants(root)
     }
 
+    /// Include the verified PTY root when it became the provider through exec.
+    fn capture_callback_ancestry(
+        &self,
+        root: ProcessIdentity,
+        peer_pid: u32,
+        _include_root: bool,
+    ) -> Result<FencedDescendants> {
+        self.fenced_callback_ancestry(root, peer_pid)
+    }
+
     fn fenced_descendants(&self, root: ProcessIdentity) -> Result<FencedDescendants> {
         if !root.matches() {
             return Ok(FencedDescendants::RootChanged);
@@ -106,6 +116,14 @@ impl RuntimeProcessSource {
 }
 
 impl ProcessSource for RuntimeProcessSource {
+    fn fenced_callback_ancestry(
+        &self,
+        root: ProcessIdentity,
+        peer_pid: u32,
+    ) -> Result<FencedDescendants> {
+        self.capture_callback_ancestry(root, peer_pid, false)
+    }
+
     fn fenced_callback_lineage(
         &self,
         root: ProcessIdentity,
@@ -120,18 +138,19 @@ impl ProcessSource for RuntimeProcessSource {
         }
     }
 
-    fn fenced_callback_ancestry(
+    fn capture_callback_ancestry(
         &self,
         root: ProcessIdentity,
         peer_pid: u32,
+        include_root: bool,
     ) -> Result<FencedDescendants> {
         #[cfg(target_os = "linux")]
-        return fallback_callback::fenced_ancestry_with_keys(root, peer_pid, &self.key_refs());
+        return fallback_callback::fenced_ancestry_with_keys(root, peer_pid, &self.key_refs(), include_root);
         #[cfg(target_os = "macos")]
-        return macos_ancestry::ancestry_with_keys(root, peer_pid, &self.key_refs());
+        return macos_ancestry::ancestry_with_keys(root, peer_pid, &self.key_refs(), include_root);
         #[cfg(not(any(target_os = "linux", target_os = "macos")))]
         {
-            let _ = (root, peer_pid);
+            let _ = (root, peer_pid, include_root);
             anyhow::bail!(super::constants::process_error::PLATFORM_UNSUPPORTED)
         }
     }

@@ -18,6 +18,19 @@ pub(super) struct ProjectedBinding {
     pub(super) version: CodexAuthorityVersion,
 }
 
+impl ProjectedBinding {
+    pub(super) fn settle_stop(&mut self, previous: Option<&AgentBinding>) {
+        self.binding.state = AgentState::WaitingForInput;
+        if let Some(previous) = previous.filter(|previous| same_projection(previous, &self.binding)) {
+            self.binding.updated_at_ms = previous.updated_at_ms;
+        }
+    }
+}
+
+pub(super) fn stop_turn<'a>(lifecycle: &'a NormalizedLifecycle, binding: &AgentBinding) -> Option<&'a str> {
+    (binding.state == AgentState::Active).then(|| lifecycle.stop_candidate.as_ref()?.turn_id.as_deref()).flatten()
+}
+
 pub(super) enum ProjectionMode {
     Active,
     Exhausted,
@@ -28,7 +41,8 @@ pub(super) fn project(
     lifecycle: &NormalizedLifecycle,
     authority_revision: u64,
     mode: ProjectionMode,
-    previous: Option<&AgentBinding>, registry: &AgentRegistry,
+    previous: Option<&AgentBinding>,
+    registry: &AgentRegistry,
 ) -> Option<ProjectedBinding> {
     let record = route.admission.record();
     let request = record.request();

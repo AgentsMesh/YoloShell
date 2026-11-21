@@ -1,6 +1,7 @@
 #!/bin/sh
 # Install the latest stable YoloShell release into the user's home directory.
 set -eu
+umask 077
 
 repository=${YOLO_RELEASE_REPOSITORY:-AgentsMesh/YoloShell}
 install_root=${YOLO_INSTALL_ROOT:-${HOME:?HOME is required}/.local/lib/yolo}
