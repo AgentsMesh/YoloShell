@@ -1,0 +1,57 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+load("//build_system/bazel:version.bzl", "YOLO_MARKETING_VERSION")
+
+package(default_visibility = ["//visibility:public"])
+
+_DEPS = [
+    "//core/crates/hub/broker/launcher:yolo_hub_broker_launcher",
+    "//core/crates/hub/delegation:yolo_hub_delegation",
+    "//core/crates/hub/dispatch:yolo_hub_dispatch",
+    "//core/crates/hub/federation/settings:yolo_hub_federation_settings",
+    "//core/crates/hub/identity:yolo_hub_identity",
+    "//core/crates/hub/peer/dialer:yolo_hub_peer_dialer",
+    "//core/crates/hub/peer/transport:yolo_hub_peer_transport",
+    "//core/crates/hub/rpc/protocol:yolo_hub_rpc_protocol",
+    "//core/crates/hub/terminal/protocol:yolo_hub_terminal_protocol",
+    "//core/crates/hub/ssh/profiles:yolo_hub_ssh_profiles",
+    "//core/crates/hub/state:yolo_hub_state",
+    "//core/crates/transport/broker/hub/protocol:yolo_broker_hub_protocol",
+    "//core/crates/transport/broker/tunnel:yolo_broker_tunnel",
+    "//core/crates/transport/remote/broker:yolo_remote_broker",
+    "@crates//:anyhow",
+    "@crates//:tokio",
+    "@crates//:tracing",
+    "@crates//:zeroize",
+]
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = glob(["**/*.rs"]) + ["BUILD.bazel"],
+)
+
+rust_library(
+    name = "yolo_hub_ssh_profile_runtime",
+    srcs = glob(["src/**/*.rs"]),
+    crate_name = "yolo_hub_ssh_profile_runtime",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    version = YOLO_MARKETING_VERSION,
+    deps = _DEPS,
+)
+
+rust_test(
+    name = "integration_tests",
+    srcs = glob([
+        "integration_tests/**/*.rs",
+        "test_support/**/*.rs",
+    ]),
+    crate_name = "yolo_hub_ssh_profile_runtime_integration_tests",
+    crate_root = "integration_tests/lib.rs",
+    edition = "2024",
+    deps = _DEPS + [
+        ":yolo_hub_ssh_profile_runtime",
+        "//core/crates/wire:yolo_wire",
+        "@crates//:tempfile",
+        "@crates//:uuid",
+    ],
+)

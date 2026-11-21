@@ -1,0 +1,91 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+load("//build_system/bazel:version.bzl", "YOLO_MARKETING_VERSION")
+load(
+    "//build_system/bazel/rust:test_features.bzl",
+    "INTEGRATION_TEST_FEATURES",
+    "TEST_SUPPORT_FEATURE",
+)
+
+package(default_visibility = ["//visibility:public"])
+
+_DEPS = [
+    "@crates//:anyhow",
+    "@crates//:libc",
+]
+
+filegroup(
+    name = "runtime_sources",
+    srcs = glob(
+        ["src/**/*.rs"],
+        allow_empty = False,
+    ),
+)
+
+filegroup(
+    name = "test_support_sources",
+    testonly = True,
+    srcs = glob(
+        ["test_support/**/*.rs"],
+        allow_empty = False,
+    ),
+)
+
+filegroup(
+    name = "integration_test_sources",
+    testonly = True,
+    srcs = glob(
+        ["integration_tests/**/*.rs"],
+        allow_empty = False,
+    ),
+)
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = glob(
+        ["**/*"],
+        allow_empty = True,
+        exclude = ["BUILD.bazel"],
+    ) + [
+        "BUILD.bazel",
+    ],
+)
+
+rust_library(
+    name = "yolo_process_spawn",
+    srcs = [":runtime_sources"],
+    crate_name = "yolo_process_spawn",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    version = YOLO_MARKETING_VERSION,
+    deps = _DEPS,
+)
+
+rust_library(
+    name = "yolo_process_spawn_test_support",
+    testonly = True,
+    srcs = [
+        ":runtime_sources",
+        ":test_support_sources",
+    ],
+    crate_features = [TEST_SUPPORT_FEATURE],
+    crate_name = "yolo_process_spawn_test_support",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    deps = _DEPS,
+)
+
+rust_test(
+    name = "yolo_process_spawn_integration_tests",
+    srcs = [
+        ":integration_test_sources",
+        ":runtime_sources",
+        ":test_support_sources",
+    ],
+    crate_features = INTEGRATION_TEST_FEATURES,
+    crate_name = "yolo_process_spawn_integration_test",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    env = {"RUST_TEST_THREADS": "1"},
+    tags = ["exclusive"],
+    deps = _DEPS,
+)

@@ -1,0 +1,16 @@
+package(default_visibility = ["//visibility:public"])
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = [
+        "BUILD.bazel",
+        "lifecycle_deadline_contract.bzl",
+        "process_role_contract.bzl",
+        "scm_rights_descriptor_contract.bzl",
+        "version.bzl",
+        "//build_system/bazel/capnp:architecture_check_data",
+        "//build_system/bazel/cargo_metadata:architecture_check_data",
+        "//build_system/bazel/cli_test_support:architecture_check_data",
+        "//build_system/bazel/rust:architecture_check_data",
+    ],
+)

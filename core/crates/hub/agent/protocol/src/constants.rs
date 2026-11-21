@@ -1,0 +1,27 @@
+pub const AGENT_PROTOCOL_SCHEMA_VERSION: u16 = 4;
+/// Previous wire schema accepted only when loading persisted projections.
+pub const PREVIOUS_AGENT_PROTOCOL_SCHEMA_VERSION: u16 = 3;
+pub const FIRST_OBSERVATION_SEQUENCE: u64 = 1;
+pub const MAX_PROVIDER_KIND_BYTES: usize = 64;
+pub const PROVIDER_CODEX: &str = "codex";
+pub const MAX_PROVIDER_VERSION_BYTES: usize = 128;
+pub const MAX_PROVIDER_DISPLAY_NAME_BYTES: usize = 96;
+pub const MAX_NATIVE_SESSION_REFERENCE_BYTES: usize = 512;
+pub const MAX_AGENT_WORKING_DIRECTORY_BYTES: usize = 4_096;
+pub const AGENT_WORKING_DIRECTORY_FIELD: &str = "working_directory";
+pub const MAX_INTERACTION_CHOICES: usize = 32;
+pub const MAX_CHOICE_ID_BYTES: usize = 64;
+pub const MAX_CHOICE_LABEL_BYTES: usize = 256;
+pub const MAX_INTERACTION_TEXT_BYTES: usize = 65_536;
+pub const MAX_INTERACTION_PROMPT_BYTES: usize = 4_096;
+pub const AGENT_STATE_TAG: &str = "state";
+pub const AGENT_ACTION_TAG: &str = "operation";
+pub const AGENT_ACTION_FIELD: &str = "action";
+pub const AGENT_RESPONSE_TAG: &str = "kind";
+pub const AGENT_CAPABILITY_TAG: &str = "support";
+pub const AGENT_WAIT_TAG: &str = "operator";
+pub const AGENT_PROMPT_REFERENCE_TAG: &str = "reference";
+pub const AGENT_PROMPT_WAIT_TAG: &str = "wait";
+pub(crate) const TOKEN_PUNCTUATION: &[u8] = b"._-";
+pub const SCHEMA_VERSION_FIELD: &str = "schema_version";
+pub const REQUEST_ID_FIELD: &str = "request_id";

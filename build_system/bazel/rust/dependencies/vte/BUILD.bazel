@@ -1,0 +1,13 @@
+package(default_visibility = ["//visibility:public"])
+
+exports_files(["osc_buffer.patch", "osc_completion.patch"])
+
+alias(
+    name = "osc_buffer_test",
+    actual = "//clients/tui/terminal/queries:integration_tests",
+)
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = glob(["**/*"], exclude = ["BUILD.bazel"]) + ["BUILD.bazel"],
+)

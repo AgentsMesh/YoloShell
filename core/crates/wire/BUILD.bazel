@@ -1,0 +1,82 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+load("//build_system/bazel:version.bzl", "YOLO_MARKETING_VERSION")
+load("//build_system/bazel/rust:test_features.bzl", "UNIT_TEST_FEATURES")
+
+package(default_visibility = ["//visibility:public"])
+
+WIRE_SOURCES = glob(["src/**/*.rs"])
+
+WIRE_UNIT_TEST_SOURCES = glob(
+    ["unit_tests/**/*.rs"],
+    allow_empty = True,
+)
+
+filegroup(
+    name = "unit_test_sources",
+    testonly = True,
+    srcs = glob(
+        ["unit_tests/**/*.rs"],
+        allow_empty = True,
+    ),
+)
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = glob(
+        ["**/*"],
+        allow_empty = True,
+        exclude = ["BUILD.bazel"],
+    ) + [
+        "BUILD.bazel",
+    ],
+)
+
+rust_library(
+    name = "yolo_wire",
+    srcs = WIRE_SOURCES,
+    crate_name = "yolo_wire",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    version = YOLO_MARKETING_VERSION,
+    deps = [
+        "//core/crates/transport/capnp/codec",
+        "//core/crates/transport/capnp/value",
+        "@crates//:serde",
+        "@crates//:serde_json",
+        "@crates//:thiserror",
+        "@crates//:tokio",
+    ],
+)
+
+rust_test(
+    name = "yolo_wire_integration_tests",
+    srcs = glob(["integration_tests/**/*.rs"]),
+    crate_root = "integration_tests/lib.rs",
+    edition = "2024",
+    deps = [
+        ":yolo_wire",
+        "//core/crates/crypto:yolo_crypto",
+        "//core/crates/terminal/model:yolo_terminal_model",
+        "//core/crates/transport/capnp/value",
+        "@crates//:serde",
+        "@crates//:uuid",
+    ],
+)
+
+rust_test(
+    name = "yolo_wire_unit_tests",
+    srcs = WIRE_SOURCES + WIRE_UNIT_TEST_SOURCES,
+    crate_features = UNIT_TEST_FEATURES,
+    crate_name = "yolo_wire_test",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    deps = [
+        "//core/crates/transport/capnp/codec",
+        "//core/crates/transport/capnp/value",
+        "@crates//:serde",
+        "@crates//:serde_bytes",
+        "@crates//:serde_json",
+        "@crates//:thiserror",
+        "@crates//:tokio",
+    ],
+)

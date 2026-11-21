@@ -1,0 +1,26 @@
+pub const PROVIDER_KIND: &str = "example.agent";
+pub const PROVIDER_DISPLAY_NAME: &str = "Example Agent";
+pub const PROVIDER_VERSION: &str = "1.2.3";
+pub const NATIVE_REFERENCE: &str = "native-thread";
+pub const SESSION_NAME: &str = "Working Shell";
+pub const WORKING_DIRECTORY: &str = "/workspace/project";
+pub const AGENT_WORKING_DIRECTORY: &str = "/agent/project";
+pub const OTHER_AGENT_DIRECTORY: &str = "/agent/another";
+pub const LITERAL_AGENT_DIRECTORY: &str =
+    "/work/Space 'quote' \"double\" $dollar `tick` \\backslash 工作区";
+pub const DIRECTORY_LABEL: &str = "Directory";
+pub const UNKNOWN_DIRECTORY_LABEL: &str = "Directory unknown";
+pub const LAST_KNOWN_DIRECTORY_LABEL: &str = "last known";
+pub const ONE_AGENT: usize = 1;
+pub const OBSERVED_MS: u64 = 1_700_000_000_000;
+pub const NONMATCHING_FILTER: &str = "absent-resource";
+pub const POINTER_WIDTH: u16 = 80;
+pub const POINTER_HEIGHT: u16 = 30;
+pub const POINTER_ITEMS: usize = 5;
+pub const POINTER_INSET: u16 = 2;
+pub const POINTER_ROW_STEP: u16 = 1;
+pub const POINTER_SHORT_HEIGHT: u16 = 6;
+pub const POINTER_TAB_FULL_WIDTH: u16 = 29;
+pub const POINTER_TAB_COMPACT_WIDTH: u16 = 11;
+pub const POINTER_NARROW_WIDTH: u16 = 1;
+pub const QWEN_CODE_KIND: &str = "qwen_code";
