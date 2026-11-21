@@ -66,12 +66,14 @@ integration:
       # Durable state fixtures need the mounted build volume's filesystem identity.
       test_root=$(mktemp -d "$CI_BUILDS_DIR/yolo-tests.XXXXXX")
       trap 'rm -rf "$test_root"' EXIT
+      # Bazel's local spawn strategy takes TMPDIR from its own client environment.
+      export TMPDIR="$test_root"
       stat -f -c 'Integration fixture filesystem %T' "$test_root"
       bazel test \
         //core/crates/terminal/metadata:integration_tests \
         //clients/tui/app:integration_tests \
         //clients/tui/cli:integration_tests \
-        --test_env=TMPDIR="$test_root" --test_tmpdir="$test_root/bazel" \
+        --test_env=TMPDIR --test_tmpdir="$test_root/bazel" \
         --spawn_strategy=local --test_output=errors --cache_test_results=no
 
 client-boundary:
