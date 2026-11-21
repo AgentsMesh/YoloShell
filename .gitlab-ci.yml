@@ -62,11 +62,17 @@ integration:
   stage: verify
   timeout: 60m
   script:
-    - bazel test
-      //core/crates/terminal/metadata:integration_tests
-      //clients/tui/app:integration_tests
-      //clients/tui/cli:integration_tests
-      --spawn_strategy=local --test_output=errors --cache_test_results=no
+    - |
+      # Durable state fixtures need the mounted build volume's filesystem identity.
+      test_root=$(mktemp -d "$CI_BUILDS_DIR/yolo-tests.XXXXXX")
+      trap 'rm -rf "$test_root"' EXIT
+      stat -f -c 'Integration fixture filesystem %T' "$test_root"
+      bazel test \
+        //core/crates/terminal/metadata:integration_tests \
+        //clients/tui/app:integration_tests \
+        //clients/tui/cli:integration_tests \
+        --test_env=TMPDIR="$test_root" --test_tmpdir="$test_root/bazel" \
+        --spawn_strategy=local --test_output=errors --cache_test_results=no
 
 client-boundary:
   extends: .bazel
