@@ -25,6 +25,8 @@ pub enum Command {
     GetClientAccess {},
     ConfigureClientAccess { change: yolo_hub_client_access_protocol::ClientAccessChange },
     Hello {},
+    Extensions {},
+    StageAttachment { request: yolo_hub_terminal_protocol::StageAttachmentRequest },
     GetBuild {},
     GetSshProfiles {},
     ConfigureSshProfiles { change: yolo_hub_ssh_profile_protocol::SshProfileChange },

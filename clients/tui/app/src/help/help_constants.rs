@@ -17,6 +17,8 @@ pub(crate) const HELP_TEXT: &str = concat!(
     "Type normally in a pane to use its shell or agent.\n",
     "Start claude, codex, or any other program from the shell.\n\n",
     "Ctrl-b c        New tab with a shell in the current directory and Hub\n",
+    "Drag to copy · Shift-drag inside mouse-aware programs\n",
+    "Ctrl-b ] / u    Attach clipboard image or files / choose a local file\n",
     "Ctrl-b v / %    Split right with a new shell\n",
     "Ctrl-b - / \"    Split down with a new shell\n",
     "Ctrl-b n / p    Next / previous tab\n",

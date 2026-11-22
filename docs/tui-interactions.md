@@ -153,25 +153,24 @@ gesture.
 
 ## Terminal Selection and Clipboard
 
-Shift+left drag selects terminal text, including for a read-only observer and
-when the source program requests mouse reports. It never forwards that gesture
-to the source PTY. The selected pane displays a bounded frozen image while its
-live surface, observations and query replies continue updating in the background.
-Release completes the selection; Ctrl+B y sends one OSC52 clipboard command to
-the outer terminal. Escape or ordinary terminal input returns to the live image.
-Successful local emission does not promise the outer terminal accepted clipboard
-access; its own clipboard policy remains authoritative.
+Drag over terminal text and release to copy it to the outer terminal's clipboard.
+Use Shift+drag when a program such as an editor requests mouse input. A click
+focuses the pane. An observer can copy the visible screen. Ctrl+B y copies the
+selection again and resumes live display. Escape also resumes live display.
+A local desktop copy uses `pbcopy`, `wl-copy`, or `xclip`. SSH and nested
+terminals use OSC 52 so the viewing terminal can update its own clipboard.
+OSC 52 also provides the fallback when the desktop clipboard is unavailable.
 
-The selected range expands wide characters, keeps combining text, distinguishes
-soft wraps from hard newlines and omits trailing screen padding. Captures are
-bounded to 65,536 cells and copies to 32,768 UTF-8 bytes; overflow fails the whole
-copy. The frozen display rebuilds visible rows with zero scrollback and never
-clones the source's entire history.
+The selected range expands wide characters, keeps combining text, joins soft
+wraps and omits trailing screen padding. The visible rectangle stays frozen
+during selection while the terminal continues recording output. A change of
+pane, layout, zoom, runtime, screen size or outer-terminal focus cancels the
+selection. Only completed user gestures issue clipboard commands.
 
-Only the explicit copy key press can queue the opaque Base64-encoded clipboard
-command. Provider OSC52 output, historical output, unfinished selections, repeated
-keys and stale runtime/geometry cannot enqueue clipboard commands. Copy commands
-are consumed once by the outer screen owner, with no subprocess or retry.
-
-Runtime replacement, pane/layout/mode/zoom changes, scrolling, resizing or focus
-loss cancel the selection. Source output alone cannot change the frozen text.
+In a terminal or an agent Chat, press Ctrl+B then `]` to paste copied files or
+an image. On macOS Yolo reads the desktop pasteboard. Linux uses `wl-paste` on
+Wayland or `xclip` on X11. Ctrl+B then `u` opens a file path field on the
+machine running the TUI, including in an SSH session without a desktop.
+Yolo uploads the bytes to the selected terminal's machine. The terminal gets
+shell-quoted paths. Chat inserts named file links in clipboard order, so the
+agent can read them when you send the draft. Enter submits the input.

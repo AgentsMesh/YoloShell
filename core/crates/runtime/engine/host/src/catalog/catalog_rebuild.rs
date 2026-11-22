@@ -8,7 +8,7 @@ use crate::model::{RuntimeRecord, TerminalManifest, WorkerLaunchSpec};
 use crate::namespace_lease::NamespaceLease;
 use crate::paths::Paths;
 use anyhow::{Context, Result};
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashMap};
 use std::ffi::OsStr;
 use std::path::Path;
 use uuid::Uuid;
@@ -33,12 +33,25 @@ pub(crate) fn durable_catalog_manifests(
         .collect())
 }
 
-pub(crate) fn durable_controller_generation(
+pub(crate) struct StartupState {
+    pub(crate) generation_floor: u64,
+    pub(crate) archived_attachments: HashMap<Uuid, yolo_host_archive::AttachmentTarget>,
+}
+
+pub(crate) fn durable_startup_state(
     paths: &Paths,
     namespace: &NamespaceLease,
-) -> Result<u64> {
+) -> Result<StartupState> {
     let mut floor = 0;
+    let mut archived_attachments = HashMap::new();
     for (terminal_id, session) in durable_sessions(paths, namespace)? {
+        if session.manifest.archived {
+            // Discovery only. The watchdog revalidates the directory, manifest and custody.
+            let target = yolo_host_archive::AttachmentTarget::observe(session.directory.private())?;
+            if target.has_entry() {
+                archived_attachments.insert(terminal_id, target);
+            }
+        }
         let runtime_path = paths.runtime_record(terminal_id);
         if let Some(record) = read_optional_durable_json::<RuntimeRecord>(
             &session.directory,
@@ -86,7 +99,10 @@ pub(crate) fn durable_controller_generation(
             }
         }
     }
-    Ok(floor)
+    Ok(StartupState {
+        generation_floor: floor,
+        archived_attachments,
+    })
 }
 
 fn durable_sessions(

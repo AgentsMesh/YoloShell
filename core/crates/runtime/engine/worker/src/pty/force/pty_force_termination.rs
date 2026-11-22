@@ -63,6 +63,8 @@ pub(crate) enum ForceReady {
     Unchanged,
     Tracking,
     Freezing(FreezeReady),
+    #[cfg(target_os = "linux")]
+    LinuxHangup(crate::process::LinuxPtyHangup),
     Frozen(KillCommitReady),
     FrozenGone,
     Killing(KillPollReady),

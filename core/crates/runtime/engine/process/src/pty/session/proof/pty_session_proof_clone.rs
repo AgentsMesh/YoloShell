@@ -16,7 +16,7 @@ impl Clone for PtySessionProof {
             #[cfg(target_os = "macos")]
             tty_path: self.tty_path.clone(),
             #[cfg(target_os = "linux")]
-            _tty_path: self._tty_path.clone(),
+            linux_slave: self.linux_slave,
             #[cfg(target_os = "linux")]
             tty_device: self.tty_device,
             #[cfg(target_os = "macos")]

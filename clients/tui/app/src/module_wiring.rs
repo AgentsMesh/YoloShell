@@ -1,3 +1,5 @@
+#[path = "input/attachments.rs"]
+mod attachments;
 #[path = "input/actions.rs"]
 mod actions;
 #[path = "catalog/catalog_events.rs"]

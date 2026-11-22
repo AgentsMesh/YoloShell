@@ -7,3 +7,5 @@ pub const MULTI_ENTRY_PAGE: u32 = 2;
 pub const SINGLE_ENTRY_PAGE: u32 = 1;
 pub const ESCAPED_PAGE_BYTE_LIMIT: u32 = 500;
 pub const EXCLUDING_PAGE_BYTE_LIMIT: u32 = 1;
+pub const AGENT_MESSAGE_CHUNK: &str = "agent_message_chunk";
+pub const MTIME_ADVANCE: std::time::Duration = std::time::Duration::from_secs(1);

@@ -1,14 +1,20 @@
 mod answer;
 mod call;
+mod chat_constants;
+mod chat_input;
+mod chat_result;
 mod constants;
 mod fault;
 mod id;
+mod ingress;
 mod result;
 mod strict;
 
 pub use answer::Answer;
 pub use call::Call;
+pub use chat_constants::{CHAT_METHOD, CHAT_VERSION};
 pub use constants::*;
 pub use fault::{Fault, RpcError};
 pub use id::Id;
+pub use ingress::ClientCall;
 pub use strict::decode;

@@ -7,6 +7,16 @@ use super::linux_io::{self, QueryValue};
 use crate::process::LiveProcessIdentity;
 
 impl PtySessionProof {
+    pub(in crate::process) fn matches_linux_master(
+        &self,
+        master: &std::fs::File,
+    ) -> anyhow::Result<bool> {
+        use std::os::fd::AsRawFd;
+        let actual =
+            crate::process::linux_passive_pty_master::exact_slave_identity(master.as_raw_fd())?;
+        Ok(self.linux_slave == Some(actual))
+    }
+
     pub(super) fn evaluate_linux_candidate(
         &self,
         candidate: &LiveProcessIdentity,

@@ -34,6 +34,8 @@ mod federation_flow;
 mod federation_hubs;
 #[path = "federation/federation_observe_only.rs"]
 mod federation_observe_only;
+#[path = "federation/federation_staging.rs"]
+mod federation_staging;
 #[path = "federation/federation_support.rs"]
 mod federation_support;
 #[path = "federation/federation_tui.rs"]

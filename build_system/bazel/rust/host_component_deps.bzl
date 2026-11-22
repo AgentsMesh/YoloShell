@@ -117,6 +117,7 @@ HOST_DEPS = [
     YOLO_HOST_WORKSPACE,
     YOLO_HOST_OPERATION_DEADLINE,
     "//core/crates/runtime/engine/host/provider_capabilities:yolo_host_provider_capabilities",
+    "//core/crates/runtime/engine/host/archive:yolo_host_archive",
     "//core/crates/runtime/engine/host/retained_history:yolo_host_retained_history",
     YOLO_TERMINAL_MODEL,
     YOLO_TRANSPORT_CORE,

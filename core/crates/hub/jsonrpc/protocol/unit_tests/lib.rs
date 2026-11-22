@@ -1,5 +1,7 @@
 mod answers;
 mod calls;
+mod chat_prompt;
+mod chat_v1;
 mod conversation_results;
 mod domain_errors;
 mod rejections;

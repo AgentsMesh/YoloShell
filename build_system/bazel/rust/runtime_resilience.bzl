@@ -21,6 +21,7 @@ RESILIENCE_COVERAGE = depset([
 
 RESILIENCE_DEPS = RUNTIME_DEPS + HUB_INTEGRATION_DEPS + [
     "//core/crates/conversation/protocol:yolo_conversation_protocol",
+    "//core/crates/agent/system/providers:yolo_agent_providers",
     "//core/crates/hub/conversation/client:yolo_hub_conversation_client",
     "//build_system/coverage/profile_test_support:library",
     "//core:yolo_runtime_adversarial",

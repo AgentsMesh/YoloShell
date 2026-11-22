@@ -81,5 +81,4 @@ INCLUDE_COMPOSITION_BASELINE = [
     ("clients/tui/app/src/terminal/terminal_input.rs", "terminal_input/state.rs"),
     ("clients/tui/app/src/terminal/terminal_input/pregrant.rs", "pregrant_lifecycle.rs"),
     ("clients/tui/app/src/terminal/terminal_runtime.rs", "terminal_runtime_geometry.rs"),
-    ("clients/tui/app/src/terminal/terminal_runtime.rs", "terminal_runtime_test_support.rs"),
 ]

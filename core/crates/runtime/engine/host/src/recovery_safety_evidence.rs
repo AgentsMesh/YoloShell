@@ -41,42 +41,7 @@ impl Host {
         expected_runtime: &RuntimeRecord,
     ) -> bool {
         manifest.terminal_id == expected_runtime.terminal_id
-            && self.stable_termination_tombstone_matches(expected_runtime)
-    }
-
-    pub(super) fn stable_termination_tombstone_matches(&self, expected_runtime: &RuntimeRecord) -> bool {
-        let runtime_path = self.paths.runtime_record(expected_runtime.terminal_id);
-        let Ok((runtime, runtime_identity)) = self
-            .namespace
-            .read_json_with_identity::<RuntimeRecord>(&runtime_path)
-        else {
-            return false;
-        };
-        if runtime != *expected_runtime {
-            return false;
-        }
-        let tombstone_path = self.paths.terminate_tombstone(expected_runtime.terminal_id);
-        let Ok((tombstone, tombstone_identity)) = self
-            .namespace
-            .read_json_with_identity::<crate::model::TerminationTombstone>(&tombstone_path)
-        else {
-            return false;
-        };
-        if tombstone
-            .validate_for(runtime.terminal_id, runtime.runtime_epoch)
-            .is_err()
-        {
-            return false;
-        }
-        let tombstone_stable = self
-            .namespace
-            .read_json_with_identity::<crate::model::TerminationTombstone>(&tombstone_path)
-            .is_ok_and(|current| current == (tombstone, tombstone_identity));
-        let runtime_stable = self
-            .namespace
-            .read_json_with_identity::<RuntimeRecord>(&runtime_path)
-            .is_ok_and(|current| current == (runtime, runtime_identity));
-        tombstone_stable && runtime_stable
+            && yolo_host_archive::stable_termination_tombstone_matches(&self.paths, &self.namespace, expected_runtime)
     }
 
     pub(super) fn exit_allows_restore(&self, runtime: &RuntimeRecord) -> bool {

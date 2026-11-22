@@ -77,10 +77,10 @@ pub fn handle(state: &mut State, jobs: &mpsc::Sender<Job>, event: MouseEvent) {
             state.mode = Mode::Terminal;
         }
         // Focus requests ordinary input control, never takeover or click-through.
-        if changed {
-            if view.terminal.is_some() {
-                crate::polling::acquire(state, jobs, false);
-            }
+        if changed && view.terminal.is_some() {
+            crate::polling::acquire(state, jobs, false);
+        }
+        if crate::selection_pointer::begin_plain(state, view, event) || changed {
             return;
         }
     }

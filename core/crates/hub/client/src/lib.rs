@@ -6,6 +6,7 @@ mod error;
 mod exchange;
 mod local;
 mod remote_setup;
+mod stage;
 mod stream;
 
 pub use client::Client;

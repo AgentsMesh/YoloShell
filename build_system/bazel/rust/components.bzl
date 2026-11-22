@@ -113,6 +113,7 @@ RUNTIME_COMPONENT_TESTS = COMMUNICATION_TESTS + HUB_DELIVERY_TESTS + TUI_CONTROL
     "//clients/tui/tab:unit_tests",
     "//clients/tui/tab:integration_tests",
     "//clients/tui/tab/manager:unit_tests",
+    "//clients/tui/clipboard:unit_tests",
     "//clients/tui/selection:unit_tests",
     "//clients/tui/selection:integration_tests",
     "//clients/tui/input:unit_tests",

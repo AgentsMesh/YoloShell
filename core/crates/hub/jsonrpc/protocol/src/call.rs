@@ -13,11 +13,11 @@ pub struct Call {
 
 #[derive(Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
-struct WireCall {
+pub(super) struct WireCall {
     jsonrpc: String,
-    id: Id,
-    method: String,
-    params: Map<String, Value>,
+    pub(super) id: Id,
+    pub(super) method: String,
+    pub(super) params: Map<String, Value>,
 }
 
 impl Call {
@@ -46,18 +46,29 @@ impl Call {
     }
 
     pub fn parse(value: Value) -> Result<Self, Fault> {
+        WireCall::parse(value)?.into_call()
+    }
+}
+
+impl WireCall {
+    pub(super) fn parse(value: Value) -> Result<Self, Fault> {
         let id = value
             .get("id")
             .cloned()
             .and_then(|value| Id::try_from(value).ok());
-        let wire: WireCall =
+        let wire: Self =
             serde_json::from_value(value).map_err(|_| Fault::new(id.clone(), INVALID_REQUEST))?;
         if wire.jsonrpc != JSONRPC_VERSION {
             return Err(Fault::new(id, INVALID_REQUEST));
         }
-        let _: Method = serde_json::from_value(Value::String(wire.method.clone()))
+        Ok(wire)
+    }
+
+    pub(super) fn into_call(self) -> Result<Call, Fault> {
+        let id = Some(self.id.clone());
+        let _: Method = serde_json::from_value(Value::String(self.method.clone()))
             .map_err(|_| Fault::new(id.clone(), METHOD_NOT_FOUND))?;
-        let mut fields = wire.params;
+        let mut fields = self.params;
         let destination = fields
             .remove(DESTINATION_FIELD)
             .and_then(|value| serde_json::from_value(value).ok())
@@ -65,13 +76,13 @@ impl Call {
         if fields.contains_key(METHOD_FIELD) {
             return Err(Fault::new(id, INVALID_PARAMS));
         }
-        fields.insert(METHOD_FIELD.into(), Value::String(wire.method));
+        fields.insert(METHOD_FIELD.into(), Value::String(self.method));
         let command = serde_json::from_value(Value::Object(fields))
             .map_err(|_| Fault::new(id.clone(), INVALID_PARAMS))?;
         let request =
             Request::new(destination, command).map_err(|_| Fault::new(id, INVALID_PARAMS))?;
-        Ok(Self {
-            id: wire.id,
+        Ok(Call {
+            id: self.id,
             request,
         })
     }

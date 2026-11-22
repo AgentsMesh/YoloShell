@@ -8,6 +8,7 @@ _DEPS = [
     "//core/crates/hub/identity:yolo_hub_identity",
     "@crates//:serde",
     "@crates//:serde_json",
+    "@crates//:url",
 ]
 
 rust_library(

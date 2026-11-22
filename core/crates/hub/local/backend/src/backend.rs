@@ -123,9 +123,9 @@ impl LocalBackend {
                 include_archived,
                 after,
             } => self.list_page(*include_archived, *after).await,
-            Command::Get { address } => Ok(Reply::Terminal {
-                terminal: self.session(*address).await?,
-            }),
+            Command::Extensions {} => Ok(Reply::Extensions { methods: vec![yolo_hub_terminal_protocol::STAGE_ATTACHMENT_METHOD.into()] }),
+            Command::StageAttachment { request } => yolo_hub_local_platform::stage_attachment(&self.client, &self.paths, request).await,
+            Command::Get { address } => Ok(Reply::Terminal { terminal: self.session(*address).await? }),
             Command::Create { request } => {
                 let created = self
                     .client

@@ -133,6 +133,10 @@ operations! {
         AgentControl: AgentControl, Mutating,
         AgentPrompt: AgentControl, Mutating,
     }
+    EXTENSION_METHODS {
+        Extensions: Observe, ReadOnly,
+        StageAttachment: TerminalWrite, Mutating,
+    }
     MANAGEMENT_METHODS {
         GetConfiguration: LocalManagement, ReadOnly,
         ListConsumers: LocalManagement, ReadOnly,

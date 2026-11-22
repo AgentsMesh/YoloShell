@@ -69,7 +69,11 @@ impl<S: AsyncRead + AsyncWrite + Unpin> Client<S> {
         if self.phase != Phase::Control {
             return Err(ClientError::TerminalStream);
         }
-        if !self.hello.methods.contains(&command.method()) {
+        // Older v20 peers deserialize hello.methods as a closed enum. Optional
+        // methods are probed explicitly and receive METHOD_NOT_FOUND on older peers.
+        if !self.hello.methods.contains(&command.method())
+            && !yolo_hub_rpc_protocol::EXTENSION_METHODS.contains(&command.method())
+        {
             return Err(ClientError::Unsupported);
         }
         let request = Request::new(destination, command).map_err(ClientError::Validation)?;

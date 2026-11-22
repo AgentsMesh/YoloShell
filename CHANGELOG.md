@@ -2,6 +2,12 @@
 
 All notable changes to Yolo are recorded here. The project follows semantic versioning once a stable release exists.
 
+## 0.6.0 — Alpha
+
+- Drag to copy terminal selections. Paste a desktop file or image with `Ctrl+B ]`, or choose a path with `Ctrl+B u`. The Hub stages the bytes on the machine that owns the terminal.
+- Plugins can use `chat_v1` to read managed agents, send prompts with attachments, answer interactions and interrupt a turn. Remote prompts execute at their origin Hub.
+- Linux Workers can retire drained terminals when the login environment prevents a complete process scan. Host recovery also finishes pending cleanup of archived attachments while preserving terminal history.
+
 ## 0.5.8 — Alpha
 
 - The plugin install command installs and enables the selected registry plugin in one invocation. Use the dry-run option to inspect the verified source, commands and digest without changing the local plugin registry.
@@ -111,87 +117,4 @@ All notable changes to Yolo are recorded here. The project follows semantic vers
   the ledger, the enrollment server and the inner peer SSH transport are
   removed; 0.1.x TCP peers need an SSH dial.
 
-## 0.1.7 — Alpha
-
-### Added
-- `yolo hub listen <address>` configures and applies the local Hub's peer
-  listener; `yolo hub peer invite --host` then defaults the port from it.
-
-### Changed
-- `yolo update` checks, installs, restarts and probes admission (`--check`,
-  `--admit`, `--no-restart`); top-level help lists auxiliary commands and
-  accepts root options before or after the command.
-- `yolo workspace update` uses the resolved revision unless
-  `--expected-revision` conflicts; `yolo worktree create` requires
-  `--trust-repository`; agent `send`/`ask`/`prompt` help states their
-  wait and atomicity differences.
-
-### Fixed
-- Invite expiry prints a remaining duration instead of epoch milliseconds.
-- Auto-start prints a notice only when no local Hub socket exists; missing
-  profile files or local Hub state produce actionable errors; `yolo audit` no
-  longer exits 0 silently.
-
-## 0.1.6 — Alpha
-
-### Added
-- `yolo status|version|start|stop|restart` expose the local Host/Hub lifecycle;
-  `yolo update --restart` activates the installed image.
-
-### Changed
-- `yolo stop`/`restart` resolve exact PIDs; upgrade refusal names `yolo restart`.
-
-## 0.1.5 — Alpha
-
-### Added
-- Hubs pair over SSH with a single-use, expiring `yolo1_` code; the provider's account and export policy remain the authority.
-
-## 0.1.4 — Alpha
-
-### Fixed
-- `yolo update` resolves the installer symlink before validating the running
-  executable, so admission works on the standard macOS installation.
-
-## 0.1.3 — Alpha
-
-### Added
-- `yolo hub peer add`/`list` manage federation peers with explicit dial addresses, imports and export policies.
-
-### Fixed
-- A YOLO client inside a YOLO terminal stays read-only, and alternate-screen snapshots keep the screen mode.
-
-## 0.1.2 — Alpha
-
-### Added
-- `yolo plugin install` replaces an existing link, stops the previous daemon when its manifest declares a `stop` action, and starts the new version.
-
-### Fixed
-- Codex Stop candidates resolve with the structured turn journal, so a finished turn that awaits the user reports Needs input instead of Running.
-- A missing plugin runtime names the executable in the startup error.
-
-### Changed
-- The Web client keeps a fresh creation in Starting until its first prompt and
-  lists terminal-native waiting agents in Needs you (web.client 0.1.2).
-
-## 0.1.1 — Alpha
-
-### Added
-- `yolo plugin install` resolves a versioned spec from the YoloShellPlugins registry, verifies the pinned source commit and manifest, and installs into a private managed directory after the explicit `--trust` preview.
-
-## 0.1.0 — Alpha
-
-### Added
-- Persistent TUI terminal tabs with recursive split panes, detach/reattach, shared layouts and private focus.
-- Per-PTY Workers that own terminal custody independently of the client, Host and Hub.
-- Agent detection and native resume for Claude Code, Codex, Gemini, Qwen and Grok, with provider-specific capability and authority handling.
-- Hub federation, remote runtime entry, public JSON-RPC and a trusted plugin interface.
-- A Bun web client with live xterm.js terminals, typed interactions, creation jobs, archive/history and multi-tab writer leases.
-- A one-line installer, `yolo update`, digest-verified downloads and immutable-image installation; GitHub releases publish macOS arm64 and Linux x86_64/arm64 assets from GitLab tags.
-- Bazel architecture gates, Rust coverage gates, private-PTY acceptance and browser end-to-end tests.
-
-### Known limits
-
-- Alpha support targets macOS Apple Silicon and Linux aarch64/x86_64; Linux remote deployment remains preview.
-- Only Claude Code and Codex are accepted agent targets for the current Alpha. Additional provider adapters are experimental.
-- Plugins are trusted and unsandboxed by policy. There is no plugin marketplace.
-- Plain-HTTP LAN mode is for trusted networks only.
+[0.1 release notes](docs/releases/0.1.md)

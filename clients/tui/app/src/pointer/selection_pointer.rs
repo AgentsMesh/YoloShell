@@ -1,5 +1,6 @@
 use crate::{Mode, State, selection_actions, selection_state::*};
 use crossterm::event::{KeyModifiers, MouseButton, MouseEvent, MouseEventKind};
+use yolo_tui_render::PaneViewport;
 use yolo_tui_selection::{CellPoint, Selection};
 
 const CELL_STEP: u16 = 1;
@@ -16,7 +17,16 @@ pub(crate) fn handle(state: &mut State, event: MouseEvent) -> bool {
     if start {
         state.pointer = crate::pointer::Pointer::default();
         selection_actions::cancel(state);
-        begin(state, event);
+        if state.presentation.current(&state.tab_layout(), state.mode)
+            && let Some(view) = state
+                .presentation
+                .panes
+                .iter()
+                .find(|view| crate::pointer::contains(view.inner, event.column, event.row))
+                .copied()
+        {
+            begin(state, view, event);
+        }
         return true;
     }
     let dragging = state
@@ -40,19 +50,24 @@ pub(crate) fn handle(state: &mut State, event: MouseEvent) -> bool {
     false
 }
 
-fn begin(state: &mut State, event: MouseEvent) {
-    if !state.presentation.current(&state.tab_layout(), state.mode) {
-        return;
+pub(crate) fn begin_plain(state: &mut State, view: PaneViewport, event: MouseEvent) -> bool {
+    if event.kind != MouseEventKind::Down(MouseButton::Left)
+        || !event.modifiers.is_empty()
+        || !crate::pointer::contains(view.inner, event.column, event.row)
+        || !view
+            .terminal
+            .and_then(|address| state.surfaces.get(&address))
+            .is_some_and(|surface| {
+                surface.screen().mouse_protocol_mode() == vt100::MouseProtocolMode::None
+            })
+    {
+        return false;
     }
-    let Some(view) = state
-        .presentation
-        .panes
-        .iter()
-        .find(|view| crate::pointer::contains(view.inner, event.column, event.row))
-        .copied()
-    else {
-        return;
-    };
+    begin(state, view, event);
+    true
+}
+
+fn begin(state: &mut State, view: PaneViewport, event: MouseEvent) {
     let Some(surface) = view
         .terminal
         .and_then(|address| state.surfaces.get(&address))
@@ -126,7 +141,13 @@ fn update(state: &mut State, event: MouseEvent) {
         active.text.extend(point)
     };
     match result {
-        Ok(()) if !active.text.is_dragging() => state.status = SELECTED_LABEL.into(),
+        Ok(()) if !active.text.is_dragging() => {
+            if active.text.has_extent() {
+                selection_actions::queue(state);
+            } else {
+                selection_actions::cancel(state);
+            }
+        }
         Ok(()) => {}
         Err(error) => {
             selection_actions::cancel(state);

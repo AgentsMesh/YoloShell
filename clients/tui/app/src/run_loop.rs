@@ -51,6 +51,8 @@ pub async fn run_with_startup(
     let mut catalog = interval(CATALOG_REFRESH);
     catalog.set_missed_tick_behavior(MissedTickBehavior::Skip);
     let mut synchronized_hold = None;
+    let mut clipboard = yolo_tui_clipboard::Writer::default();
+    let mut attachments = yolo_tui_clipboard::Transfers::default();
     let result = async {
         loop {
             crate::layout_sync::pump(&mut state, &jobs);
@@ -67,7 +69,7 @@ pub async fn run_with_startup(
                 screen.notify(bell)?;
             }
             crate::tab_persistence::save_if_changed(&mut tab_store, &state, &mut tab_saved)?;
-            if let Some(command) = crate::selection_actions::take_clipboard(&mut state) {
+            if let Some(command) = crate::selection_actions::take_clipboard(&mut state).and_then(|command| clipboard.queue(command)) {
                 screen.copy(&command)?;
             }
             let synchronized = synchronized_terminal(&state);
@@ -97,6 +99,7 @@ pub async fn run_with_startup(
             }
             state.sync_query_authority();
             crate::terminal_input::drain_pregrant(&mut state, &jobs);
+            attachments.sync(state.attachment.as_mut().map(|item| &mut item.dialog), &options.endpoint, options.hub);
             let allow_priority = !yield_after_priority;
             yield_after_priority = false;
             tokio::select! {
@@ -108,6 +111,8 @@ pub async fn run_with_startup(
                     }
                     None => priority_closed = true,
                 },
+                fallback = clipboard.fallback() => if let Some(command) = fallback { screen.copy(&command)?; },
+                result = attachments.next() => crate::attachments::complete(&mut state, &jobs, result),
                 _ = terminate.recv() => break,
                 _ = hangup.recv() => break,
                 _ = interrupt.recv() => break,

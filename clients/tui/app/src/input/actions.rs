@@ -13,6 +13,7 @@ use yolo_hub_rpc_protocol::Command;
 include!("actions_confirmation.rs");
 
 pub fn handle(state: &mut State, jobs: &mpsc::Sender<Job>, hub: HubId, event: Event) -> bool {
+    if crate::attachments::edit(state, &event) { return false; }
     crate::startup::user_event(state, &event);
     if let Some(detach) = crate::modal_shortcuts::handle(state, &event) {
         return detach;

@@ -86,3 +86,33 @@ fn shell_only_stale_catalog_and_changed_execution_do_not_admit_new_chat_input() 
         Event::Key(KeyCode::Esc.into())
     ));
 }
+
+#[test]
+fn attachment_paste_waits_for_upload_and_inserts_only_into_its_original_chat() {
+    let (mut state, jobs, mut incoming) = ready();
+    toggle(&mut state, &jobs);
+    let paste_attachment = |state: &mut crate::State| {
+        key(state, &jobs, KeyCode::Char('b'), KeyModifiers::CONTROL);
+        key(state, &jobs, KeyCode::Char(']'), KeyModifiers::NONE);
+    };
+    paste_attachment(&mut state);
+    assert!(state.attachment.is_some());
+    key(&mut state, &jobs, KeyCode::Enter, KeyModifiers::NONE);
+    assert!(incoming.try_recv().is_err());
+    let path = "/tmp/staged/clipboard.png";
+    crate::attachments::complete(&mut state, &jobs, Ok(path.into()));
+    assert_eq!(crate::chat::current(&state).unwrap().composer.text(), path);
+    assert!(incoming.try_recv().is_err());
+
+    paste_attachment(&mut state);
+    let address = state.focused_terminal().unwrap();
+    let mut fields = state.terminals[&address].fields().clone();
+    fields.runtime.as_mut().unwrap().target.runtime_epoch = yolo_hub_identity::RuntimeEpoch::new();
+    state.terminals.insert(
+        address,
+        yolo_hub_terminal_protocol::TerminalSummary::new(fields).unwrap(),
+    );
+    crate::attachments::complete(&mut state, &jobs, Ok(path.into()));
+    assert_eq!(crate::chat::current(&state).unwrap().composer.text(), path);
+    assert!(incoming.try_recv().is_err());
+}

@@ -80,7 +80,7 @@ impl Federation {
                 .fields()
                 .command
                 .operation_timeout(OPERATION_TIMEOUT),
-            self.origin.dispatch(call.payload.request.clone()),
+            self.origin_operation(call.payload.request.clone(), self.origin.as_ref()),
         )
         .await;
         self.require_open()?;

@@ -1,5 +1,8 @@
 # Chat clients for existing TUI agents
 
+The versioned Hub interface for TUI and plugin Chat views is described in
+[Managed Chat v1](chat-protocol.md).
+
 Chat is a client-local view of an existing managed agent. Opening Chat does not
 create another Terminal, start another agent, invoke a model API or transfer PTY
 custody. The origin Hub owns native conversation binding and content projection.

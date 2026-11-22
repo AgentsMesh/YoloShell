@@ -56,3 +56,28 @@ impl ForceOutput<'_> {
         }
     }
 }
+#[cfg(target_os = "linux")]
+impl ForceOutput<'_> {
+    pub(super) fn prepare_linux_hangup(
+        &self,
+        tree: &mut crate::process::FreezingProcessTree,
+    ) -> anyhow::Result<Option<crate::process::LinuxPtyHangup>> {
+        use crate::worker::pty_output_progress::OutputDescriptor;
+        let guard;
+        let (descriptor, binding) = match self {
+            Self::Reader(output) => {
+                guard = output.descriptor.lock();
+                (&*guard, output.master_alias_authority.as_ref())
+            }
+            Self::Exclusive(output) => (&output.descriptor, output.master_alias_authority.as_ref()),
+            #[cfg(test)]
+            Self::Scripted(_) => return Ok(None),
+        };
+        match (descriptor, binding) {
+            (OutputDescriptor::Native(file), Some(binding)) => {
+                tree.prepare_linux_hangup(file, binding)
+            }
+            _ => Ok(None),
+        }
+    }
+}

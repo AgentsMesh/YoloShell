@@ -10,7 +10,7 @@ pub fn export(origin: HubId, relay: bool) -> ExportPolicy {
     let mut policy = exports(origin, relay);
     policy.rights = policy
         .rights
-        .union(&[Right::ConversationRead].into_iter().collect());
+        .union(&[Right::ConversationRead, Right::AgentControl].into_iter().collect());
     policy
 }
 

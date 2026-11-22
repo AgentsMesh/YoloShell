@@ -3,6 +3,8 @@ use yolo_hub_terminal_protocol::PublicError;
 
 #[derive(Debug, thiserror::Error)]
 pub enum ClientError {
+    #[error("could not read attachment: {0}")]
+    AttachmentRead(#[source] std::io::Error),
     #[error("Hub request validation failed: {0}")]
     Validation(PublicError),
     #[error("Hub request was rejected: {0}")]

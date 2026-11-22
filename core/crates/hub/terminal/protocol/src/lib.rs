@@ -15,6 +15,7 @@ mod lease_observation;
 mod lifecycle;
 mod run;
 mod size;
+mod stage;
 mod summary;
 mod text;
 mod terminal;
@@ -41,6 +42,7 @@ pub use lease_observation::{LeaseObservation, LeaseObservationFields};
 pub use lifecycle::{TerminalAction, TerminalCommand, TerminalSelection};
 pub use run::{TerminalRunFields, TerminalRunRequest, TerminalRunResult};
 pub use size::TerminalSize;
+pub use stage::{ATTACHMENT_CHUNK_BYTES, StageAttachmentRequest, StagedAttachment};
 pub use summary::{
     RuntimeStatus, RuntimeSummary, TerminalRecoveryHint, TerminalSummary, TerminalSummaryFields,
 };

@@ -6,7 +6,6 @@ package(default_visibility = ["//visibility:public"])
 
 _DEPS = [
     "//core/crates/agent/system/provider/contract:yolo_agent_provider_contract",
-    "//core/crates/hub/agent/protocol:yolo_hub_agent_protocol",
     "//core/crates/hub/delegation:yolo_hub_delegation",
     "//core/crates/hub/dispatch:yolo_hub_dispatch",
     "//core/crates/hub/federation/aggregate:yolo_hub_federation_aggregate",

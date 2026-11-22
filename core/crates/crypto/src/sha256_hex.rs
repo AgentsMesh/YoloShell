@@ -27,10 +27,14 @@ impl Sha256Hasher {
 
     pub fn finish_hex(self) -> String {
         let digest = self.0.finish();
-        let mut encoded = String::with_capacity(SHA256_HEX_LENGTH);
-        for byte in digest.as_ref() {
-            write!(&mut encoded, "{byte:02x}").expect(STRING_WRITE_FAILURE);
-        }
-        encoded
+        encode(digest.as_ref())
     }
+}
+
+pub(super) fn encode(bytes: &[u8]) -> String {
+    let mut encoded = String::with_capacity(SHA256_HEX_LENGTH);
+    for byte in bytes {
+        write!(&mut encoded, "{byte:02x}").expect(STRING_WRITE_FAILURE);
+    }
+    encoded
 }

@@ -158,4 +158,5 @@ impl State {
 
 include!("terminal_runtime_geometry.rs");
 #[cfg(test)]
-include!("terminal_runtime_test_support.rs");
+#[path = "../../test_support/terminal_runtime.rs"]
+mod test_support;

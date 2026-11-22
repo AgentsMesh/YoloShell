@@ -2,6 +2,7 @@ use super::*;
 
 mod constants;
 mod validation;
+mod resource_link;
 
 #[test]
 fn limits_are_nonzero_and_hard_bounded() {

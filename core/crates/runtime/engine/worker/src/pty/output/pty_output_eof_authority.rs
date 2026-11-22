@@ -34,7 +34,7 @@ mod exclusive;
 #[path = "pty_output_eof_authority_reader_probe.rs"]
 mod reader_probe;
 #[cfg(test)]
-#[path = "pty_output_eof_authority_scripted.rs"]
+#[path = "../../../test_support/pty_output_eof_authority_scripted.rs"]
 mod scripted;
 #[path = "pty_output_eof_authority_sealed.rs"]
 mod sealed;

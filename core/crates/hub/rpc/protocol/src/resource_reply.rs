@@ -5,7 +5,7 @@ pub(crate) fn valid(reply: &Reply, method: Method, origin: HubId) -> Option<bool
     use Method::*;
     if !matches!(
         method,
-        ListLayouts
+        Extensions | StageAttachment | ListLayouts
             | GetLayout
             | UpdateLayout
             | ResolveConversation
@@ -16,6 +16,8 @@ pub(crate) fn valid(reply: &Reply, method: Method, origin: HubId) -> Option<bool
     }
     Some(match (reply, method) {
         (Reply::Error { .. }, _) => true,
+        (Reply::Extensions { methods }, Extensions) => methods.iter().all(|name| !name.is_empty() && name.bytes().all(|ch| ch.is_ascii_lowercase() || ch.is_ascii_digit() || ch == b'_')),
+        (Reply::StagedAttachment { attachment }, StageAttachment) => attachment.target.address.hub_id == origin,
         (Reply::Layouts { documents }, ListLayouts) => {
             documents.len() <= yolo_presentation_protocol::MAX_DOCUMENTS
                 && documents.iter().all(|document| {
@@ -45,6 +47,8 @@ pub(crate) fn valid(reply: &Reply, method: Method, origin: HubId) -> Option<bool
 
 pub(crate) fn matches_target(reply: &Reply, command: &Command) -> Option<bool> {
     Some(match (reply, command) {
+        (Reply::Extensions { .. }, Command::Extensions {}) => true,
+        (Reply::StagedAttachment { attachment }, Command::StageAttachment { request }) => attachment.matches(request),
         (Reply::Layout { document }, Command::GetLayout { address }) => document
             .as_ref()
             .is_none_or(|document| document.address == *address),

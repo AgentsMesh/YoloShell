@@ -6,13 +6,60 @@ use std::time::Duration;
 use tokio::sync::watch;
 use tokio::time::Instant;
 use yolo_hub_agent_protocol::{
-    Activity, AgentLifecycleState, AgentPromptOutcome, AgentSnapshot, AgentWaitCondition,
-    AgentWaitRequest, MAX_AGENT_WAIT_MS, ObservationCursor,
+    Activity, AgentLifecycleState, AgentPromptOutcome, AgentPromptRequest, AgentPromptResult,
+    AgentPromptWait, AgentSnapshot, AgentWaitCondition, AgentWaitRequest, CommandOutcome,
+    MAX_AGENT_WAIT_MS, ObservationCursor,
 };
 use yolo_hub_identity::{AgentTarget, HubId};
 use yolo_hub_terminal_protocol::PublicError;
 
 use crate::{AgentSnapshots, wait};
+
+/// Submit through the origin's authenticated process, then observe the requested
+/// turn disposition with the same receipt for local and relayed calls.
+pub async fn submit(
+    backend: &yolo_hub_local_backend::LocalBackend,
+    request: &AgentPromptRequest,
+    wake: watch::Receiver<u64>,
+) -> Result<AgentPromptResult, PublicError> {
+    let execution = backend.prompt_agent(request).await?;
+    let (outcome, snapshot) = match execution.receipt.outcome() {
+        CommandOutcome::Failed { .. } => (AgentPromptOutcome::Rejected, None),
+        CommandOutcome::Unknown {} => (AgentPromptOutcome::Unknown, None),
+        _ => match request.fields().wait {
+            AgentPromptWait::None => (AgentPromptOutcome::Delivered, None),
+            AgentPromptWait::TurnEnd { timeout_ms } => observed_outcome(
+                prompt_turn(
+                    backend,
+                    execution.target.address.hub_id,
+                    execution.target,
+                    execution.baseline,
+                    timeout_ms,
+                    wake,
+                )
+                .await,
+            ),
+        },
+    };
+    Ok(AgentPromptResult {
+        receipt: execution.receipt,
+        terminal: execution.terminal,
+        outcome,
+        snapshot,
+    })
+}
+
+type Observation = (AgentPromptOutcome, Option<AgentSnapshot>);
+
+/// Once native submission has returned a receipt, a failed follow-up read
+/// describes the turn observation. Keep the original delivery receipt.
+pub(super) fn observed_outcome(result: Result<Observation, PublicError>) -> Observation {
+    match result {
+        Ok(observation) => observation,
+        Err(PublicError::NotFound) => (AgentPromptOutcome::Exited, None),
+        Err(_) => (AgentPromptOutcome::Unknown, None),
+    }
+}
 
 /// Wait until the execution leaves `working`, asks for approval, or ends.
 /// The cursor is the observation seen before submission, so only newer states
@@ -75,3 +122,7 @@ pub async fn prompt_turn<S: AgentSnapshots>(
         }
     }
 }
+
+#[cfg(all(test, feature = "yolo-unit-tests"))]
+#[path = "../unit_tests/prompt_outcome.rs"]
+mod outcome_tests;

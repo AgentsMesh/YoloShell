@@ -90,3 +90,27 @@ fn transport_ids_support_strings_and_integers_and_preserve_their_types() {
         assert!(Id::try_from(value).is_err());
     }
 }
+
+#[test]
+fn discovery_reports_the_entry_profile_without_adding_a_typed_hello_method() {
+    use yolo_hub_rpc_protocol::Reply;
+    use yolo_hub_rpc_protocol_test_support::commands;
+    let wire = serde_json::to_value(Call::from_request(commands::request(
+        Command::Extensions {},
+    )))
+    .unwrap();
+    let discovery = ClientCall::parse(wire).unwrap();
+    for mut methods in [vec![], vec![CHAT_METHOD.to_string()]] {
+        methods.push("future".into());
+        let answer = discovery
+            .answer(Reply::Extensions { methods })
+            .unwrap()
+            .result
+            .unwrap();
+        let methods = answer["methods"].as_array().unwrap();
+        assert_eq!(
+            methods.iter().filter(|name| *name == CHAT_METHOD).count(),
+            1
+        );
+    }
+}

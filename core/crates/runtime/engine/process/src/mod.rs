@@ -8,6 +8,8 @@ mod authority_test_hook;
 include!("module_wiring.rs");
 #[cfg(all(test, target_os = "macos", feature = "yolo-integration-tests"))]
 pub(crate) use captured_targets::test_hook::install_test_signal_hook;
+#[cfg(target_os = "linux")]
+pub use captured_tree::LinuxPtyHangup;
 pub use captured_tree::{
     CapturedProcessTree, FreezePoll, FreezingProcessTree, FrozenProcessTree,
     KillPendingProcessTree, KillPoll, ProcessTransitionError, ReportedProducersGone,

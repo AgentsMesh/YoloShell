@@ -1,4 +1,5 @@
 mod bounded_reads;
+mod chat;
 mod conditional_reads;
 mod constants;
 mod evidence;

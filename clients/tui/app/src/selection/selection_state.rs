@@ -6,11 +6,10 @@ use yolo_presentation_layout::Layout;
 use yolo_tui_selection::{ClipboardCommand, Selection};
 
 pub(crate) const COPY_KEY: char = 'y';
-pub(crate) const SELECTING_LABEL: &str = "Selection paused · release, then Ctrl+B y to copy";
-pub(crate) const SELECTED_LABEL: &str = "Selection paused · Ctrl+B y copies · Esc resumes";
-pub(crate) const COPY_QUEUED_LABEL: &str = "Selection queued for terminal clipboard";
+pub(crate) const SELECTING_LABEL: &str = "Release to copy the selected text";
+pub(crate) const COPY_QUEUED_LABEL: &str = "Selection sent to terminal clipboard";
 pub(crate) const CLEARED_LABEL: &str = "Selection cleared";
-pub(crate) const NO_SELECTION_LABEL: &str = "Shift+drag over terminal text before copying";
+pub(crate) const NO_SELECTION_LABEL: &str = "Drag over terminal text to copy";
 
 #[derive(Default)]
 pub(crate) struct SelectionState {

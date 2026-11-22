@@ -7,6 +7,8 @@ impl Command {
             Self::GetClientAccess {} => Method::GetClientAccess,
             Self::ConfigureClientAccess { .. } => Method::ConfigureClientAccess,
             Self::Hello {} => Method::Hello,
+            Self::Extensions {} => Method::Extensions,
+            Self::StageAttachment { .. } => Method::StageAttachment,
             Self::GetBuild {} => Method::GetBuild,
             Self::GetSshProfiles {} => Method::GetSshProfiles,
             Self::ConfigureSshProfiles { .. } => Method::ConfigureSshProfiles,

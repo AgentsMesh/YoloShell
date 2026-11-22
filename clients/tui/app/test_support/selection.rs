@@ -72,6 +72,12 @@ impl Fixture {
     pub fn select(&mut self) {
         self.begin(FIRST, FIRST);
         self.finish(LAST_ALPHA, FIRST);
+        assert_eq!(
+            crate::selection_actions::take_clipboard(&mut self.state)
+                .unwrap()
+                .as_bytes(),
+            EXPECTED_COPY
+        );
     }
 
     pub fn copy(&mut self) {
