@@ -152,13 +152,11 @@ fn print_catalogue(rows: &[Row<'_>], repository: &str) {
     }
     if let Some(first) = rows.iter().find(|row| row.installed.is_none()) {
         if repository == DEFAULT_REGISTRY {
-            println!(
-                "\nReview {} with `yolo plugin install {}`.",
-                first.id, first.id
-            );
+            println!("\nInstall with `yolo plugin install {}`.", first.id);
         } else {
             println!(
-                "\nPass the same --registry URL to `yolo plugin install <id>` to review a plugin."
+                "\nUse `yolo plugin install {} --registry <URL>` with this registry.",
+                first.id
             );
         }
     }

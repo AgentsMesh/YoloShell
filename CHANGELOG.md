@@ -2,12 +2,16 @@
 
 All notable changes to Yolo are recorded here. The project follows semantic versioning once a stable release exists.
 
+## 0.5.8 — Alpha
+
+- The plugin install command installs and enables the selected registry plugin in one invocation. Use the dry-run option to inspect the verified source, commands and digest without changing the local plugin registry.
+- Existing trust install invocations remain accepted for compatibility. The normal help no longer presents that extra confirmation step.
+- Registry discovery and local plugin state keep their separate meanings. Offline inventory and catalogue JSON behavior remain available.
 ## 0.5.7 — Alpha
 
 - `yolo plugin` and `yolo plugin list` show published plugins alongside local install state. A fresh account can discover `web.client` in the official registry and review it before installing.
 - `yolo plugin list --installed` works offline. Existing `list --json` scripts retain their local records. Use `list --registry --json` for the catalogue, or supply a Git URL to browse another registry.
 - Plugin help highlights listing, installation, startup and logs. Local development and diagnostic commands remain available through `yolo plugin help <command>`.
-
 ## 0.5.6 — Alpha
 
 - With trusted Codex hooks installed, new Bash and Zsh login terminals support `codex --yolo` on the first launch and after reattachment. Managed start and resume choose a compatible local-server command.
@@ -16,31 +20,26 @@ All notable changes to Yolo are recorded here. The project follows semantic vers
 - Federated run and workspace pagination preserves the origin Hub. Workspace membership follows all result pages, and name lookup handles Unicode and cross-Hub ambiguity.
 - The TUI displays long replies and narrow-screen agent details, reuses empty tabs, and forwards terminal control keys. SSH preserves empty arguments and accepts keys with non-UTF-8 comments.
 - The updater follows release pages and recognizes installed nightlies. Local build probes preserve healthy services during a transient error. Local-action plugins can declare zero required Hub methods.
-
 ## 0.5.5 — Alpha
 
 - Managed Codex launches disable the shared app-server so the terminal keeps a stable provider ownership boundary.
 - Codex hook callbacks that run in their own process group without a controlling TTY retain admission through the provider process and callback group evidence.
 - Host provider capability probes accept closed launch commands with arguments.
-
 ## 0.5.4 — Alpha
 
 - Yolo reads ext4 filesystem UUIDs on Ubuntu 24.04 GA kernels, including Linux 6.8.
 - The installer creates private user directories even when the login umask allows group writes.
 - Hook installation errors identify the affected configuration file or directory and report its unsafe permission mode.
-
 ## 0.5.3 — Alpha
 
 - The TUI can retire the last terminal on a machine in a multi-machine layout. The entry Hub keeps a tab for sharing the layout.
 - `yolo terminal screen` reads remote terminals through the Hub that owns the selected terminal, including across multiple hops.
-
 ## 0.5.2 — Alpha
 
 - Codex conversations can be read and prompted after a verified turn end.
 - Agent runs track terminal exits, recovery into a new runtime and archival. Repeated stops preserve the run revision.
 - The machine sidebar shows hook setup guidance when empty and opens a running terminal on the selected machine.
 - On Linux, upgrade checks inspect the systemd units that own the selected profile and verify their effective image paths.
-
 ## 0.5.1 — Alpha
 
 ### Added
@@ -49,7 +48,6 @@ All notable changes to Yolo are recorded here. The project follows semantic vers
 
 ### Changed
 - Provider hook installation no longer exposes the internal revision token or Cap'n Proto output; `yolo internal host hooks` keeps the revision-fenced commands for automation.
-
 ## 0.5.0 — Alpha
 
 ### Changed

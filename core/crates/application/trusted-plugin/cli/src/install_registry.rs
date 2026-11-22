@@ -1,4 +1,4 @@
-use anyhow::{bail, ensure, Context, Result};
+use anyhow::{Context, Result, bail, ensure};
 use serde::{Deserialize, Serialize};
 use std::path::{Component, Path, PathBuf};
 use yolo_trusted_plugin_manifest::{SCHEMA_VERSION, TrustedPluginManifest};
@@ -6,7 +6,9 @@ use yolo_trusted_plugin_manifest::{SCHEMA_VERSION, TrustedPluginManifest};
 pub(crate) const DEFAULT_REGISTRY: &str = "https://github.com/AgentsMesh/YoloShellPlugins.git";
 
 fn checkout_path(registry: &Path, path: &Path) -> Result<PathBuf> {
-    let root = registry.canonicalize().context("resolve plugin registry checkout")?;
+    let root = registry
+        .canonicalize()
+        .context("resolve plugin registry checkout")?;
     let resolved = path
         .canonicalize()
         .with_context(|| format!("resolve plugin registry entry {}", path.display()))?;
@@ -58,7 +60,10 @@ pub(crate) fn load_spec(
     }
     let directory = checkout_path(registry, &specs_directory(registry)?.join(id))
         .with_context(|| format!("plugin {id} is not present in the registry"))?;
-    ensure!(directory.is_dir(), "registry entry {id} must be a directory");
+    ensure!(
+        directory.is_dir(),
+        "registry entry {id} must be a directory"
+    );
     let version = match requested {
         Some(version) => {
             validate_version(version)?;
@@ -67,7 +72,11 @@ pub(crate) fn load_spec(
         None => latest_version(&directory, id)?,
     };
     let path = checkout_path(registry, &directory.join(format!("{version}.json")))?;
-    ensure!(path.is_file(), "registry spec {} must be a regular file", path.display());
+    ensure!(
+        path.is_file(),
+        "registry spec {} must be a regular file",
+        path.display()
+    );
     let bytes = std::fs::read(&path)
         .with_context(|| format!("read plugin registry spec {}", path.display()))?;
     let spec: RegistrySpec = serde_json::from_slice(&bytes)
@@ -135,7 +144,10 @@ fn validate_source(source: &RegistrySource) -> Result<()> {
     if source.path.is_empty()
         || path.is_absolute()
         || path.components().any(|component| {
-            matches!(component, Component::ParentDir | Component::RootDir | Component::Prefix(_))
+            matches!(
+                component,
+                Component::ParentDir | Component::RootDir | Component::Prefix(_)
+            )
         })
     {
         bail!("registry source path must be relative and must not contain ..");
@@ -148,11 +160,9 @@ pub(super) fn is_plugin_id(id: &str) -> bool {
         && id.contains('.')
         && id.split('.').all(|part| {
             !part.is_empty()
-                && part
-                    .chars()
-                    .all(|character| character.is_ascii_lowercase()
-                        || character.is_ascii_digit()
-                        || character == '-')
+                && part.chars().all(|character| {
+                    character.is_ascii_lowercase() || character.is_ascii_digit() || character == '-'
+                })
         })
 }
 
@@ -186,4 +196,3 @@ fn is_commit(value: &str) -> bool {
 #[cfg(test)]
 #[path = "../unit_tests/install.rs"]
 mod install_tests;
-
