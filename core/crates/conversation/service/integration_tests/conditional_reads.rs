@@ -1,4 +1,4 @@
-use super::fixtures::Fixture;
+use super::{constants::MTIME_ADVANCE, fixtures::Fixture};
 use std::fs;
 use yolo_agent_contract::AgentKind;
 use yolo_conversation_protocol::*;
@@ -21,12 +21,14 @@ fn unchanged_content_after_cache_miss_keeps_its_revision_but_not_a_forged_genera
     let initial = fixture.page();
     fixture.request.since_revision = Some(initial.revision);
     fixture.request.since_generation = Some(initial.history_generation);
-    // A same-byte rewrite changes the ctime stamp and forces the complete prefix scan.
+    // APFS moves the file birth time backwards when mtime predates creation.
+    // Advance mtime to exercise a cache miss on the same file identity.
+    let newer = std::time::SystemTime::now() + MTIME_ADVANCE;
     let bytes = fs::read(&fixture.path).unwrap();
     fs::write(&fixture.path, &bytes).unwrap();
     fs::File::open(&fixture.path)
         .unwrap()
-        .set_modified(std::time::SystemTime::UNIX_EPOCH)
+        .set_modified(newer)
         .unwrap();
     assert!(
         matches!(fixture.reader.read(&fixture.binding, &fixture.request).unwrap(),
@@ -37,7 +39,7 @@ fn unchanged_content_after_cache_miss_keeps_its_revision_but_not_a_forged_genera
     fs::write(&fixture.path, &bytes).unwrap();
     fs::File::open(&fixture.path)
         .unwrap()
-        .set_modified(std::time::SystemTime::UNIX_EPOCH)
+        .set_modified(newer)
         .unwrap();
     let page = fixture.page();
     assert_eq!(page.revision, initial.revision);

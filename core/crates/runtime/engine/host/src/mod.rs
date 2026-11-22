@@ -109,6 +109,7 @@ pub struct Host {
     request_drain: request_drain::HostRequestDrain,
     parked_resume_retries: Mutex<HashMap<(Uuid, String), ResumeRetryDisposition>>,
     pending_recovery_writes: Mutex<HashMap<Uuid, PendingRecoveryWrite>>,
+    pending_attachment_cleanup: Mutex<HashMap<Uuid, yolo_host_archive::AttachmentTarget>>,
     secondary_custody: secondary_custody::SecondaryCustodyRegistry,
     secondary_custody_holder: crate::pty_custody::CustodyHolderIdentity,
     #[cfg(test)]

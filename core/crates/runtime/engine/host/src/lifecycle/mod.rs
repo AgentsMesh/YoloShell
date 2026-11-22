@@ -8,3 +8,6 @@ include!("lifecycle.rs");
 include!("lifecycle_product.rs");
 include!("lifecycle_product_runtime.rs");
 include!("lifecycle_operations.rs");
+
+#[path = "lifecycle_archive_attachments.rs"]
+mod archive_attachments;

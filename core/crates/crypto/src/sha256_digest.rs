@@ -18,6 +18,14 @@ impl Sha256Digest {
         Ok(Self(Sha256::digest(encoded).into()))
     }
 
+    pub fn as_bytes(&self) -> &[u8] {
+        &self.0
+    }
+
+    pub fn to_hex(self) -> String {
+        crate::sha256_hex::encode(&self.0)
+    }
+
     #[doc(hidden)]
     pub const fn repeated(value: u8) -> Self {
         Self([value; SHA256_DIGEST_BYTES])

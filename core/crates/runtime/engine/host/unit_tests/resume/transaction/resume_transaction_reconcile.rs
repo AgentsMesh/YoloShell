@@ -116,9 +116,8 @@ fn durable_resume_transaction_raises_catalog_generation_floor_before_launch() {
     let transaction = shell_resume_transaction(previous.runtime_epoch, &launch);
     host.publish_resume_transaction(&transaction).unwrap();
 
-    let floor =
-        catalog_rebuild::durable_controller_generation(&host.paths, &host.namespace).unwrap();
-    assert_eq!(floor, launch.controller_generation);
+    let startup = catalog_rebuild::durable_startup_state(&host.paths, &host.namespace).unwrap();
+    assert_eq!(startup.generation_floor, launch.controller_generation);
     assert!(!host.paths.worker_launch(manifest.terminal_id).exists());
 }
 

@@ -11,6 +11,7 @@ pub const MAX_TERMINAL_NAME_BYTES: usize = 256;
 /// Separates the Hub id from the terminal id in the short selector form.
 pub const SELECTOR_SEPARATOR: char = '/';
 pub const MAX_DIRECTORY_BYTES: usize = 4_096;
+pub const STAGE_ATTACHMENT_METHOD: &str = "stage_attachment";
 pub const MAX_INPUT_BYTES: usize = 65_536;
 pub const MAX_OUTPUT_CHUNK_BYTES: usize = 1_048_576;
 pub const MAX_SNAPSHOT_BYTES: usize = 8_388_608;

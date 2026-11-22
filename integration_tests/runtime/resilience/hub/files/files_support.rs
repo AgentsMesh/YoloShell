@@ -105,18 +105,33 @@ pub fn enable_files(
     policy.remaining_reexports = depth;
 }
 pub async fn visible_session(entry: &RunningNode, target: yolo_hub_identity::RuntimeTarget) {
-    assert!(matches!(
-        entry
-            .client()
-            .await
-            .call(
-                target.address.hub_id,
-                Command::Get {
-                    address: target.address
-                },
-                deadline()
-            )
-            .await,
-        Ok(Reply::Terminal { .. })
-    ));
+    // The agent catalogue may still contain a live row while a changed relay
+    // export is propagating. Wait for the terminal read on the new route.
+    tokio::time::timeout_at(deadline(), async {
+        loop {
+            let response = entry
+                .client()
+                .await
+                .call(
+                    target.address.hub_id,
+                    Command::Get {
+                        address: target.address,
+                    },
+                    deadline(),
+                )
+                .await;
+            match response {
+                Ok(Reply::Terminal { terminal }) => {
+                    assert_eq!(terminal.fields().address, target.address);
+                    return;
+                }
+                Err(yolo_hub_client::ClientError::Remote(
+                    PublicError::Unreachable | PublicError::Unauthorized,
+                )) => tokio::time::sleep(POLL).await,
+                other => panic!("terminal lookup failed: {other:?}"),
+            }
+        }
+    })
+    .await
+    .unwrap();
 }

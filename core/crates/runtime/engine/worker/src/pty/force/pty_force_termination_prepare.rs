@@ -54,6 +54,12 @@ impl PtyForceTermination {
         output: &mut ForceOutput<'_>,
     ) -> Result<ForceReady> {
         let ready = tree.prepare_poll()?;
+        #[cfg(target_os = "linux")]
+        if matches!(ready, crate::process::FreezeReady::Pending(_))
+            && let Some(proof) = output.prepare_linux_hangup(tree)?
+        {
+            return Ok(ForceReady::LinuxHangup(proof));
+        }
         let Some(version) = ready.kernel_eof_version().cloned() else {
             return Ok(ForceReady::Freezing(ready));
         };

@@ -26,28 +26,38 @@ pub fn captured(state: &mut State, jobs: &mpsc::Sender<Job>, event: MouseEvent) 
         state.pointer.capture = Some(capture);
         return;
     }
+    let Some((view, clamped)) = captured_event(state, capture, event) else {
+        return;
+    };
+    if forward(state, jobs, view, clamped) && matches!(event.kind, MouseEventKind::Drag(_)) {
+        state.pointer.capture = Some(capture);
+    }
+}
+
+fn captured_event(
+    state: &State,
+    capture: Capture,
+    event: MouseEvent,
+) -> Option<(PaneViewport, MouseEvent)> {
     if !state.presentation.current(&state.tab_layout(), state.mode)
         || state.tab_layout().focused() != capture.pane
     {
-        return;
+        return None;
     }
-    let Some(view) = state
+    let view = state
         .presentation
         .panes
         .iter()
         .find(|view| view.pane == capture.pane)
-        .copied()
-    else {
-        return;
-    };
-    let Some(grant) = view
+        .copied()?;
+    let grant = view
         .terminal
-        .and_then(|address| state.grant(address, std::time::Instant::now()))
-    else {
-        return;
-    };
-    if !same_authority(grant, capture.grant) || view.inner.width == 0 || view.inner.height == 0 {
-        return;
+        .and_then(|address| state.grant(address, std::time::Instant::now()))?;
+    if !crate::query_state::same_writer(grant, capture.grant)
+        || view.inner.width == 0
+        || view.inner.height == 0
+    {
+        return None;
     }
     let mut clamped = event;
     clamped.column = event.column.clamp(
@@ -62,9 +72,7 @@ pub fn captured(state: &mut State, jobs: &mpsc::Sender<Job>, event: MouseEvent) 
             .bottom()
             .saturating_sub(crate::constants::PANE_BORDER_CELLS),
     );
-    if forward(state, jobs, view, clamped) && matches!(event.kind, MouseEventKind::Drag(_)) {
-        state.pointer.capture = Some(capture);
-    }
+    Some((view, clamped))
 }
 
 pub fn forward(
@@ -73,28 +81,9 @@ pub fn forward(
     view: PaneViewport,
     event: MouseEvent,
 ) -> bool {
-    let Some(address) = view.terminal else {
+    let Some((grant, encoded)) = payload(state, view, event) else {
         return false;
     };
-    let Some(grant) = state.grant(address, std::time::Instant::now()) else {
-        return false;
-    };
-    if !state.input_ready(address) {
-        return false;
-    }
-    let Some(surface) = state.surfaces.get(&address) else {
-        return false;
-    };
-    if surface.cursor().target != grant.fields().target
-        || surface.screen().size() != (view.inner.height, view.inner.width)
-        || surface.screen().scrollback() != 0
-    {
-        return false;
-    }
-    let mut relative = event;
-    relative.column = event.column.saturating_sub(view.inner.x);
-    relative.row = event.row.saturating_sub(view.inner.y);
-    let encoded = yolo_tui_input::encode_mouse(relative, surface.screen());
     let sent = deliver(state, jobs, encoded);
     if sent {
         if let MouseEventKind::Down(button) = event.kind {
@@ -108,10 +97,23 @@ pub fn forward(
     sent
 }
 
-fn same_authority(left: LeaseGrant, right: LeaseGrant) -> bool {
-    let (left, right) = (left.fields(), right.fields());
-    left.target == right.target
-        && left.generation == right.generation
-        && left.capability == right.capability
-        && left.principal == right.principal
+fn payload(
+    state: &State,
+    view: PaneViewport,
+    mut event: MouseEvent,
+) -> Option<(LeaseGrant, Result<Vec<u8>, yolo_tui_input::InputError>)> {
+    let address = view.terminal?;
+    let grant = state.grant(address, std::time::Instant::now())?;
+    let surface = state.surfaces.get(&address)?;
+    if !state.input_ready(address)
+        || surface.cursor().target != grant.fields().target
+        || surface.screen().size() != (view.inner.height, view.inner.width)
+        || surface.screen().scrollback() != 0
+        || surface.screen().mouse_protocol_mode() == vt100::MouseProtocolMode::None
+    {
+        return None;
+    }
+    event.column = event.column.saturating_sub(view.inner.x);
+    event.row = event.row.saturating_sub(view.inner.y);
+    Some((grant, yolo_tui_input::encode_mouse(event, surface.screen())))
 }

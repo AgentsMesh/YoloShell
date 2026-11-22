@@ -16,6 +16,8 @@ mod launch;
 mod recovery_hint;
 mod snapshot;
 mod terminal_run;
+mod staging;
+pub use staging::stage_attachment;
 mod workspace;
 mod workspace_membership;
 mod workspace_reservation;

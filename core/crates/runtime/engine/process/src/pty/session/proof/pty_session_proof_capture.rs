@@ -42,7 +42,7 @@ impl PtySessionProof {
         ensure!(device != u64::default(), TTY_TYPE_DETAIL);
         ensure!(!capability.is_empty(), EMPTY_CAPABILITY_DETAIL);
         Ok(Self {
-            _tty_path: PathBuf::new(),
+            linux_slave: None,
             tty_device: device,
             capability,
             runtime: None,
@@ -63,10 +63,7 @@ impl PtySessionProof {
         let metadata = std::fs::metadata(&tty_path).context(TTY_METADATA_CONTEXT)?;
         ensure!(metadata.file_type().is_char_device(), TTY_TYPE_DETAIL);
         #[cfg(target_os = "linux")]
-        let tty_device = {
-            use std::os::unix::fs::MetadataExt;
-            metadata.rdev()
-        };
+        let slave = crate::process::LinuxPtySlaveIdentity::from_metadata(&metadata);
         #[cfg(target_os = "macos")]
         let tty_object_identity =
             Some(super::macos_object_identity::MacosPtyObjectIdentity::from_metadata(&metadata));
@@ -74,9 +71,9 @@ impl PtySessionProof {
             #[cfg(target_os = "macos")]
             tty_path,
             #[cfg(target_os = "linux")]
-            _tty_path: tty_path,
+            linux_slave: Some(slave),
             #[cfg(target_os = "linux")]
-            tty_device,
+            tty_device: slave.rdev,
             #[cfg(target_os = "macos")]
             tty_object_identity,
             #[cfg(target_os = "macos")]
@@ -103,7 +100,7 @@ impl PtySessionProof {
             #[cfg(target_os = "macos")]
             tty_path: PathBuf::new(),
             #[cfg(target_os = "linux")]
-            _tty_path: PathBuf::new(),
+            linux_slave: None,
             #[cfg(target_os = "linux")]
             tty_device: u64::default(),
             #[cfg(target_os = "macos")]

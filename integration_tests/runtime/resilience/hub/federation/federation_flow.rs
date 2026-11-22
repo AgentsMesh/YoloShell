@@ -6,7 +6,6 @@ use super::{
 };
 use std::sync::Arc;
 use yolo_hub_agent_protocol::{Freshness, Reachability};
-use yolo_hub_federation_settings::Configuration;
 use yolo_hub_rpc_protocol::{Command, Reply};
 use yolo_hub_terminal_protocol::{AttachRequest, LeaseMode, TerminalEvent};
 use yolo_hub_state::HubState;
@@ -28,32 +27,7 @@ async fn real_three_hubs_relay_reverse_connection_and_tui_keep_origin_custody() 
         b_state.peer_identity(),
         c_state.peer_identity(),
     );
-    let a_config = Configuration {
-        ssh_peers: Default::default(),
-        trusted_origins: vec![c],
-        file_roots: vec![],
-        peers: vec![peer(b, Some(&b_state), true, vec![])],
-    };
-    let b_config = Configuration {
-        ssh_peers: Default::default(),
-        trusted_origins: vec![],
-        file_roots: vec![],
-        peers: vec![
-            peer(
-                a,
-                None,
-                false,
-                vec![exports(b.hub(), false), exports(c.hub(), false)],
-            ),
-            peer(c, Some(&c_state), true, vec![]),
-        ],
-    };
-    let c_config = Configuration {
-        ssh_peers: Default::default(),
-        trusted_origins: vec![],
-        file_roots: vec![],
-        peers: vec![peer(b, Some(&b_state), false, vec![exports(c.hub(), true)])],
-    };
+    let (a_config, b_config, c_config) = shell_relay_config(&a_state, &b_state, &c_state);
     let a_node = RunningNode::start(&a_host, a_state, a_config).await;
     let b_node = RunningNode::start(&b_host, b_state, b_config.clone()).await;
     let c_node = RunningNode::start(&c_host, c_state, c_config).await;

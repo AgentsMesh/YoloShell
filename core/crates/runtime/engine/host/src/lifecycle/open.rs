@@ -35,8 +35,7 @@ impl Host {
             (HOST_WORKER_SOCKET_NAMESPACE_LABEL, worker_sockets),
         ])?;
         crate::durable_reboot::settle_all_pending(&paths, &namespace)?;
-        let durable_generation =
-            catalog_rebuild::durable_controller_generation(&paths, &namespace)?;
+        let startup = catalog_rebuild::durable_startup_state(&paths, &namespace)?;
         let catalog_entry = namespace.file(&paths.catalog())?;
         let (mut catalog, _) = Catalog::open_rebuildable_retained(catalog_entry, || {
             catalog_rebuild::durable_catalog_manifests(&paths, &namespace)
@@ -52,7 +51,7 @@ impl Host {
         creation_capabilities.recover_completed(&creation_ledger_path, &creation_receipts)?;
         namespace.verify()?;
         let secondary_custody_holder = crate::pty_custody::CustodyHolderIdentity::capture()?;
-        let controller_generation = catalog.claim_controller_generation(durable_generation)?;
+        let controller_generation = catalog.claim_controller_generation(startup.generation_floor)?;
         #[cfg(test)]
         pause_after_controller_claim(paths.home(), controller_generation);
         namespace.verify()?;
@@ -75,6 +74,7 @@ impl Host {
             request_drain: request_drain::HostRequestDrain::default(),
             parked_resume_retries: Mutex::new(HashMap::new()),
             pending_recovery_writes: Mutex::new(HashMap::new()),
+            pending_attachment_cleanup: Mutex::new(startup.archived_attachments),
             secondary_custody: secondary_custody::SecondaryCustodyRegistry::default(),
             secondary_custody_holder,
             #[cfg(test)]

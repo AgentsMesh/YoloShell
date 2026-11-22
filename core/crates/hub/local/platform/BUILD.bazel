@@ -23,6 +23,7 @@ _DEPS = [
     "//core/crates/transport/client:yolo_client",
     "//core/crates/wire:yolo_wire",
     "@crates//:futures",
+    "@crates//:libc",
     "@crates//:tokio",
     "@crates//:uuid",
 ]

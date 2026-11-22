@@ -1,9 +1,6 @@
 use crate::forward_diagnostics::ForwardStage;
 use crate::{Federation, node::now_ms, remote_source::RemoteSource};
 use std::sync::atomic::Ordering;
-use yolo_hub_agent_protocol::{
-    AgentPromptOutcome, AgentPromptResult, AgentPromptWait, CommandOutcome,
-};
 use yolo_hub_dispatch::{Dispatcher, Operation, OperationFuture};
 use yolo_hub_identity::HubId;
 use yolo_hub_peer_protocol::{Call, MAX_CALL_LIFETIME_MS, Purpose, Signed, required_rights};
@@ -150,28 +147,21 @@ impl Federation {
                     list: yolo_hub_federation_aggregate::workspaces(request, local, &catalogues),
                 }))
             }
+            _ => self.origin_operation(request, &self.backend).await,
+        }
+    }
+
+    /// Only the entry aggregates inventory. Local clients and admitted peers
+    /// share native control and waits while each ingress retains its dispatcher.
+    pub(crate) async fn origin_operation(
+        &self, request: Request, fallback: &dyn Dispatcher,
+    ) -> Result<Operation, PublicError> {
+        match &request.fields().command {
             Command::AgentPrompt { request } => {
-                let execution = self.backend.prompt_agent(request).await?;
-                let (outcome, snapshot) = match execution.receipt.outcome() {
-                    CommandOutcome::Failed { .. } => (AgentPromptOutcome::Rejected, None),
-                    CommandOutcome::Unknown {} => (AgentPromptOutcome::Unknown, None),
-                    _ => match request.fields().wait {
-                        AgentPromptWait::None => (AgentPromptOutcome::Delivered, None),
-                        AgentPromptWait::TurnEnd { timeout_ms } => yolo_hub_agent_wait::prompt_turn(
-                            &self.backend, self.hub_id(), execution.target, execution.baseline,
-                            timeout_ms, self.catalogue_wake.subscribe(),
-                        )
-                        .await?,
-                    },
-                };
-                Ok(Operation::Reply(Reply::AgentPrompt {
-                    prompt: AgentPromptResult {
-                        receipt: execution.receipt,
-                        terminal: execution.terminal,
-                        outcome,
-                        snapshot,
-                    },
-                }))
+                let prompt = yolo_hub_agent_wait::submit(
+                    &self.backend, request, self.catalogue_wake.subscribe(),
+                ).await?;
+                Ok(Operation::Reply(Reply::AgentPrompt { prompt }))
             }
             Command::WaitAgents { request } => {
                 let mut request = request.clone();
@@ -188,7 +178,7 @@ impl Federation {
                 .await?;
                 Ok(Operation::Reply(Reply::AgentWait { wait: result }))
             }
-            _ => self.backend.dispatch(request).await,
+            _ => fallback.dispatch(request).await,
         }
     }
 }

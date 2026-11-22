@@ -84,6 +84,8 @@ pub(crate) fn decode(value: Value, method: Method) -> Result<Reply, PublicError>
     use Method::*;
     let tag = match method {
         Hello => reply_tag::HELLO,
+        Extensions => reply_tag::EXTENSIONS,
+        StageAttachment => reply_tag::STAGED_ATTACHMENT,
         GetBuild => reply_tag::BUILD,
         List => reply_tag::TERMINALS,
         Get | Terminal | CleanupArchive => reply_tag::TERMINAL,

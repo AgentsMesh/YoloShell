@@ -146,13 +146,11 @@ impl Host {
         }
         let current = self
             .read_namespace_json::<RuntimeRecord>(&self.paths.runtime_record(record.terminal_id));
-        let exit =
-            self.read_namespace_json::<ExitRecord>(&self.paths.exit_record(record.terminal_id));
         let current_matches =
             matches!(current, Ok(current) if current.has_same_process_identity(record));
-        let exit_matches = matches!(exit, Ok(exit) if exit.runtime_epoch == record.runtime_epoch);
-        current_matches && (exit_matches || self.stable_termination_tombstone_matches(record))
+        current_matches && yolo_host_archive::exit_or_tombstone_matches(&self.paths, &self.namespace, record)
     }
+
 }
 
 include!("lifecycle_archive_publication.rs");

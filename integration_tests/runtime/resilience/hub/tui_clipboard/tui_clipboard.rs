@@ -40,18 +40,21 @@ async fn real_tui_clipboard_is_explicit_passive_frozen_and_fenced_from_provider_
     gesture::finish(&mut driver, anchor).await;
     assert!(driver.screen().contents().contains(SOURCE_MARKER));
     assert!(!driver.screen().contents().contains(LIVE_MARKER));
+    probe
+        .assert_commands(Phase::Release, &[EXPECTED_COMMAND], &driver)
+        .await;
     driver.send(COPY).await;
     driver
         .wait(|text| text.contains(COPY_LABEL) && text.contains(LIVE_MARKER))
         .await;
     probe
-        .assert_commands(Phase::ExplicitCopy, &[EXPECTED_COMMAND], &driver)
+        .assert_commands(Phase::ExplicitCopy, &[EXPECTED_COMMAND; 2], &driver)
         .await;
     assert!(source.emit(PROVIDER_CLIPBOARD).await.is_empty());
     assert!(source.emit(SOURCE_OUTPUT).await.is_empty());
     driver.wait(|text| text.contains(SOURCE_MARKER)).await;
     probe
-        .assert_commands(Phase::ProviderOutput, &[EXPECTED_COMMAND], &driver)
+        .assert_commands(Phase::ProviderOutput, &[EXPECTED_COMMAND; 2], &driver)
         .await;
 
     let anchor = gesture::begin(&mut driver).await;
@@ -60,7 +63,7 @@ async fn real_tui_clipboard_is_explicit_passive_frozen_and_fenced_from_provider_
     driver.send(COPY).await;
     driver.wait(|text| text.contains(NO_SELECTION_LABEL)).await;
     probe
-        .assert_commands(Phase::FocusLost, &[EXPECTED_COMMAND], &driver)
+        .assert_commands(Phase::FocusLost, &[EXPECTED_COMMAND; 2], &driver)
         .await;
     assert!(source.emit(query::EMPTY_OUTPUT).await.is_empty());
     let observed_reply = hub
@@ -95,7 +98,7 @@ async fn real_tui_clipboard_is_explicit_passive_frozen_and_fenced_from_provider_
     let _ = holder.stop().await;
     runtime::replace(&host, &mut driver, source.target).await;
     probe
-        .assert_commands(Phase::RuntimeReplaced, &[EXPECTED_COMMAND], &driver)
+        .assert_commands(Phase::RuntimeReplaced, &[EXPECTED_COMMAND; 3], &driver)
         .await;
     drop(probe);
     driver.finish().await;

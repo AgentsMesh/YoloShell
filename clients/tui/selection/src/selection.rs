@@ -51,6 +51,10 @@ impl Selection {
         Ok(())
     }
 
+    pub fn has_extent(&self) -> bool {
+        self.head != self.anchor
+    }
+
     pub fn is_dragging(&self) -> bool {
         self.dragging
     }

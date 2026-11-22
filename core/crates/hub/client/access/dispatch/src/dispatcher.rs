@@ -41,6 +41,14 @@ impl ScopedDispatcher {
                         .methods
                         .retain(|method| admission::advertised(&self.admission, *method));
                 }
+                if let Reply::Extensions { methods } = &mut reply {
+                    let destination = request.fields().destination;
+                    methods.retain(|name| {
+                        name == yolo_hub_terminal_protocol::STAGE_ATTACHMENT_METHOD
+                            && yolo_hub_rpc_protocol::Method::StageAttachment.required_rights()
+                                .is_some_and(|rights| self.admission.grant().allows(destination, &rights))
+                    });
+                }
                 Ok(Operation::Reply(reply))
             }
             Operation::Attached(source) => {

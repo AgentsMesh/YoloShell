@@ -68,6 +68,7 @@ async fn real_three_hubs_attenuate_origin_observe_only_grant_without_granting_co
     assert_eq!(from_a, from_c);
     assert_eq!(from_b, from_c);
     let address = *from_c.first().unwrap();
+    super::federation_staging::denied(&a_node, &c_host, created.target).await;
     denials::verify(&a_node, &b_node, &c_node, &c_host, &created, address).await;
     a_node.stop().await;
     b_node.stop().await;

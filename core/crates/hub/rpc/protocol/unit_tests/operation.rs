@@ -69,6 +69,11 @@ fn operation_table_defines_every_method_once_and_keeps_the_wire_groups_explicit(
             Method::AgentPrompt,
         ]
     );
+    assert_eq!(EXTENSION_METHODS, &[Method::Extensions, Method::StageAttachment]);
+    assert_eq!(
+        Method::StageAttachment.required_rights(),
+        Some([Right::TerminalWrite].into_iter().collect())
+    );
     assert_eq!(
         MANAGEMENT_METHODS,
         &[Method::GetConfiguration, Method::ListConsumers, Method::Configure]

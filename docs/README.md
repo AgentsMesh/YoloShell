@@ -54,7 +54,7 @@ validation notes and internal release evidence are not part of the public tree.
 - [Provider extension contract](provider-extension-contract.md)
 - [Provider runtime capabilities](provider-runtime-capabilities.md)
 - [Provider hooks research](provider-hooks-research.md)
-- [Conversation reader contract](conversation-reader-contract.md)
+- [Managed Chat v1](chat-protocol.md) and [conversation reader contract](conversation-reader-contract.md)
 - [Creation query origin](creation-query-origin.md)
 - [Protocol creation transaction](protocol-creation-transaction.md)
 

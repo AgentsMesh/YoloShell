@@ -84,6 +84,7 @@ pub struct State {
     pub(crate) pointer: crate::pointer::Pointer,
     pub(crate) pane_view: crate::pane_view::PaneView,
     pub(crate) document: yolo_tui_document::View,
+    pub(crate) attachment: Option<crate::attachments::Attachment>,
     pub(crate) selection: crate::selection_state::SelectionState,
     pub(crate) hub_manager: Option<yolo_tui_hub_manager::Manager>,
 }
@@ -147,6 +148,7 @@ impl Default for State {
             pointer: crate::pointer::Pointer::default(),
             pane_view: crate::pane_view::PaneView::default(),
             document: Default::default(),
+            attachment: None,
             selection: crate::selection_state::SelectionState::default(),
             hub_manager: None,
         }

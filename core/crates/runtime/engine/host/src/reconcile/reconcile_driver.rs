@@ -42,6 +42,7 @@ impl Host {
             result.merge(session_result);
         }
         result.unreachable += self.retry_pending_recovery_writes().await;
+        result.unreachable += self.retry_archived_attachment_cleanup().await;
         result
     }
 }

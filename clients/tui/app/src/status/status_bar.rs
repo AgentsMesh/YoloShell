@@ -15,6 +15,10 @@ pub(crate) fn draw(
     area: Rect,
     desired: Option<TerminalSize>,
 ) {
+    if let Some(attachment) = &state.attachment {
+        attachment.dialog.draw(frame, area);
+        return;
+    }
     if state.prefix {
         let hint = if state.client_capability_enabled(ClientCapability::TerminalLifecycle) {
             PREFIX_HINT

@@ -4,9 +4,9 @@ use std::sync::Arc;
 use tokio::io::{AsyncRead, AsyncWrite};
 use tokio::time::Instant;
 use yolo_hub_dispatch::{Dispatcher, Operation};
-use yolo_hub_jsonrpc_protocol::{Answer, Call, Fault, PARSE_ERROR, decode};
+use yolo_hub_jsonrpc_protocol::{Answer, Call, ClientCall, Fault, PARSE_ERROR, decode};
 use yolo_hub_jsonrpc_transport::{Framed, Incoming};
-use yolo_hub_rpc_protocol::{Command, Reply, Response};
+use yolo_hub_rpc_protocol::{Command, Reply};
 use yolo_hub_state::HubState;
 use yolo_local_unix::LocalUnixStream;
 
@@ -43,9 +43,9 @@ pub(crate) async fn serve_stream<S: AsyncRead + AsyncWrite + Send + Unpin>(
         if decoded.as_ref().is_ok_and(Call::is_notification) {
             continue;
         }
-        let request = match decoded
+        let incoming = match decoded
             .map_err(|_| Fault::new(None, PARSE_ERROR))
-            .and_then(Call::parse)
+            .and_then(ClientCall::parse)
         {
             Ok(request) => request,
             Err(fault) => {
@@ -56,6 +56,7 @@ pub(crate) async fn serve_stream<S: AsyncRead + AsyncWrite + Send + Unpin>(
             }
         };
         state.verify()?;
+        let request = &incoming.call;
         let fields = request.fields();
         if !greeted {
             ensure!(
@@ -64,13 +65,13 @@ pub(crate) async fn serve_stream<S: AsyncRead + AsyncWrite + Send + Unpin>(
             );
             greeted = true;
         }
-        let result = operation::dispatch(dispatcher.as_ref(), &request).await;
+        let result = operation::dispatch(dispatcher.as_ref(), request).await;
         state.verify()?;
         let reply = match result {
             Ok(Operation::Attached(source)) => {
                 yolo_hub_terminal_wire::send_attachment(
                     &mut channel,
-                    &request,
+                    request,
                     source.initial(),
                     Instant::now() + OPERATION_TIMEOUT,
                 )
@@ -80,19 +81,8 @@ pub(crate) async fn serve_stream<S: AsyncRead + AsyncWrite + Send + Unpin>(
             Ok(Operation::Reply(reply)) => reply,
             Err(code) => Reply::Error { code },
         };
-        respond(&mut channel, &request, reply).await?;
+        channel
+            .send(&incoming.answer(reply)?, Instant::now() + OPERATION_TIMEOUT)
+            .await?;
     }
-}
-
-async fn respond<S: AsyncWrite + Unpin>(
-    channel: &mut Framed<S>,
-    request: &Call,
-    reply: Reply,
-) -> Result<()> {
-    Response::new(request, request.fields().destination, reply.clone()).validate_for(request)?;
-    let response = Answer::new(request, reply)?;
-    channel
-        .send(&response, Instant::now() + OPERATION_TIMEOUT)
-        .await?;
-    Ok(())
 }

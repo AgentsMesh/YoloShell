@@ -9,6 +9,7 @@ _DEPS = [
     "//core/crates/crypto:yolo_crypto",
     "//core/crates/hub/conversation/client:yolo_hub_conversation_client",
     "//clients/tui/chat:yolo_tui_chat",
+    "//clients/tui/clipboard:yolo_tui_clipboard",
     "//clients/tui/constants:yolo_tui_app_constants",
     "//core/crates/hub/catalog/client:yolo_hub_catalog_client",
     "//core/crates/hub/client/channels:yolo_hub_client_channels",

@@ -8,7 +8,7 @@ pub struct PtySessionProof {
     #[cfg(target_os = "macos")]
     tty_path: PathBuf,
     #[cfg(target_os = "linux")]
-    _tty_path: PathBuf,
+    linux_slave: Option<crate::process::LinuxPtySlaveIdentity>,
     #[cfg(target_os = "linux")]
     tty_device: u64,
     #[cfg(target_os = "macos")]

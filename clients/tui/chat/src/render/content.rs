@@ -2,7 +2,9 @@ use super::{Row, wrap};
 use crate::{Chat, constants::*};
 use ratatui::style::Color;
 use std::collections::VecDeque;
-use yolo_conversation_protocol::{ConversationPart, ConversationRole};
+use yolo_conversation_protocol::{
+    ChatContent, ChatUpdate, ConversationRole, ToolContent, ToolOutcome,
+};
 
 pub(super) fn rows(chat: &Chat, width: u16) -> Vec<Row> {
     let mut rows = VecDeque::new();
@@ -14,8 +16,8 @@ pub(super) fn rows(chat: &Chat, width: u16) -> Vec<Row> {
             ConversationRole::Runtime => (RUNTIME, Color::DarkGray),
         };
         add(&mut rows, role, width, color);
-        for part in &entry.parts {
-            part_rows(&mut rows, part, width);
+        for update in entry.chat_updates() {
+            update_rows(&mut rows, update, width);
         }
     }
     if rows.is_empty() {
@@ -24,61 +26,73 @@ pub(super) fn rows(chat: &Chat, width: u16) -> Vec<Row> {
     rows.into_iter().collect()
 }
 
-fn part_rows(rows: &mut VecDeque<Row>, part: &ConversationPart, width: u16) {
+fn update_rows(rows: &mut VecDeque<Row>, update: ChatUpdate<'_>, width: u16) {
     let plain = Color::Reset;
-    match part {
-        ConversationPart::Text { text } => add(rows, text, width, plain),
-        ConversationPart::Thinking { text } => {
-            add(rows, THINKING, width, Color::DarkGray);
-            add(rows, text, width, Color::DarkGray);
+    match update {
+        ChatUpdate::UserMessageChunk { content } | ChatUpdate::AgentMessageChunk { content } => {
+            content_rows(rows, content, width, plain);
         }
-        ConversationPart::ToolCall {
-            call_id,
-            name,
-            arguments,
+        ChatUpdate::AgentThoughtChunk { content } => {
+            add(rows, THINKING, width, Color::DarkGray);
+            content_rows(rows, content, width, Color::DarkGray);
+        }
+        ChatUpdate::ToolCall {
+            tool_call_id,
+            title,
+            raw_input,
         } => {
             add(
                 rows,
-                &format!("{TOOL}: {} ({})", wrap::safe(name), wrap::safe(call_id)),
+                &format!(
+                    "{TOOL}: {} ({})",
+                    wrap::safe(title),
+                    wrap::safe(tool_call_id)
+                ),
                 width,
                 Color::Yellow,
             );
-            add(rows, arguments, width, plain);
+            add(rows, raw_input, width, plain);
         }
-        ConversationPart::ToolResult {
-            call_id,
-            output,
-            is_error,
+        ChatUpdate::ToolCallUpdate {
+            tool_call_id,
+            status,
+            content: [ToolContent::Content { content }],
         } => {
-            let label = if *is_error { TOOL_ERROR } else { TOOL_RESULT };
-            let color = if *is_error { Color::Red } else { Color::Yellow };
+            let (label, color) = match status {
+                ToolOutcome::Failed => (TOOL_ERROR, Color::Red),
+                ToolOutcome::Completed => (TOOL_RESULT, Color::Yellow),
+            };
             add(
                 rows,
-                &format!("{label}: {}", wrap::safe(call_id)),
+                &format!("{label}: {}", wrap::safe(tool_call_id)),
                 width,
                 color,
             );
-            add(rows, output, width, plain);
+            content_rows(rows, content, width, plain);
         }
-        ConversationPart::Compaction { summary } => {
+        ChatUpdate::CompactionUpdate {
+            summary: [content], ..
+        } => {
             add(rows, COMPACTION, width, Color::DarkGray);
-            add(rows, summary, width, plain);
+            content_rows(rows, content, width, plain);
         }
-        ConversationPart::Notice { text } => add(rows, text, width, Color::Yellow),
-        ConversationPart::Unsupported { native_kind } => {
-            add(
-                rows,
-                &format!("{UNSUPPORTED}: {}", wrap::safe(native_kind)),
-                width,
-                Color::DarkGray,
-            );
+        ChatUpdate::Notice {
+            title, description, ..
+        } => {
+            add(rows, title, width, Color::Yellow);
+            if let Some(detail) = description {
+                add(rows, detail, width, Color::DarkGray);
+            }
         }
-        ConversationPart::ImageUnavailable { media_type } => {
-            let label = media_type.as_ref().map_or_else(
-                || IMAGE_UNAVAILABLE.into(),
-                |kind| format!("{IMAGE_UNAVAILABLE}: {}", wrap::safe(kind)),
-            );
-            add(rows, &label, width, Color::DarkGray);
+    }
+}
+
+fn content_rows(rows: &mut VecDeque<Row>, content: ChatContent<&str>, width: u16, color: Color) {
+    match content {
+        ChatContent::Text { text } => add(rows, text, width, color),
+        ChatContent::ResourceLink { name, uri, .. } => {
+            add(rows, name, width, color);
+            add(rows, uri, width, Color::DarkGray);
         }
     }
 }

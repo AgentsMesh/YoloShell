@@ -8,6 +8,7 @@ use capture::Capture;
 #[derive(Clone, Copy, Debug)]
 pub enum Phase {
     SourceOutput,
+    Release,
     ExplicitCopy,
     ProviderOutput,
     FocusLost,

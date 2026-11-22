@@ -13,6 +13,15 @@ pub(crate) fn prefix(
     key: KeyCode,
 ) -> bool {
     state.pointer = crate::pointer::Pointer::default();
+    if let KeyCode::Char(']' | 'u') = key {
+        let source = if key == KeyCode::Char(']') {
+            yolo_tui_clipboard::InitialSource::Clipboard
+        } else {
+            yolo_tui_clipboard::InitialSource::LocalFile
+        };
+        crate::attachments::open(state, source);
+        return false;
+    }
     if key == KeyCode::Char(crate::chat::TOGGLE_KEY) {
         crate::chat::toggle(state);
         return false;

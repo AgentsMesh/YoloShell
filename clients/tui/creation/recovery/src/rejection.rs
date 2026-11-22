@@ -55,6 +55,10 @@ pub(crate) fn error(error: &ControlError) -> Option<BlockedReason> {
             ClientError::Unsupported | ClientError::UnsupportedEndpoint => {
                 Some(BlockedReason::Unsupported)
             }
+            // Staging a local attachment cannot dispatch a shell creation.
+            ClientError::AttachmentRead(_) => {
+                Some(BlockedReason::Rejected(PublicError::InvalidPayload))
+            }
             ClientError::InvalidEndpoint => Some(BlockedReason::InvalidEndpoint),
             ClientError::WrongLocalUser => Some(BlockedReason::WrongLocalUser),
         },

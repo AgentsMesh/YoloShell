@@ -15,6 +15,8 @@ pub(crate) const DESTINATION_FIELD: &str = "destination";
 pub(crate) const RESULT_TAG: &str = "result";
 
 pub(crate) mod reply_tag {
+    pub const EXTENSIONS: &str = "extensions";
+    pub const STAGED_ATTACHMENT: &str = "staged_attachment";
     pub const HELLO: &str = "hello";
     pub const BUILD: &str = "build";
     pub const TERMINALS: &str = "terminals";

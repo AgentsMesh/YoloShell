@@ -42,6 +42,20 @@ impl PtyForceTermination {
                 };
                 (next, ForceTerminationPoll::Pending)
             }
+            #[cfg(target_os = "linux")]
+            (PtyProcessCustody::Freezing(tree), ForceReady::LinuxHangup(proof)) => {
+                match tree.commit_linux_hangup(proof) {
+                    Ok(gone) => (
+                        PtyProcessCustody::GonePending(gone),
+                        ForceTerminationPoll::Pending,
+                    ),
+                    Err(failure) => {
+                        let (tree, error) = failure.into_parts();
+                        *custody = Some(PtyProcessCustody::Freezing(tree));
+                        return Err(error);
+                    }
+                }
+            }
             (PtyProcessCustody::Frozen(tree), ForceReady::Frozen(ready)) => {
                 let next = match tree.commit_kill(ready) {
                     KillCommitPoll::Refreeze(tree) => PtyProcessCustody::Freezing(tree),

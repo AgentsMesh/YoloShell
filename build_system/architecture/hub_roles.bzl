@@ -111,6 +111,7 @@ PUBLIC_COMPONENTS = [
 
 CLIENT_COMPONENTS = [
     "//clients/tui/chat:yolo_tui_chat",
+    "//clients/tui/clipboard:yolo_tui_clipboard",
     "//core/crates/hub/conversation/client:yolo_hub_conversation_client",
     YOLO_HUB_CLIENT_TRANSPORT,
     YOLO_HUB_SSH_ENTRY,

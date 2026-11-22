@@ -80,7 +80,7 @@ pub(crate) mod socket_stage;
 #[path = "../test_support/persistence_api.rs"]
 #[doc(hidden)]
 pub mod test_support;
-pub use yolo_paths_core::validation;
+pub use yolo_paths_core::{attachments, validation};
 #[path = "worker_artifacts.rs"]
 pub mod worker_artifacts;
 pub use crate::ReadVersionChanged;

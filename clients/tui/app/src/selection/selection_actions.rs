@@ -20,21 +20,30 @@ pub(crate) fn sync(state: &mut State) {
     }
 }
 
-/// Call only from the explicit Ctrl+B y key-press branch.
+/// Copy again on Ctrl+B y and resume the live screen.
 pub(crate) fn copy(state: &mut State) {
     sync(state);
+    if queue(state) {
+        state.selection.active = None;
+    }
+}
+
+pub(crate) fn queue(state: &mut State) -> bool {
     let Some(active) = state.selection.active.as_ref() else {
         state.status = NO_SELECTION_LABEL.into();
-        return;
+        return false;
     };
     match active.text.clipboard() {
         Ok(command) => {
             // A single bounded command waits for the outer screen's owner.
             state.selection.pending = Some(command);
-            cancel(state);
             state.status = COPY_QUEUED_LABEL.into();
+            true
         }
-        Err(error) => state.status = error.to_string(),
+        Err(error) => {
+            state.status = error.to_string();
+            false
+        }
     }
 }
 

@@ -8,6 +8,7 @@ const ACTIVE_CLIENTS: &str = "host accepted a client during automatic idle shutd
 const ACTIVE_CREATION: &str = "host has an active session creation transaction";
 const ACTIVE_RESUME: &str = "host has an active session recovery transaction";
 const PENDING_RECOVERY_WRITE: &str = "host has an uncommitted recovery state write";
+const PENDING_ARCHIVE_CLEANUP: &str = "host has pending archived attachment cleanup";
 const ACTIVE_SESSION: &str = "host has a live or indeterminate session";
 const CATALOG_UNCERTAIN: &str = "host catalog contains an indeterminate row";
 
@@ -72,6 +73,9 @@ impl Host {
         }
         if !lock_recover(&self.pending_recovery_writes).is_empty() {
             return Err(ErrorBody::conflict(PENDING_RECOVERY_WRITE));
+        }
+        if !lock_recover(&self.pending_attachment_cleanup).is_empty() {
+            return Err(ErrorBody::conflict(PENDING_ARCHIVE_CLEANUP));
         }
         let listing = self.catalog_list_tolerant(true).await.map_err(internal)?;
         if !listing.diagnostics.is_empty() {

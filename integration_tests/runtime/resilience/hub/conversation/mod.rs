@@ -7,9 +7,10 @@ use yolo_conversation_protocol::{ConversationPart, ConversationReadResult};
 use yolo_hub_client::ClientError;
 use yolo_hub_conversation_client::{self as conversation, ConversationClientError};
 use yolo_hub_federation_settings::Configuration;
-use yolo_hub_terminal_protocol::PublicError;
 use yolo_hub_state::HubState;
+use yolo_hub_terminal_protocol::PublicError;
 
+mod chat;
 mod constants;
 mod support;
 use constants::*;
@@ -56,7 +57,10 @@ async fn real_three_hub_conversation_reads_preserve_origin_and_revocation_keeps_
         ..Configuration::default()
     };
     let a_node = RunningNode::start(&a_host, a_state, a_config).await;
-    let c_node = RunningNode::start(&c_host, c_state, c_config).await;
+    let origin = super::files_runtime::prepared(&c_host, &c_state, &c_config)
+        .await
+        .with_conversations(yolo_agent_providers::builtin_conversation_sources());
+    let c_node = RunningNode::start_prepared(c_state, c_config, origin).await;
     let target = launch(&c_node, &c_host, NAME_C).await;
     a_node.wait_origins(&[c.hub()]).await;
     let before = c_host
@@ -90,6 +94,15 @@ async fn real_three_hub_conversation_reads_preserve_origin_and_revocation_keeps_
             .any(|part| matches!(part, ConversationPart::Text { text } if text == CONTENT_MARKER))
     );
 
+    let chat = chat::read(&a_node, a.hub(), &request).await;
+    assert_eq!(chat["result"]["version"], 1);
+    chat::verify(
+        &chat["result"]["reading"]["page"],
+        &descriptor.address.chat_session_id(),
+    );
+
+    chat::verify_origin_prompt(&a_node, &request).await;
+
     b_config
         .peers
         .iter_mut()
@@ -112,6 +125,7 @@ async fn real_three_hub_conversation_reads_preserve_origin_and_revocation_keeps_
     })
     .await
     .unwrap();
+    assert!(chat::read(&a_node, a.hub(), &request).await["error"].is_object());
     a_node.wait_origins(&[c.hub()]).await;
     super::files_support::visible_session(&a_node, target).await;
     // A real terminal input/output exchange must still succeed through the same relay.

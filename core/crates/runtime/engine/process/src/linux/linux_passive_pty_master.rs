@@ -19,6 +19,17 @@ pub(crate) struct LinuxPtySlaveIdentity {
     pub(super) rdev: u64,
 }
 
+impl LinuxPtySlaveIdentity {
+    pub(crate) fn from_metadata(metadata: &std::fs::Metadata) -> Self {
+        use std::os::unix::fs::MetadataExt;
+        Self {
+            device: metadata.dev(),
+            inode: metadata.ino(),
+            rdev: metadata.rdev(),
+        }
+    }
+}
+
 pub(crate) struct LinuxPassivePtyMaster {
     descriptor: OwnedFd,
     slave: LinuxPtySlaveIdentity,
@@ -71,29 +82,20 @@ fn validate_descriptor(descriptor: &OwnedFd) -> Result<()> {
     Ok(())
 }
 
-fn exact_slave_identity(master: RawFd) -> Result<LinuxPtySlaveIdentity> {
-    let flags = libc::O_RDONLY | libc::O_NOCTTY | libc::O_CLOEXEC;
+pub(super) fn exact_slave_identity(master: RawFd) -> Result<LinuxPtySlaveIdentity> {
+    // An O_PATH descriptor identifies the devpts inode without opening the tty
+    // for I/O or changing a master's hangup while verifying transferred custody.
+    let flags = libc::O_PATH | libc::O_NOCTTY | libc::O_CLOEXEC;
     let descriptor = unsafe { libc::ioctl(master, libc::TIOCGPTPEER, flags) };
     ensure!(
         descriptor != SYSTEM_FAILURE,
         std::io::Error::last_os_error()
     );
     let slave = unsafe { File::from_raw_fd(descriptor) };
-    let mut status = std::mem::MaybeUninit::<libc::stat>::uninit();
-    ensure!(
-        unsafe { libc::fstat(slave.as_raw_fd(), status.as_mut_ptr()) } != SYSTEM_FAILURE,
-        std::io::Error::last_os_error()
-    );
-    let status = unsafe { status.assume_init() };
-    ensure!(
-        status.st_mode & libc::S_IFMT == libc::S_IFCHR,
-        SLAVE_TYPE_DETAIL
-    );
-    Ok(LinuxPtySlaveIdentity {
-        device: status.st_dev,
-        inode: status.st_ino,
-        rdev: status.st_rdev,
-    })
+    use std::os::unix::fs::FileTypeExt;
+    let metadata = slave.metadata()?;
+    ensure!(metadata.file_type().is_char_device(), SLAVE_TYPE_DETAIL);
+    Ok(LinuxPtySlaveIdentity::from_metadata(&metadata))
 }
 
 fn fcntl(descriptor: RawFd, operation: libc::c_int) -> Result<libc::c_int> {

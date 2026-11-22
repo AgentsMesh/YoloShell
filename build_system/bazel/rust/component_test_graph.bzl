@@ -27,6 +27,7 @@ _BASE_COMPONENT_ENTRIES = [
     ("persistence/maintenance", "yolo_maintenance"),
     ("runtime/engine/custody/guardian", "yolo_custody_guardian"),
     ("runtime/engine/host", "yolo_host"),
+    ("runtime/engine/host/archive", "yolo_host_archive"),
     ("runtime/engine/host/retained_history", "yolo_host_retained_history"),
     ("runtime/engine/host/operation/deadline", "yolo_host_operation_deadline"),
     ("runtime/engine/process", "yolo_process"),

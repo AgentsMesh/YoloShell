@@ -150,3 +150,5 @@ Semantic reply validation runs before a channel is reused; an invalid body
 retires it. Cancellation after dispatch leaves a mutation's outcome unknown and
 never replays it. Cancellation before admission issues no operation. There is no
 native AppKit client or App-to-relay ABI.
+
+Remote image and file transfer is documented in [Terminal attachments](terminal-attachments.md).

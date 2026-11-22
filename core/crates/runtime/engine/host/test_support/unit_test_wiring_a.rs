@@ -23,6 +23,7 @@
 #[cfg(all(test, feature = "yolo-unit-tests"))] #[path = "../unit_tests/worker/worker_status_identity_tests.rs"] mod worker_status_identity_tests;
 #[cfg(all(test, feature = "yolo-unit-tests"))] #[path = "../unit_tests/archive_race.rs"] mod archive_race;
 #[cfg(all(test, feature = "yolo-unit-tests"))] #[path = "../unit_tests/archive_catalog_race.rs"] mod archive_catalog_race;
+#[cfg(all(test, feature = "yolo-unit-tests"))] #[path = "../unit_tests/lifecycle/archive_attachments.rs"] mod archive_attachments;
 #[cfg(all(test, feature = "yolo-unit-tests"))] #[path = "../unit_tests/reconcile/reconcile_edges.rs"] mod reconcile_edges;
 #[cfg(all(test, feature = "yolo-unit-tests"))] #[path = "../unit_tests/reconcile/reconcile_branch_convergence.rs"] mod reconcile_branch_convergence;
 #[cfg(all(test, feature = "yolo-unit-tests"))] #[path = "../unit_tests/reconcile/reconcile_catalog_branch_convergence.rs"] mod reconcile_catalog_branch_convergence;

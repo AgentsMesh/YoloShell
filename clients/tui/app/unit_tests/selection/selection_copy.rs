@@ -3,12 +3,18 @@ use crate::selection_actions;
 use crossterm::event::{KeyCode, KeyModifiers};
 
 #[test]
-fn explicit_copy_works_for_observers_even_with_provider_mouse_mode_and_never_acquires_input() {
+fn release_and_explicit_copy_work_for_observers_even_with_provider_mouse_mode_and_never_acquires_input()
+ {
     let mut fixture = Fixture::new();
     fixture.begin(FIRST, FIRST);
     assert!(selection_actions::take_clipboard(&mut fixture.state).is_none());
     fixture.finish(LAST_ALPHA, FIRST);
-    assert!(selection_actions::take_clipboard(&mut fixture.state).is_none());
+    assert_eq!(
+        selection_actions::take_clipboard(&mut fixture.state)
+            .unwrap()
+            .as_bytes(),
+        EXPECTED_COPY
+    );
     fixture.copy();
     assert_eq!(
         selection_actions::take_clipboard(&mut fixture.state)
@@ -86,4 +92,29 @@ fn busy_terminal_continues_updating_while_selection_and_display_copy_the_frozen_
     );
     assert!(selection_actions::display_screen(&fixture.state, fixture.target.address).is_none());
     fixture.no_input();
+}
+
+#[test]
+fn plain_terminal_drag_copies_and_a_click_leaves_the_clipboard_alone() {
+    use crate::pointer;
+    use crossterm::event::{MouseButton, MouseEventKind};
+    let mut fixture = Fixture::new();
+    fixture.emit(b"\x1b[?1002l");
+    for (end, copied) in [(FIRST, false), (LAST_ALPHA, true)] {
+        let x = fixture.view.inner.x;
+        let y = fixture.view.inner.y;
+        pointer::handle(
+            &mut fixture.state,
+            &fixture.jobs,
+            super::panes::mouse(MouseEventKind::Down(MouseButton::Left), x, y),
+        );
+        fixture.finish(end, FIRST);
+        assert_eq!(
+            selection_actions::take_clipboard(&mut fixture.state)
+                .as_ref()
+                .map(|value| value.as_bytes()),
+            copied.then_some(EXPECTED_COPY)
+        );
+        fixture.no_input();
+    }
 }

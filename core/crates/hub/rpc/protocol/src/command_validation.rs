@@ -6,7 +6,11 @@ use yolo_hub_terminal_protocol::PublicError;
 impl Command {
     pub fn validate_origin(&self, origin: HubId) -> Result<(), PublicError> {
         let owner = match self {
-            Self::ListLayouts {} => None,
+            Self::Extensions {} | Self::ListLayouts {} => None,
+            Self::StageAttachment { request } => {
+                request.validate()?;
+                Some(request.target.address.hub_id)
+            }
             Self::GetLayout { address } => {
                 if address.layout_id.is_nil() {
                     return Err(PublicError::InvalidRequest);

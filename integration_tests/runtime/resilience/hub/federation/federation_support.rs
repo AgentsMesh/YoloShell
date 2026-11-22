@@ -3,7 +3,7 @@ mod prepared_start;
 use std::{path::PathBuf, time::Duration};
 use tokio::time::Instant;
 use yolo_hub_delegation::PeerIdentity;
-use yolo_hub_federation_settings::{ExportPolicy, Peer, PeerAddress};
+use yolo_hub_federation_settings::{Configuration, ExportPolicy, Peer, PeerAddress};
 use yolo_hub_identity::HubId;
 use yolo_hub_routing::Right;
 use yolo_hub_state::HubState;
@@ -36,6 +36,40 @@ pub fn exports(origin: HubId, relay: bool) -> ExportPolicy {
         remaining_reexports: if relay { REEXPORT_ALLOWED } else { LEAF_EXPORT },
     }
 }
+pub fn shell_relay_config(
+    a_state: &HubState,
+    b_state: &HubState,
+    c_state: &HubState,
+) -> (Configuration, Configuration, Configuration) {
+    let (a, b, c) = (
+        a_state.peer_identity(),
+        b_state.peer_identity(),
+        c_state.peer_identity(),
+    );
+    let a_config = Configuration {
+        trusted_origins: vec![c],
+        peers: vec![peer(b, Some(b_state), true, vec![])],
+        ..Configuration::default()
+    };
+    let b_config = Configuration {
+        peers: vec![
+            peer(
+                a,
+                None,
+                false,
+                vec![exports(b.hub(), false), exports(c.hub(), false)],
+            ),
+            peer(c, Some(c_state), true, vec![]),
+        ],
+        ..Configuration::default()
+    };
+    let c_config = Configuration {
+        peers: vec![peer(b, Some(b_state), false, vec![exports(c.hub(), true)])],
+        ..Configuration::default()
+    };
+    (a_config, b_config, c_config)
+}
+
 pub fn peer(
     identity: PeerIdentity,
     dial: Option<&HubState>,

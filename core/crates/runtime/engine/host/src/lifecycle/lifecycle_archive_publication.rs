@@ -15,10 +15,14 @@ impl Host {
             let lifecycle_lock = self
                 .acquire_archive_publication_lock(terminal_id, selection, retained_fence)
                 .await?;
-            self.require_archived_runtime_settled(terminal_id)?;
-            self.catalog_upsert(&existing).await.map_err(internal)?;
+            let guard = self.archive_attachment_guard(terminal_id)?;
+            let target = self.remember_archive_cleanup(&guard)?;
+            let archived = self.clear_archived_attachments(&guard, target)?
+                .ok_or_else(|| ErrorBody::conflict(LIFECYCLE_SELECTION_CHANGED))?;
+            drop(guard);
+            self.catalog_upsert(&archived).await.map_err(internal)?;
             drop(lifecycle_lock);
-            return Ok(self.view_for_manifest(existing).await);
+            return Ok(self.view_for_manifest(archived).await);
         }
         let runtime = match self.live_runtime_record(terminal_id).await {
             Ok(record) => Some(record),
@@ -59,13 +63,7 @@ impl Host {
         if let Some(hook) = lock_recover(&self.catalog_test_probes.archive_publication).take() {
             hook();
         }
-        let guard =
-            yolo_paths::durable_mutation::SessionDurableMutationGuard::acquire_after_lifecycle_lock(
-                &self.paths,
-                &self.namespace,
-                terminal_id,
-            )
-            .map_err(internal)?;
+        let guard = self.archive_attachment_guard(terminal_id)?;
         guard.require_no_pending_intent().map_err(internal)?;
         let path = self.paths.manifest(terminal_id);
         let (mut manifest, identity) = guard
@@ -78,10 +76,13 @@ impl Host {
         }
         manifest.archived = true;
         manifest.updated_at_ms = now_ms();
+        // The manifest may already be installed if its commit fence returns an error.
+        let target = self.remember_archive_cleanup(&guard)?;
         guard
             .write_json_expected_with_commit_fence(&path, Some(identity), &manifest)
             .map_err(internal)?;
-        guard.require_no_pending_intent().map_err(internal)?;
+        self.clear_archived_attachments(&guard, target)?
+            .ok_or_else(|| ErrorBody::conflict(LIFECYCLE_SELECTION_CHANGED))?;
         drop(guard);
         self.catalog_upsert(&manifest).await.map_err(internal)?;
         drop(lifecycle_lock);
@@ -108,15 +109,15 @@ impl Host {
     pub(crate) fn require_archived_runtime_settled(
         &self,
         terminal_id: Uuid,
-    ) -> std::result::Result<(), ErrorBody> {
+    ) -> std::result::Result<Option<RuntimeRecord>, ErrorBody> {
         let path = self.paths.runtime_record(terminal_id);
         let record = match self.read_namespace_json::<RuntimeRecord>(&path) {
             Ok(record) if runtime_loss::runtime_record_identity_is_verifiable(&record, terminal_id) => record,
-            Err(_) if lifecycle_path_is_absent(&path) => return Ok(()),
+            Err(_) if lifecycle_path_is_absent(&path) => return Ok(None),
             Ok(_) | Err(_) => return Err(ErrorBody::conflict(ARCHIVED_RUNTIME_CONFLICT)),
         };
         if runtime_loss::process_identities_proven_gone(&record, &self.boot_id) {
-            Ok(())
+            Ok(Some(record))
         } else {
             Err(ErrorBody::conflict(ARCHIVED_RUNTIME_CONFLICT))
         }

@@ -17,7 +17,7 @@ use yolo_hub_identity::{AgentTarget, HubId};
 use yolo_hub_terminal_protocol::PublicError;
 
 mod prompt;
-pub use prompt::prompt_turn;
+pub use prompt::{prompt_turn, submit};
 
 /// How often a wait refreshes without a catalogue change hint. The Host feed
 /// covers binding and worker events; this only guards missed hints.

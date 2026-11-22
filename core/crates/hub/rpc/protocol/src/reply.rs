@@ -18,6 +18,8 @@ use yolo_hub_workspace_protocol::{ListWorkspacesResult, WorkspaceSummary};
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "result", rename_all = "snake_case", deny_unknown_fields)]
 pub enum Reply {
+    Extensions { methods: Vec<String> },
+    StagedAttachment { attachment: yolo_hub_terminal_protocol::StagedAttachment },
     Layouts {
         documents: Vec<yolo_presentation_protocol::LayoutSummary>,
     },

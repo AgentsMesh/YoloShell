@@ -5,6 +5,7 @@ package(default_visibility = ["//visibility:public"])
 
 _DEPS = [
     "//core/crates/hub/identity:yolo_hub_identity",
+    "//core/crates/hub/agent/protocol:yolo_hub_agent_protocol",
     "//core/crates/hub/rpc/protocol:yolo_hub_rpc_protocol",
     "//core/crates/hub/terminal/protocol:yolo_hub_terminal_protocol",
     "//core/crates/conversation/protocol:yolo_conversation_protocol",
@@ -12,6 +13,7 @@ _DEPS = [
     "@crates//:serde_json",
     "@crates//:thiserror",
     "@crates//:uuid",
+    "@crates//:url",
 ]
 
 filegroup(

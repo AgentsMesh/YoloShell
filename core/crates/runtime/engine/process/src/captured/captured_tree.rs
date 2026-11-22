@@ -25,7 +25,7 @@ mod discovery_publication;
 #[path = "tree/exact/captured_tree_exact_authority.rs"]
 mod exact_authority;
 #[cfg(all(feature = "adversarial-test-hooks", not(test), target_os = "macos"))]
-#[path = "tree/exact/captured_tree_exact_authority_diagnostic.rs"]
+#[path = "../../test_support/captured_tree/captured_tree_exact_authority_diagnostic.rs"]
 mod exact_authority_diagnostic;
 #[path = "tree/exact/captured_tree_exact_lineage.rs"]
 mod exact_lineage;
@@ -46,6 +46,11 @@ pub(super) use termination::ExactClosureKill;
 mod merge;
 #[path = "tree/captured_tree_ownership.rs"]
 mod ownership;
+#[cfg(target_os = "linux")]
+#[path = "tree/captured_tree_linux_hangup.rs"]
+mod linux_hangup;
+#[cfg(target_os = "linux")]
+pub use linux_hangup::LinuxPtyHangup;
 #[path = "tree/captured_tree_progress.rs"]
 mod progress;
 #[path = "tree/captured_tree_refresh.rs"]
