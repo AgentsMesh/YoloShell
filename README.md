@@ -106,13 +106,13 @@ needed, then probes live service admission. See
 
 ## The Web Client
 
-The trusted web client is a separate plugin repository:
-[AgentsMesh/YoloShellWeb](https://github.com/AgentsMesh/YoloShellWeb). It is a
-Bun server plus a browser UI that projects the Hub catalogue, live xterm.js
-terminals, Chat history, typed interactions and terminal creation over an
-authenticated same-origin session.
+The official plugin registry publishes the Web client as `web.client`.
+Its Bun server and browser UI provide the Hub catalogue, live xterm.js terminals,
+Chat history, typed interactions and terminal creation over an authenticated
+same-origin session. [Plugin registry](https://github.com/AgentsMesh/YoloShellPlugins)
 
 ```bash
+yolo plugin
 yolo plugin install web.client --trust
 yolo plugin startup
 yolo plugin log web.client
@@ -120,8 +120,8 @@ yolo plugin log web.client
 
 `plugin install` resolves the versioned spec, verifies the pinned commit and
 manifest, copies it into a private managed directory, and links only after the
-explicit `--trust` preview. For a local checkout, use
-`yolo plugin link "$PWD/YoloShellWeb/client" --trust` instead.
+explicit trust decision. For a local checkout, run
+`yolo plugin link "$PWD/YoloShellWeb" --trust` from its parent directory.
 
 The plugin binds to the LAN and prints its URL. Open it and paste the token from
 the plugin's private data directory. Plain HTTP plus a bearer token is a

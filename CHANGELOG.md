@@ -2,6 +2,12 @@
 
 All notable changes to Yolo are recorded here. The project follows semantic versioning once a stable release exists.
 
+## 0.5.7 — Alpha
+
+- `yolo plugin` and `yolo plugin list` show published plugins alongside local install state. A fresh account can discover `web.client` in the official registry and review it before installing.
+- `yolo plugin list --installed` works offline. Existing `list --json` scripts retain their local records. Use `list --registry --json` for the catalogue, or supply a Git URL to browse another registry.
+- Plugin help highlights listing, installation, startup and logs. Local development and diagnostic commands remain available through `yolo plugin help <command>`.
+
 ## 0.5.6 — Alpha
 
 - With trusted Codex hooks installed, new Bash and Zsh login terminals support `codex --yolo` on the first launch and after reattachment. Managed start and resume choose a compatible local-server command.
@@ -81,17 +87,12 @@ All notable changes to Yolo are recorded here. The project follows semantic vers
 ## 0.2.3 — Alpha
 
 ### Changed
-- `yolo hub peer join <user@host>` onboards a peer over the user's existing SSH
-  client, discovering and pinning its identity and socket. Peer links use an SSH
-  stdio bridge with no broker profile; the SSH account is the admission boundary
-  and its share policy controls exports.
+- `yolo hub peer join <user@host>` onboards a peer over the user's existing SSH client, discovering and pinning its identity and socket. Peer links use an SSH stdio bridge with no broker profile; the SSH account is the admission boundary and its share policy controls exports.
 
 ## 0.2.2 — Alpha
 
 ### Fixed
-- `yolo update` validates the local state contract before stopping services;
-  `yolo start` explains an early Hub exit and points to `yolo restart` when the
-  running Host belongs to an older image.
+- `yolo update` validates the local state contract before stopping services; `yolo start` explains an early Hub exit and points to `yolo restart` when the running Host belongs to an older image.
 
 ## 0.2.1 — Alpha
 

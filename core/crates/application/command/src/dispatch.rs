@@ -45,9 +45,9 @@ pub(crate) fn run(connection: ConnectionOptions, command: Command) -> Result<()>
             no_connection(&connection, "protocol")?;
             yolo_protocol_cli::run_command(command)
         }
-        Command::Plugin { command } => {
+        Command::Plugin(options) => {
             no_connection(&connection, "plugin")?;
-            yolo_trusted_plugin_cli::run_plugin(command)
+            yolo_trusted_plugin_cli::run_plugin(options.into_command())
         }
         Command::Update(args) => {
             local_only(&connection, "update")?;

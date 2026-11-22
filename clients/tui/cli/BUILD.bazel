@@ -85,6 +85,7 @@ isolated_rust_test(
         "//core/crates/application/launch/contract:yolo_launch_contract",
         "//core/crates/hub/client:yolo_hub_client",
         "//core/crates/runtime/engine/process:yolo_process",
+        "@crates//:serde_json",
         "@crates//:tempfile",
         "@crates//:tokio",
     ],

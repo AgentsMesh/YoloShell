@@ -8,13 +8,15 @@ use crate::arguments::{Arguments, Command as RootCommand, PluginCommand};
 
 pub(crate) fn run(arguments: Arguments) -> Result<()> {
     let RootCommand::Plugin(options) = arguments.command;
-    run_command(options.command)
+    run_command(options.into_command())
 }
 
 pub(crate) fn run_command(command: PluginCommand) -> Result<()> {
     let paths = crate::paths::registry_paths()?;
     match command {
-        PluginCommand::List { json } => list(&paths, json),
+        PluginCommand::List { installed, registry, json } => {
+            crate::catalogue::list(&paths, installed, registry.as_deref(), json)
+        }
         PluginCommand::Describe { id, json } => describe(&paths, &id, json),
         PluginCommand::Link { dir, trust, json } => link(&paths, &dir, trust, json),
         PluginCommand::Install {
@@ -44,27 +46,8 @@ pub(crate) fn run_command(command: PluginCommand) -> Result<()> {
     }
 }
 
-fn list(paths: &RegistryPaths, json: bool) -> Result<()> {
-    let registry = Registry::load(paths)?;
-    if json {
-        println!(
-            "{}",
-            serde_json::to_string_pretty(&registry.records().collect::<Vec<_>>())?
-        );
-    } else {
-        for record in registry.records() {
-            println!(
-                "{} {} {}",
-                record.id,
-                if record.enabled {
-                    "enabled"
-                } else {
-                    "disabled"
-                },
-                record.source.display()
-            );
-        }
-    }
+pub(super) fn print_json(value: &impl serde::Serialize) -> Result<()> {
+    println!("{}", serde_json::to_string_pretty(value)?);
     Ok(())
 }
 
@@ -72,12 +55,7 @@ fn describe(paths: &RegistryPaths, id: &str, json: bool) -> Result<()> {
     let registry = Registry::load(paths)?;
     let (record, manifest) = registry.revalidate(id)?;
     if json {
-        println!(
-            "{}",
-            serde_json::to_string_pretty(
-                &serde_json::json!({"record": record, "manifest": manifest})
-            )?
-        );
+        print_json(&serde_json::json!({"record": record, "manifest": manifest}))?;
     } else {
         println!(
             "id: {}\nname: {}\nversion: {}\nsource: {}\ndigest: {}\nplatforms: {:?}\nweb: {:?}\napi: {:?}",
@@ -98,12 +76,7 @@ fn link(paths: &RegistryPaths, dir: &PathBuf, trust: bool, json: bool) -> Result
     let manifest = load(dir)?;
     let digest = source_digest(dir)?;
     if json {
-        println!(
-            "{}",
-            serde_json::to_string_pretty(
-                &serde_json::json!({"manifest": manifest, "digest": digest})
-            )?
-        );
+        print_json(&serde_json::json!({"manifest": manifest, "digest": digest}))?;
     } else {
         println!(
             "id: {}\nstartup: {:?}\nactions: {:?}\ndigest: {}",
@@ -134,7 +107,7 @@ fn status(paths: &RegistryPaths, id: &str, json: bool) -> Result<()> {
         .get(id)
         .ok_or_else(|| anyhow::anyhow!("plugin is not linked"))?;
     if json {
-        println!("{}", serde_json::to_string_pretty(record)?);
+        print_json(record)?;
     } else {
         println!("{}: {:?}", id, record.last_startup);
     }

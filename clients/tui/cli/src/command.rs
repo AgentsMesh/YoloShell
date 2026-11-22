@@ -7,7 +7,7 @@ use crate::server::ServerCommand;
 use crate::terminal::TerminalCommand;
 use clap::Subcommand;
 use yolo_command_cli::{
-    AgentCommand, ConversationAction, PluginCommand, ProtocolCommand, UpdateArgs, WorkspaceCommand,
+    AgentCommand, ConversationAction, PluginOptions, ProtocolCommand, UpdateArgs, WorkspaceCommand,
     WorktreeCommand,
 };
 use yolo_tui_app::StartupAction;
@@ -115,12 +115,8 @@ pub(crate) enum Command {
         #[command(subcommand)]
         command: ProtocolCommand,
     },
-    /// Manage trusted user-level plugins.
-    #[command(group(crate::arguments::connection_group()))]
-    Plugin {
-        #[command(subcommand)]
-        command: PluginCommand,
-    },
+    /// Find and manage plugins for this user.
+    Plugin(PluginOptions),
     /// Check, install and activate Yolo releases.
     #[command(group(crate::arguments::connection_group()))]
     Update(UpdateArgs),

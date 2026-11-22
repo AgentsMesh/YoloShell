@@ -1,7 +1,7 @@
 use clap::{Parser, Subcommand};
 
 #[derive(Debug, Parser)]
-#[command(name = "yolo", about = "Manage trusted user-level plugins")]
+#[command(name = "yolo", about = "Find and manage plugins for this user")]
 pub struct Arguments {
     #[command(subcommand)]
     pub command: Command,
@@ -9,25 +9,60 @@ pub struct Arguments {
 
 #[derive(Debug, Subcommand)]
 pub enum Command {
-    /// Manage trusted user-level plugins.
-    Plugin(Options),
+    /// Find and manage plugins for this user.
+    Plugin(PluginOptions),
 }
 
-#[derive(Debug, clap::Args)]
-pub struct Options {
+#[derive(Debug, Default, clap::Args)]
+#[command(defer = plugin_help)]
+pub struct PluginOptions {
     #[command(subcommand)]
-    pub command: PluginCommand,
+    pub command: Option<PluginCommand>,
+}
+
+impl PluginOptions {
+    pub fn into_command(self) -> PluginCommand {
+        self.command.unwrap_or(PluginCommand::List {
+            json: false,
+            installed: false,
+            registry: None,
+        })
+    }
+}
+
+fn plugin_help(command: clap::Command) -> clap::Command {
+    let other = command
+        .get_subcommands()
+        .filter(|subcommand| subcommand.is_hide_set())
+        .map(clap::Command::get_name)
+        .collect::<Vec<_>>()
+        .join(", ");
+    command
+        .after_help(format!(
+            "More commands\n  {other}\n\nRun `yolo plugin help <command>` for details."
+        ))
+        .mut_args(|arg| {
+            let hidden = arg.is_global_set() || arg.is_hide_set();
+            arg.hide(hidden)
+        })
 }
 
 #[derive(Debug, Subcommand)]
 pub enum PluginCommand {
-    /// List linked plugins and their trust state.
+    /// Show registry plugins and what is installed locally.
     List {
-        /// Print one JSON document.
+        /// Only show local plugins. Works offline.
+        #[arg(long, conflicts_with = "registry")]
+        installed: bool,
+        /// Read the catalogue from this Git registry. Omit the URL for the official registry.
+        #[arg(long, value_name = "URL", num_args = 0..=1, default_missing_value = crate::install_registry::DEFAULT_REGISTRY)]
+        registry: Option<String>,
+        /// Print local records as JSON. Use --registry for catalogue JSON.
         #[arg(long)]
         json: bool,
     },
     /// Show one plugin's manifest, commands and grants.
+    #[command(hide = true)]
     Describe {
         /// Plugin id.
         id: String,
@@ -36,6 +71,7 @@ pub enum PluginCommand {
         json: bool,
     },
     /// Link a local plugin directory after reviewing its commands and digest.
+    #[command(hide = true)]
     Link {
         /// Plugin directory containing the manifest.
         dir: std::path::PathBuf,
@@ -64,16 +100,19 @@ pub enum PluginCommand {
         json: bool,
     },
     /// Remove a linked plugin without touching its data directory.
+    #[command(hide = true)]
     Unlink {
         /// Plugin id.
         id: String,
     },
     /// Allow a linked plugin to run startup hooks and actions.
+    #[command(hide = true)]
     Enable {
         /// Plugin id.
         id: String,
     },
     /// Stop a linked plugin from running hooks and actions.
+    #[command(hide = true)]
     Disable {
         /// Plugin id.
         id: String,
@@ -84,7 +123,8 @@ pub enum PluginCommand {
         #[arg(long)]
         json: bool,
     },
-    /// Invoke one declared plugin action with a JSON argument.
+    /// Run one action declared by the plugin.
+    #[command(hide = true)]
     Action {
         /// Plugin id.
         id: String,
@@ -94,7 +134,8 @@ pub enum PluginCommand {
         #[arg(long)]
         json: bool,
     },
-    /// Show the last startup or action result for one plugin.
+    /// Show the last startup result for one plugin.
+    #[command(hide = true)]
     Status {
         /// Plugin id.
         id: String,
@@ -108,6 +149,7 @@ pub enum PluginCommand {
         id: String,
     },
     /// Print one plugin's writable data directory.
+    #[command(hide = true)]
     DataDir {
         /// Plugin id.
         id: String,

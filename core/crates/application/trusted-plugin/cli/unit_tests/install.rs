@@ -89,3 +89,55 @@ fn rejects_reserved_and_malformed_ids_before_reading_the_registry() {
     assert!(load_spec(root.path(), "../escape", None).is_err());
     assert!(load_spec(root.path(), "WEB", None).is_err());
 }
+
+#[cfg(unix)]
+#[test]
+fn registry_specs_can_link_to_versioned_metadata_inside_the_checkout() {
+    use std::fs;
+    use std::os::unix::fs::symlink;
+
+    let registry = tempfile::tempdir().unwrap();
+    let id = "acme.test";
+    let version = "0.1.0";
+    let metadata = registry.path().join("metadata");
+    write_spec(&metadata, id, version, COMMIT, ".", manifest(id, version));
+
+    let index = registry.path().join("index");
+    fs::create_dir(&index).unwrap();
+    symlink("index", registry.path().join("Specs")).unwrap();
+    symlink(Path::new("../metadata/Specs").join(id), index.join(id)).unwrap();
+    let version_file = metadata.join("Specs").join(id).join("0.1.0.json");
+    fs::rename(&version_file, version_file.with_file_name("release.json")).unwrap();
+    symlink("release.json", &version_file).unwrap();
+
+    for requested in [None, Some(version)] {
+        assert_eq!(load_spec(registry.path(), id, requested).unwrap().version, version);
+    }
+}
+
+#[cfg(unix)]
+#[test]
+fn registry_specs_must_be_regular_files_inside_the_checkout() {
+    use std::os::unix::fs::symlink;
+
+    let root = tempfile::tempdir().unwrap();
+    let registry = root.path().join("registry");
+    let other = root.path().join("other");
+    let id = "acme.test";
+    let version = "0.1.0";
+    write_spec(&other, id, version, COMMIT, ".", manifest(id, version));
+
+    std::fs::create_dir(&registry).unwrap();
+    let specs = registry.join("Specs");
+    let outside = other.join("Specs");
+    symlink(&outside, &specs).unwrap();
+    assert!(load_spec(&registry, id, None).is_err());
+    std::fs::remove_file(&specs).unwrap();
+    std::fs::create_dir(&specs).unwrap();
+    symlink(outside.join(id), specs.join(id)).unwrap();
+    assert!(load_spec(&registry, id, None).is_err());
+    std::fs::remove_file(specs.join(id)).unwrap();
+    std::fs::create_dir(specs.join(id)).unwrap();
+    symlink(outside.join(id).join("0.1.0.json"), specs.join(id).join("0.1.0.json")).unwrap();
+    assert!(load_spec(&registry, id, Some(version)).is_err());
+}
