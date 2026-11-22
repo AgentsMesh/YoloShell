@@ -1,0 +1,30 @@
+package(default_visibility = ["//visibility:public"])
+
+RUNTIME_COMPONENT_ARCHITECTURE_DATA = [
+    "//core/crates/runtime/engine/executable/identity:architecture_check_data",
+    "//core/crates/runtime/engine/process:architecture_check_data",
+    "//core/crates/runtime/engine/process/identity:architecture_check_data",
+    "//core/crates/runtime/engine/process/seccomp:architecture_check_data",
+    "//core/crates/runtime/engine/resilience/support:architecture_check_data",
+    "//core/crates/runtime/engine/pty/custody:architecture_check_data",
+    "//core/crates/runtime/engine/protocol:architecture_check_data",
+    "//core/crates/runtime/engine/worker/agent/events:architecture_check_data",
+    "//core/crates/runtime/engine/worker/context/env:architecture_check_data",
+    "//core/crates/runtime/engine/worker/launch/fence:architecture_check_data",
+    "//core/crates/runtime/engine/startup/checkpoint/contract:architecture_check_data",
+    "//core/crates/runtime/engine/startup/guard:architecture_check_data",
+    "//core/crates/runtime/engine/worker:architecture_check_data",
+    "//core/crates/runtime/engine/host:architecture_check_data",
+    "//core/crates/runtime/engine/host/change/feed:architecture_check_data",
+    "//core/crates/runtime/engine/host/operation/deadline:architecture_check_data",
+    "//core/crates/runtime/engine/host/runtime/observation:architecture_check_data",
+    "//core/crates/runtime/engine/host/runtime/views:architecture_check_data",
+    "//core/crates/runtime/engine/host/shutdown/signal:architecture_check_data",
+    "//core/crates/runtime/engine/host/workspace:architecture_check_data",
+    "//core/crates/runtime/engine/custody/guardian:architecture_check_data",
+]
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = RUNTIME_COMPONENT_ARCHITECTURE_DATA + ["BUILD.bazel"],
+)

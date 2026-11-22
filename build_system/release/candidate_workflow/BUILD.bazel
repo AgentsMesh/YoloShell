@@ -1,0 +1,73 @@
+load("@rules_rust//rust:defs.bzl", "rust_library")
+load("//build_system/platform/macos:config.bzl", "RELEASE_EVIDENCE_MACOS_MINIMUM_OS_ENV")
+load("//build_system/bazel/rust:config.bzl", "RUST_UNIT_TEST_THREAD_COUNT")
+load("//build_system/bazel/rust:isolated_test.bzl", "isolated_rust_test")
+load("//build_system/bazel/rust:test_features.bzl", "INTEGRATION_TEST_FEATURES")
+
+package(default_visibility = ["//visibility:public"])
+
+PRODUCTION_SOURCES = ["src/lib.rs"]
+
+PRODUCTION_DEPS = [
+    "//build_system/release/acceptance_receipt:library",
+    "//build_system/release/candidate_artifact:library",
+    "//build_system/release/contracts:library",
+    "//build_system/release/evidence_model:library",
+    "//build_system/release/foundation:library",
+    "//build_system/release/gate_system:library",
+    "//build_system/release/linux_gate_system:library",
+    "//build_system/release/tool_custody:library",
+    "//build_system/release/verification:library",
+    "//build_system/release/workspace_state:library",
+    "@crates//:anyhow",
+]
+
+TEST_DEPS = [
+    dependency
+    for dependency in PRODUCTION_DEPS
+    if dependency not in [
+        "//build_system/release/candidate_artifact:library",
+        "//build_system/release/gate_system:library",
+        "//build_system/release/linux_gate_system:library",
+        "//build_system/release/tool_custody:library",
+        "//build_system/release/verification:library",
+    ]
+] + [
+    "//build_system/release/candidate_artifact:test_support",
+    "//build_system/release/gate_system:test_support",
+    "//build_system/release/linux_gate_system:test_support",
+    "//build_system/release/test_support:library",
+    "//build_system/release/tool_custody:test_support",
+    "//build_system/release/verification:test_support",
+    "@crates//:tempfile",
+]
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = PRODUCTION_SOURCES + [
+        "BUILD.bazel",
+        "integration_tests/candidate_tests.rs",
+    ],
+)
+
+rust_library(
+    name = "library",
+    srcs = PRODUCTION_SOURCES,
+    crate_name = "yolo_release_candidate_workflow",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    rustc_env = RELEASE_EVIDENCE_MACOS_MINIMUM_OS_ENV,
+    deps = PRODUCTION_DEPS,
+)
+
+isolated_rust_test(
+    name = "integration_tests",
+    srcs = PRODUCTION_SOURCES + ["integration_tests/candidate_tests.rs"],
+    crate_features = INTEGRATION_TEST_FEATURES,
+    crate_name = "yolo_release_candidate_workflow_integration_tests",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    env = {"RUST_TEST_THREADS": RUST_UNIT_TEST_THREAD_COUNT},
+    rustc_env = RELEASE_EVIDENCE_MACOS_MINIMUM_OS_ENV,
+    deps = TEST_DEPS,
+)

@@ -1,0 +1,14 @@
+load("@rules_rust//rust:defs.bzl", "rust_binary")
+
+package(default_visibility = ["//visibility:public"])
+
+rust_binary(
+    name = "capnpc-rust",
+    srcs = ["src/main.rs"],
+    crate_name = "yolo_capnp_generator",
+    crate_root = "src/main.rs",
+    edition = "2024",
+    deps = ["@crates//:capnpc"],
+)
+
+filegroup(name = "architecture_check_data", srcs = ["BUILD.bazel", "src/main.rs"])

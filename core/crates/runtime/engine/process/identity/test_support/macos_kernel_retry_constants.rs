@@ -1,0 +1,16 @@
+pub const TEST_PID: u32 = 41;
+pub const WRONG_PID: u32 = 42;
+pub const PARENT_PID: u32 = 40;
+pub const PROCESS_GROUP: u32 = 31;
+pub const FOREGROUND_GROUP: u32 = 30;
+pub const START_SECONDS: u64 = 7;
+pub const START_MICROSECONDS: u64 = 11;
+pub const UNIQUE_ID: u64 = 101;
+pub const PARENT_UNIQUE_ID: u64 = 97;
+pub const PID_VERSION: i32 = 23;
+pub const CHANGED_UNIQUE_ID: u64 = 102;
+pub const CHANGED_START_MICROSECONDS: u64 = 12;
+pub const CHANGED_PID_VERSION: i32 = 24;
+pub const QUERY_FAILURE: i32 = -1;
+pub const QUERY_INCREMENT: usize = 1;
+pub const SHORT_RESPONSE: i32 = 1;
