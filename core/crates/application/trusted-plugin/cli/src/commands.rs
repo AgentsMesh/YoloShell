@@ -14,23 +14,26 @@ pub(crate) fn run(arguments: Arguments) -> Result<()> {
 pub(crate) fn run_command(command: PluginCommand) -> Result<()> {
     let paths = crate::paths::registry_paths()?;
     match command {
-        PluginCommand::List { installed, registry, json } => {
-            crate::catalogue::list(&paths, installed, registry.as_deref(), json)
-        }
+        PluginCommand::List {
+            installed,
+            registry,
+            json,
+        } => crate::catalogue::list(&paths, installed, registry.as_deref(), json),
         PluginCommand::Describe { id, json } => describe(&paths, &id, json),
         PluginCommand::Link { dir, trust, json } => link(&paths, &dir, trust, json),
         PluginCommand::Install {
             id,
             version,
             registry,
-            trust,
+            dry_run,
+            trust: _,
             json,
         } => crate::install::install(
             &paths,
             &id,
             version.as_deref(),
             registry.as_deref(),
-            trust,
+            dry_run,
             json,
         ),
         PluginCommand::Unlink { id } => mutate(&paths, &id, None),

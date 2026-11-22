@@ -40,7 +40,13 @@ impl Fixture {
         let rewrite = format!("url.file://{}.insteadOf", registry.display());
         git(
             directory.path(),
-            &["config", FILE_OPTION, GIT_CONFIG_FILE, &rewrite, DEFAULT_REGISTRY],
+            &[
+                "config",
+                FILE_OPTION,
+                GIT_CONFIG_FILE,
+                &rewrite,
+                DEFAULT_REGISTRY,
+            ],
         );
         let trace = directory.path().join("git.trace");
         Self {
@@ -55,14 +61,14 @@ impl Fixture {
             .arg(PLUGIN)
             .args(args)
             .stdin(Stdio::null())
-            .env(
-                "YOLO_PLUGIN_REGISTRY_ROOT",
-                self.directory.path().join("state"),
-            )
+            .env("YOLO_PLUGIN_REGISTRY_ROOT", self.account())
             .env("GIT_ALLOW_PROTOCOL", "file")
             .env("GIT_CONFIG_NOSYSTEM", "1")
             .env("XDG_CONFIG_HOME", self.directory.path())
-            .env("GIT_CONFIG_GLOBAL", self.directory.path().join(GIT_CONFIG_FILE))
+            .env(
+                "GIT_CONFIG_GLOBAL",
+                self.directory.path().join(GIT_CONFIG_FILE),
+            )
             .env_remove("GIT_CONFIG_COUNT")
             .env_remove("GIT_CONFIG_PARAMETERS")
             .env("GIT_TRACE", &self.trace)
@@ -70,14 +76,34 @@ impl Fixture {
             .unwrap()
     }
 
+    pub(super) fn account(&self) -> PathBuf {
+        self.directory.path().join("state")
+    }
+
+    pub(super) fn publish_source(&self) {
+        let spec_path = self
+            .registry
+            .join("Specs")
+            .join(WEB)
+            .join(format!("{LATEST}.json"));
+        let mut spec: Value = serde_json::from_slice(&fs::read(&spec_path).unwrap()).unwrap();
+        let source = Path::new(spec["source"]["repository"].as_str().unwrap());
+        fs::create_dir(source).unwrap();
+        fs::write(source.join(MANIFEST_FILE), spec["manifest"].to_string()).unwrap();
+        git(source, GIT_INIT);
+        git(source, &["add", MANIFEST_FILE]);
+        git(source, GIT_COMMIT);
+        git(source, &["tag", spec["source"]["tag"].as_str().unwrap()]);
+        spec["source"]["commit"] = git(source, &["rev-parse", "HEAD"]).into();
+        fs::write(spec_path, spec.to_string()).unwrap();
+        git(&self.registry, GIT_ADD);
+        git(&self.registry, GIT_COMMIT);
+    }
+
     pub(super) fn link(&self, id: &str) {
         let path = self.directory.path().join(id);
         fs::create_dir(&path).unwrap();
-        fs::write(
-            path.join("yolo-plugin.json"),
-            manifest(id, EARLIER).to_string(),
-        )
-        .unwrap();
+        fs::write(path.join(MANIFEST_FILE), manifest(id, EARLIER).to_string()).unwrap();
         success(&self.plugin(&[LINK, path.to_str().unwrap(), TRUST]));
     }
 
@@ -94,7 +120,7 @@ impl Fixture {
     }
 }
 
-fn git(repository: &Path, args: &[&str]) {
+fn git(repository: &Path, args: &[&str]) -> String {
     let mut command = Command::new("git");
     command
         .current_dir(repository)
@@ -105,7 +131,7 @@ fn git(repository: &Path, args: &[&str]) {
         .env("GIT_COMMITTER_EMAIL", "fixture@example.test")
         .env("GIT_CONFIG_GLOBAL", "/dev/null")
         .env("GIT_CONFIG_NOSYSTEM", "1");
-    success(&command.output().unwrap());
+    success(&command.output().unwrap()).trim().to_owned()
 }
 
 fn manifest(id: &str, version: &str) -> Value {

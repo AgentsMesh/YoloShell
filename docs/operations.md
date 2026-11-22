@@ -102,16 +102,17 @@ unsafe signal.
 
 ## Trusted Plugins
 
-Trusted plugins run with the user's authority. Browse the registry and install
-the Web client with the following commands. The `--trust` flag approves its source.
+Trusted plugins run with the user's authority. Browse the registry, install
+the Web client, then start it and read its log.
 
 ```bash
 yolo plugin
-yolo plugin install web.client --trust
+yolo plugin install web.client
 yolo plugin startup
 yolo plugin log web.client
 ```
 
+Use `yolo plugin install web.client --dry-run` to preview the source and digest.
 Use `yolo plugin list --installed` for an offline inventory. To test a local
 plugin, use `yolo plugin link ./my-plugin --trust` and `yolo plugin unlink my.plugin`.
 

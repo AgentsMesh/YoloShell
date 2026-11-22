@@ -3,7 +3,9 @@ use crate::install_registry::load_spec;
 use serde_json::json;
 use std::path::Path;
 use yolo_hub_rpc_protocol::{HUB_PROTOCOL_VERSION, Method};
-use yolo_trusted_plugin_manifest::{ClientApiContract, Platform, SCHEMA_VERSION, TrustedPluginManifest};
+use yolo_trusted_plugin_manifest::{
+    ClientApiContract, Platform, SCHEMA_VERSION, TrustedPluginManifest,
+};
 
 fn manifest(id: &str, version: &str) -> TrustedPluginManifest {
     TrustedPluginManifest {
@@ -57,7 +59,14 @@ const COMMIT: &str = "0123456789abcdef0123456789abcdef01234567";
 fn selects_the_highest_semver_and_honors_an_explicit_version() {
     let root = tempfile::tempdir().unwrap();
     for version in ["0.9.0", "0.10.0", "0.2.0"] {
-        write_spec(root.path(), "acme.test", version, COMMIT, ".", manifest("acme.test", version));
+        write_spec(
+            root.path(),
+            "acme.test",
+            version,
+            COMMIT,
+            ".",
+            manifest("acme.test", version),
+        );
     }
     let latest = load_spec(root.path(), "acme.test", None).unwrap();
     assert_eq!(latest.version, "0.10.0");
@@ -69,22 +78,45 @@ fn selects_the_highest_semver_and_honors_an_explicit_version() {
 #[test]
 fn rejects_traversal_bad_commit_and_manifest_mismatch() {
     let root = tempfile::tempdir().unwrap();
-    write_spec(root.path(), "acme.test", "0.1.0", COMMIT, "../escape", manifest("acme.test", "0.1.0"));
+    write_spec(
+        root.path(),
+        "acme.test",
+        "0.1.0",
+        COMMIT,
+        "../escape",
+        manifest("acme.test", "0.1.0"),
+    );
     assert!(load_spec(root.path(), "acme.test", None).is_err());
 
     let root = tempfile::tempdir().unwrap();
-    write_spec(root.path(), "acme.test", "0.1.0", "ABC", ".", manifest("acme.test", "0.1.0"));
+    write_spec(
+        root.path(),
+        "acme.test",
+        "0.1.0",
+        "ABC",
+        ".",
+        manifest("acme.test", "0.1.0"),
+    );
     assert!(load_spec(root.path(), "acme.test", None).is_err());
 
     let root = tempfile::tempdir().unwrap();
-    write_spec(root.path(), "acme.test", "0.1.0", COMMIT, ".", manifest("other.test", "0.1.0"));
+    write_spec(
+        root.path(),
+        "acme.test",
+        "0.1.0",
+        COMMIT,
+        ".",
+        manifest("other.test", "0.1.0"),
+    );
     assert!(load_spec(root.path(), "acme.test", None).is_err());
 }
 
 #[test]
 fn rejects_reserved_and_malformed_ids_before_reading_the_registry() {
     let root = tempfile::tempdir().unwrap();
-    let error = load_spec(root.path(), "yolo.web", None).unwrap_err().to_string();
+    let error = load_spec(root.path(), "yolo.web", None)
+        .unwrap_err()
+        .to_string();
     assert!(error.contains("web.client"), "{error}");
     assert!(load_spec(root.path(), "../escape", None).is_err());
     assert!(load_spec(root.path(), "WEB", None).is_err());
@@ -111,7 +143,10 @@ fn registry_specs_can_link_to_versioned_metadata_inside_the_checkout() {
     symlink("release.json", &version_file).unwrap();
 
     for requested in [None, Some(version)] {
-        assert_eq!(load_spec(registry.path(), id, requested).unwrap().version, version);
+        assert_eq!(
+            load_spec(registry.path(), id, requested).unwrap().version,
+            version
+        );
     }
 }
 
@@ -138,6 +173,10 @@ fn registry_specs_must_be_regular_files_inside_the_checkout() {
     assert!(load_spec(&registry, id, None).is_err());
     std::fs::remove_file(specs.join(id)).unwrap();
     std::fs::create_dir(specs.join(id)).unwrap();
-    symlink(outside.join(id).join("0.1.0.json"), specs.join(id).join("0.1.0.json")).unwrap();
+    symlink(
+        outside.join(id).join("0.1.0.json"),
+        specs.join(id).join("0.1.0.json"),
+    )
+    .unwrap();
     assert!(load_spec(&registry, id, Some(version)).is_err());
 }

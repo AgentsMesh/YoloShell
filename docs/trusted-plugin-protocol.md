@@ -63,17 +63,19 @@ requires the explicit `--trust` flag. Linking is in place: Yolo does not copy
 source.
 `unlink` removes only the registry entry.
 
-`yolo plugin install <id> [--version <version>] [--registry <url>] --trust`
-reads a versioned spec from
-[AgentsMesh/YoloShellPlugins](https://github.com/AgentsMesh/YoloShellPlugins)
-(the default registry), resolves the newest version unless `--version` is given,
-clones the pinned source commit, verifies the commit and manifest, copies the
-plugin root into a private managed source directory, and prints the source and
-digest. It requires `--trust` after that preview, like `link`. The reference web
-plugin id is `web.client`; the `yolo.` prefix is reserved for built-ins. The
-command requires `git` on `PATH`.
+`yolo plugin install <id>` installs and enables the selected registry plugin
+in one invocation. It uses Git to fetch the newest version by default.
+`--version` selects a specific version and `--registry` selects another Git
+registry. The installer verifies the pinned commit and manifest, copies the
+source into a private managed directory, and records its verified digest.
+The official Web plugin is `web.client`. [Default registry](https://github.com/AgentsMesh/YoloShellPlugins)
 
-Installing over a linked id replaces the link after the same preview. When the
+`--dry-run` verifies the source, prints the commands and digest, and exits
+before modifying the installation or running lifecycle hooks. Scripts that
+previously invoked a bare install just to preview it should use this flag.
+Existing install commands with `--trust` remain compatible.
+
+Installing over a linked id replaces the link after verification. When the
 previous manifest declares a `stop` action, the installer stops that plugin and
 starts the newly linked version; otherwise it warns that a running plugin must
 be restarted manually. Reinstalling the same version reuses the verified
@@ -149,7 +151,7 @@ yolo plugin list --installed [--json]
 yolo plugin list --registry [URL] [--json]
 yolo plugin describe <id>
 yolo plugin link <dir> [--trust]
-yolo plugin install <id> [--version <version>] [--registry <url>] [--trust]
+yolo plugin install <id> [--version <version>] [--registry <url>] [--dry-run] [--json]
 yolo plugin unlink <id>
 yolo plugin enable|disable <id>
 yolo plugin startup

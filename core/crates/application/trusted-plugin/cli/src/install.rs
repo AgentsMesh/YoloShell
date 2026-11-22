@@ -1,4 +1,4 @@
-use anyhow::{bail, Context, Result};
+use anyhow::{Context, Result, bail};
 use std::path::{Path, PathBuf};
 use yolo_trusted_plugin_manifest::load;
 use yolo_trusted_plugin_registry::{Registry, RegistryPaths, source_digest};
@@ -12,7 +12,7 @@ pub(crate) fn install(
     id: &str,
     version: Option<&str>,
     registry: Option<&str>,
-    trust: bool,
+    dry_run: bool,
     json: bool,
 ) -> Result<()> {
     let registry_url = registry.unwrap_or(DEFAULT_REGISTRY);
@@ -39,9 +39,8 @@ pub(crate) fn install(
         bail!("registry manifest does not match the plugin source manifest");
     }
     let digest = source_digest(&prepared)?;
-    preview(&spec, &digest, json)?;
-    if !trust {
-        bail!("review the source and digest above, then rerun with --trust");
+    if dry_run {
+        return print_verified_source(&spec, &digest, json);
     }
 
     let previous = Registry::load(paths)?.get(&spec.id).cloned();
@@ -68,9 +67,8 @@ pub(crate) fn install(
             return Err(error);
         }
     }
-    let linked = Registry::load_locked(paths).and_then(|mut registry| {
-        registry.replace_approved(&target, &digest, paths)
-    });
+    let linked = Registry::load_locked(paths)
+        .and_then(|mut registry| registry.replace_approved(&target, &digest, paths));
     if let Err(error) = linked {
         if !existing {
             let _ = std::fs::remove_dir_all(&target);
@@ -81,12 +79,23 @@ pub(crate) fn install(
     if previous.is_some() {
         install_lifecycle::restart(paths, &spec.id, stopped)?;
     }
-    if !json {
-        if previous.is_some() {
-            println!("updated {} to {} at {}", spec.id, spec.version, target.display());
-        } else {
-            println!("installed {} {} at {}", spec.id, spec.version, target.display());
-        }
+    if json {
+        return print_verified_source(&spec, &digest, true);
+    }
+    if previous.is_some() {
+        println!(
+            "updated {} to {} at {}",
+            spec.id,
+            spec.version,
+            target.display()
+        );
+    } else {
+        println!(
+            "installed {} {} at {}",
+            spec.id,
+            spec.version,
+            target.display()
+        );
     }
     Ok(())
 }
@@ -106,7 +115,7 @@ fn restart_previous(paths: &RegistryPaths, id: &str, stopped: bool) {
     }
 }
 
-fn preview(spec: &RegistrySpec, digest: &str, json: bool) -> Result<()> {
+fn print_verified_source(spec: &RegistrySpec, digest: &str, json: bool) -> Result<()> {
     if json {
         println!(
             "{}",

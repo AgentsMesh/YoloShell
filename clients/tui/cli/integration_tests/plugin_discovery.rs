@@ -1,4 +1,4 @@
-use super::{BINARY_ENV, JSON_ARGUMENT, LIST_COMMAND};
+use super::{BINARY_ENV, INSTALL_COMMAND, JSON_ARGUMENT, LIST_COMMAND};
 use serde_json::{Value, json};
 use std::{fs, path::Path, process::Output};
 
@@ -11,6 +11,51 @@ use fixture::{Fixture, success};
 
 fn rows(output: Output) -> Vec<Value> {
     serde_json::from_str(success(&output)).unwrap()
+}
+
+#[test]
+fn install_links_immediately_and_dry_run_only_reports_the_verified_source() {
+    let fixture = Fixture::new();
+    fixture.publish_source();
+    let details = fixture.plugin(&[INSTALL_COMMAND, WEB, DRY_RUN, JSON_ARGUMENT]);
+    let preview: Value = serde_json::from_str(success(&details)).unwrap();
+    assert_eq!(preview["version"], LATEST);
+    assert!(!fixture.account().exists());
+
+    let install = fixture.plugin(&[INSTALL_COMMAND, WEB]);
+    assert!(success(&install).starts_with(&format!("installed {WEB} {LATEST} at ")));
+    let local = rows(fixture.plugin(&[LIST_COMMAND, INSTALLED, JSON_ARGUMENT]));
+    let [record] = local.as_slice() else {
+        panic!("expected one installed plugin")
+    };
+    assert_eq!(record["id"], WEB);
+    assert_eq!(record["enabled"], true);
+    assert_eq!(record["digest"], preview["digest"]);
+
+    success(&fixture.plugin(&[DISABLE, WEB]));
+    let registry = fixture.account().join("config/plugins.json");
+    let before = fs::read(&registry).unwrap();
+    let dry_run = fixture.plugin(&[INSTALL_COMMAND, WEB, TRUST, DRY_RUN, JSON_ARGUMENT]);
+    assert_eq!(
+        serde_json::from_str::<Value>(success(&dry_run)).unwrap(),
+        preview
+    );
+    assert_eq!(fs::read(&registry).unwrap(), before);
+}
+
+#[test]
+fn legacy_install_scripts_receive_the_verified_details_and_an_enabled_plugin() {
+    let fixture = Fixture::new();
+    fixture.publish_source();
+    let install = fixture.plugin(&[INSTALL_COMMAND, WEB, TRUST, JSON_ARGUMENT]);
+    let details: Value = serde_json::from_str(success(&install)).unwrap();
+    let records = rows(fixture.plugin(&[LIST_COMMAND, INSTALLED, JSON_ARGUMENT]));
+    let [record] = records.as_slice() else {
+        panic!("expected one installed plugin")
+    };
+    assert_eq!(record["enabled"], true);
+    assert_eq!(details["manifest"]["id"], WEB);
+    assert_eq!(details["digest"], record["digest"]);
 }
 
 #[test]

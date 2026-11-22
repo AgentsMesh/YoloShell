@@ -82,7 +82,7 @@ pub enum PluginCommand {
         #[arg(long)]
         json: bool,
     },
-    /// Install a registry plugin after reviewing its source digest.
+    /// Install and enable a plugin from the registry.
     Install {
         /// Plugin id in the configured registry.
         id: String,
@@ -92,8 +92,11 @@ pub enum PluginCommand {
         /// Registry URL or name; defaults to the configured registry.
         #[arg(long)]
         registry: Option<String>,
-        /// Confirm the reviewed source commands and digest; without it, only prints the review.
+        /// Show the verified source, commands and digest without installing.
         #[arg(long)]
+        dry_run: bool,
+        /// Accepted for compatibility with earlier installers.
+        #[arg(long, hide = true)]
         trust: bool,
         /// Print one JSON document.
         #[arg(long)]

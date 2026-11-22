@@ -113,14 +113,14 @@ same-origin session. [Plugin registry](https://github.com/AgentsMesh/YoloShellPl
 
 ```bash
 yolo plugin
-yolo plugin install web.client --trust
+yolo plugin install web.client
 yolo plugin startup
 yolo plugin log web.client
 ```
 
-`plugin install` resolves the versioned spec, verifies the pinned commit and
-manifest, copies it into a private managed directory, and links only after the
-explicit trust decision. For a local checkout, run
+`plugin install` verifies the registry's pinned commit and manifest, then
+installs and enables the plugin. Use `--dry-run` to preview the source, commands
+and digest. For a local checkout, run
 `yolo plugin link "$PWD/YoloShellWeb" --trust` from its parent directory.
 
 The plugin binds to the LAN and prints its URL. Open it and paste the token from
