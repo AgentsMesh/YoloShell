@@ -17,3 +17,5 @@ pub(super) const PROTOCOL_FIELD: &str = "protocol_version";
 pub(super) const GIT_INIT: &[&str] = &["init", "--quiet"];
 pub(super) const GIT_ADD: &[&str] = &["add", "Specs"];
 pub(super) const GIT_COMMIT: &[&str] = &["commit", "--quiet", "-m", "Publish fixture specs"];
+pub(super) const GIT_CONFIG_FILE: &str = "git/config";
+pub(super) const FILE_OPTION: &str = "--file";

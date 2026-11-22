@@ -35,6 +35,13 @@ impl Fixture {
         for args in [GIT_INIT, GIT_ADD, GIT_COMMIT] {
             git(&registry, args);
         }
+        // The release image's Git 2.30 reads XDG config before cloning.
+        fs::create_dir(directory.path().join("git")).unwrap();
+        let rewrite = format!("url.file://{}.insteadOf", registry.display());
+        git(
+            directory.path(),
+            &["config", FILE_OPTION, GIT_CONFIG_FILE, &rewrite, DEFAULT_REGISTRY],
+        );
         let trace = directory.path().join("git.trace");
         Self {
             directory,
@@ -54,13 +61,10 @@ impl Fixture {
             )
             .env("GIT_ALLOW_PROTOCOL", "file")
             .env("GIT_CONFIG_NOSYSTEM", "1")
-            .env("GIT_CONFIG_GLOBAL", "/dev/null")
-            .env("GIT_CONFIG_COUNT", "1")
-            .env(
-                "GIT_CONFIG_KEY_0",
-                format!("url.file://{}.insteadOf", self.registry.display()),
-            )
-            .env("GIT_CONFIG_VALUE_0", DEFAULT_REGISTRY)
+            .env("XDG_CONFIG_HOME", self.directory.path())
+            .env("GIT_CONFIG_GLOBAL", self.directory.path().join(GIT_CONFIG_FILE))
+            .env_remove("GIT_CONFIG_COUNT")
+            .env_remove("GIT_CONFIG_PARAMETERS")
             .env("GIT_TRACE", &self.trace)
             .output()
             .unwrap()
