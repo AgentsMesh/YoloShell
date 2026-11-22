@@ -19,9 +19,7 @@ fn connection() -> ConnectionOptions {
 fn commands_reject_connection_options_they_do_not_use() {
     let error = super::run(
         connection(),
-        Command::Plugin {
-            command: yolo_trusted_plugin_cli::PluginCommand::List { json: true },
-        },
+        Command::Plugin(Default::default()),
     )
     .unwrap_err()
     .to_string();

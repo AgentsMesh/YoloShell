@@ -94,7 +94,7 @@ fn copy_tree(source: &Path, destination: &Path) -> Result<()> {
 fn run(command: &mut Command) -> Result<()> {
     let output = command
         .output()
-        .context("git is required to install plugins")?;
+        .context("git is required to read plugin repositories")?;
     if !output.status.success() {
         bail!(
             "git failed: {}",

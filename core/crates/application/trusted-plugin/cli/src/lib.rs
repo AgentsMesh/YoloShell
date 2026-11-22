@@ -1,6 +1,7 @@
 //! `yolo plugin` for trusted, user-level plugins.
 
 mod arguments;
+mod catalogue;
 mod commands;
 mod constants;
 mod execution;
@@ -13,7 +14,7 @@ mod paths;
 use std::ffi::OsString;
 
 pub const COMMAND_INDEX: usize = 1;
-pub use arguments::PluginCommand;
+pub use arguments::{PluginCommand, PluginOptions};
 
 pub fn selects(arguments: &[OsString]) -> bool {
     arguments

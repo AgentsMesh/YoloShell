@@ -16,7 +16,7 @@ pub(crate) fn split(command: Command) -> RootCommand {
         Command::Workspace { command } => RootCommand::Aux(Aux::Workspace { command }),
         Command::Worktree { command } => RootCommand::Aux(Aux::Worktree { command }),
         Command::Protocol { command } => RootCommand::Aux(Aux::Protocol { command }),
-        Command::Plugin { command } => RootCommand::Aux(Aux::Plugin { command }),
+        Command::Plugin(options) => RootCommand::Aux(Aux::Plugin(options)),
         Command::Update(args) => RootCommand::Aux(Aux::Update(args)),
         command => RootCommand::Tui(command),
     }

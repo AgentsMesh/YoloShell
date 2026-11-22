@@ -28,11 +28,8 @@ pub enum Command {
         #[command(subcommand)]
         command: yolo_protocol_cli::ProtocolCommand,
     },
-    /// Manage trusted user-level plugins.
-    Plugin {
-        #[command(subcommand)]
-        command: yolo_trusted_plugin_cli::PluginCommand,
-    },
+    /// Find and manage plugins for this user.
+    Plugin(yolo_trusted_plugin_cli::PluginOptions),
     /// Check, install and activate Yolo releases.
     Update(UpdateArgs),
 }

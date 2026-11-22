@@ -130,8 +130,23 @@ is for trusted networks only and must not expose a generic Hub RPC proxy.
 
 ## CLI
 
+`yolo plugin` and `yolo plugin list` show the latest registry version alongside
+the local state for each ID. A local development link also appears when its ID
+has no published spec. Discovery reads versioned specs. Installation downloads
+the plugin source and verifies its commit, manifest and digest.
+
+`yolo plugin list --installed` works offline. Existing scripts can use
+`yolo plugin list --json` for the same local records. For catalogue JSON use
+`yolo plugin list --registry --json`. Each row contains `id`, `name`,
+`registry_version` and `installed`. The latter contains the local record or
+`null`. Supply a Git URL after `--registry` to use another catalogue.
+An incomplete catalogue produces an error. Text output still shows local
+records and any usable specs. Catalogue JSON requires a complete result.
+
 ```sh
-yolo plugin list [--json]
+yolo plugin [list]
+yolo plugin list --installed [--json]
+yolo plugin list --registry [URL] [--json]
 yolo plugin describe <id>
 yolo plugin link <dir> [--trust]
 yolo plugin install <id> [--version <version>] [--registry <url>] [--trust]

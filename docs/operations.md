@@ -102,18 +102,18 @@ unsafe signal.
 
 ## Trusted Plugins
 
-Trusted plugins are user-level processes linked from a local directory. They run
-with the user's authority and are not sandboxed. Linking a plugin is the trust
-decision:
+Trusted plugins run with the user's authority. Browse the registry and install
+the Web client with the following commands. The `--trust` flag approves its source.
 
 ```bash
-yolo plugin link ./my-plugin --trust
+yolo plugin
+yolo plugin install web.client --trust
 yolo plugin startup
-yolo plugin list
-yolo plugin action my.plugin status
-yolo plugin log my.plugin
-yolo plugin unlink my.plugin
+yolo plugin log web.client
 ```
+
+Use `yolo plugin list --installed` for an offline inventory. To test a local
+plugin, use `yolo plugin link ./my-plugin --trust` and `yolo plugin unlink my.plugin`.
 
 Yolo executes one startup hook and fixed actions; it never supervises plugin
 daemons, probes ports, or kills plugin processes. Plugins manage their own

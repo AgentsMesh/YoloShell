@@ -1,5 +1,6 @@
 mod argument_failures;
 mod automatic_startup;
+mod plugin_discovery;
 #[path = "../test_support/constants.rs"]
 mod constants;
 use constants::*;

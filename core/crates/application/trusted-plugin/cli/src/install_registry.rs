@@ -1,9 +1,28 @@
-use anyhow::{bail, Context, Result};
+use anyhow::{bail, ensure, Context, Result};
 use serde::{Deserialize, Serialize};
-use std::path::{Component, Path};
+use std::path::{Component, Path, PathBuf};
 use yolo_trusted_plugin_manifest::{SCHEMA_VERSION, TrustedPluginManifest};
 
 pub(crate) const DEFAULT_REGISTRY: &str = "https://github.com/AgentsMesh/YoloShellPlugins.git";
+
+fn checkout_path(registry: &Path, path: &Path) -> Result<PathBuf> {
+    let root = registry.canonicalize().context("resolve plugin registry checkout")?;
+    let resolved = path
+        .canonicalize()
+        .with_context(|| format!("resolve plugin registry entry {}", path.display()))?;
+    ensure!(
+        resolved.starts_with(root),
+        "registry entry points outside the checkout: {}",
+        path.display()
+    );
+    Ok(resolved)
+}
+
+pub(super) fn specs_directory(registry: &Path) -> Result<PathBuf> {
+    let path = checkout_path(registry, &registry.join("Specs"))?;
+    ensure!(path.is_dir(), "plugin registry Specs must be a directory");
+    Ok(path)
+}
 
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -37,7 +56,9 @@ pub(crate) fn load_spec(
     if !is_plugin_id(id) {
         bail!("invalid plugin id {id:?}; use a dotted lowercase id such as web.client");
     }
-    let directory = registry.join("Specs").join(id);
+    let directory = checkout_path(registry, &specs_directory(registry)?.join(id))
+        .with_context(|| format!("plugin {id} is not present in the registry"))?;
+    ensure!(directory.is_dir(), "registry entry {id} must be a directory");
     let version = match requested {
         Some(version) => {
             validate_version(version)?;
@@ -45,7 +66,8 @@ pub(crate) fn load_spec(
         }
         None => latest_version(&directory, id)?,
     };
-    let path = directory.join(format!("{version}.json"));
+    let path = checkout_path(registry, &directory.join(format!("{version}.json")))?;
+    ensure!(path.is_file(), "registry spec {} must be a regular file", path.display());
     let bytes = std::fs::read(&path)
         .with_context(|| format!("read plugin registry spec {}", path.display()))?;
     let spec: RegistrySpec = serde_json::from_slice(&bytes)
@@ -70,7 +92,7 @@ fn latest_version(directory: &Path, id: &str) -> Result<String> {
             versions.push(version.to_owned());
         }
     }
-    versions.sort_by_key(|version| version_key(version));
+    versions.sort_by(|a, b| version_key(a).cmp(&version_key(b)).then_with(|| a.cmp(b)));
     versions
         .pop()
         .ok_or_else(|| anyhow::anyhow!("plugin {id} has no version specs"))
@@ -121,7 +143,7 @@ fn validate_source(source: &RegistrySource) -> Result<()> {
     Ok(())
 }
 
-fn is_plugin_id(id: &str) -> bool {
+pub(super) fn is_plugin_id(id: &str) -> bool {
     !id.starts_with("yolo.")
         && id.contains('.')
         && id.split('.').all(|part| {
