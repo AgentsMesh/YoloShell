@@ -1,0 +1,69 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+load("//build_system/bazel:version.bzl", "YOLO_MARKETING_VERSION")
+load("//build_system/bazel/rust:test_features.bzl", "TEST_SUPPORT_FEATURE", "UNIT_TEST_FEATURES")
+
+package(default_visibility = ["//visibility:public"])
+
+_DEPS = ["@crates//:tokio"]
+
+filegroup(
+    name = "runtime_sources",
+    srcs = glob(
+        ["src/**/*.rs"],
+        allow_empty = False,
+    ),
+)
+
+filegroup(
+    name = "unit_test_sources",
+    testonly = True,
+    srcs = glob(
+        ["unit_tests/**/*.rs"],
+        allow_empty = True,
+    ),
+)
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = glob(
+        ["**/*"],
+        allow_empty = True,
+        exclude = ["BUILD.bazel"],
+    ) + [
+        "BUILD.bazel",
+    ],
+)
+
+rust_library(
+    name = "yolo_transport_core",
+    srcs = [":runtime_sources"],
+    crate_name = "yolo_transport_core",
+    crate_root = "src/mod.rs",
+    edition = "2024",
+    version = YOLO_MARKETING_VERSION,
+    deps = _DEPS,
+)
+
+rust_library(
+    name = "yolo_transport_core_test_support",
+    testonly = True,
+    srcs = [":runtime_sources"],
+    crate_features = [TEST_SUPPORT_FEATURE],
+    crate_name = "yolo_transport_core_test_support",
+    crate_root = "src/mod.rs",
+    edition = "2024",
+    deps = _DEPS,
+)
+
+rust_test(
+    name = "yolo_transport_core_unit_tests",
+    srcs = [
+        ":runtime_sources",
+        ":unit_test_sources",
+    ],
+    crate_features = UNIT_TEST_FEATURES,
+    crate_name = "yolo_transport_core_unit_test",
+    crate_root = "src/mod.rs",
+    edition = "2024",
+    deps = _DEPS,
+)

@@ -1,0 +1,16 @@
+pub(super) const QUERY_NAME: &str = "creation-query";
+pub(super) const OTHER_NAME: &str = "other-creation";
+pub(super) const OTHER_CWD: &str = "~/different-query-directory";
+pub(super) const OTHER_FINGERPRINT: &[u8] = b"different creation request";
+pub(super) const QUERY_STAGE_FILE: &str = "query-must-preserve.tmp";
+pub(super) const QUERY_STAGE_BYTES: &[u8] = b"unfinished receipt staging";
+pub(super) const QUERY_REPLACEMENT_FILE: &str = "replaced-creation-ledger.json";
+pub(super) const QUERY_CWD_DIRECTORY: &str = "creation-cwd";
+pub(super) const QUERY_RAW_CWD_COMPONENT: &str = ".";
+pub(super) const QUERY_ONLY_BINDING: usize = 1;
+pub(super) const QUERY_HOST_HOME_DIRECTORY: &str = "query-host-home";
+pub(super) const QUERY_REPLACED_HOME_DIRECTORY: &str = "retained-host-home";
+pub(super) const QUERY_DISPLACED_HOME_DIRECTORY: &str = "displaced-host-home";
+pub(super) const QUERY_LOCK_BUDGET: std::time::Duration = std::time::Duration::from_millis(5);
+pub(super) const FINGERPRINT_FIELD: &str = "request_fingerprint";
+pub(super) const QUERY_SCHEMA_OFFSET: u16 = 1;

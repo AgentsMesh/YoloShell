@@ -1,0 +1,11 @@
+pub(super) const TUI_BINARY_ENV: &str = "YOLO_TEST_TUI_BINARY";
+pub(super) const DRIVER_NAME: &str = "TUI acceptance driver";
+pub(super) const CONTROL_LABEL: &str = " | Control: this UI";
+pub(super) const SPLIT: &[u8] = b"\x02%";
+pub(super) const RESTORED_ACCESS: &str = " | Read Only · Ctrl-b t to take control";
+pub(super) const QUIT: &[u8] = b"\x02d";
+pub(super) const ESCAPE: &[u8] = b"\x1b";
+pub(super) const TERMINALS_HEADER: &str = "Terminals:";
+pub(super) const ENTER: &[u8] = b"\r";
+pub(super) const PASTE_START: &[u8] = b"\x1b[200~";
+pub(super) const PASTE_END: &[u8] = b"\x1b[201~";

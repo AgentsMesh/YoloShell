@@ -1,0 +1,15 @@
+package(default_visibility = ["//visibility:public"])
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = [
+        "BUILD.bazel",
+        "README.md",
+        "//build_system/architecture:architecture_check_data",
+        "//build_system/bazel:architecture_check_data",
+        "//build_system/platform/linux:architecture_check_data",
+        "//build_system/platform/macos:architecture_check_data",
+        "//build_system/release:architecture_check_data",
+        "//build_system/coverage:architecture_check_data",
+    ],
+)
