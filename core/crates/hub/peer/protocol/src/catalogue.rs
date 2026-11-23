@@ -120,11 +120,12 @@ impl ExportedOrigin {
         self.catalogue.verify(Purpose::Catalogue, origin)?;
         self.catalogue.payload.validate(origin)?;
         // Old observations remain authentic but must be presented as stale.
-        self.authority.authorize(
+        self.authority.authorize_with_skew(
             origin,
             self.catalogue.payload.policy_epoch,
             local,
             now,
+            MAX_CLOCK_SKEW_MS,
             &[Right::Observe].into_iter().collect(),
         )?;
         if self

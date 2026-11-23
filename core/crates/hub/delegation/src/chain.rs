@@ -38,6 +38,18 @@ impl DelegationChain {
         now: u64,
         required: &Rights,
     ) -> Result<(), DelegationError> {
+        self.authorize_with_skew(origin, epoch, recipient, now, 0, required)
+    }
+
+    pub fn authorize_with_skew(
+        &self,
+        origin: PeerIdentity,
+        epoch: u64,
+        recipient: PeerIdentity,
+        now: u64,
+        clock_skew_ms: u64,
+        required: &Rights,
+    ) -> Result<(), DelegationError> {
         if self.origin() != origin {
             return Err(DelegationError::Origin);
         }
@@ -49,7 +61,9 @@ impl DelegationChain {
         }
         for link in &self.0 {
             let claims = &link.fields().claims;
-            if now < claims.not_before_ms || now >= claims.expires_at_ms {
+            if now.saturating_add(clock_skew_ms) < claims.not_before_ms
+                || now >= claims.expires_at_ms
+            {
                 return Err(DelegationError::Expired);
             }
         }

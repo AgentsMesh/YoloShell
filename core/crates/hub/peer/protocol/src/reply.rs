@@ -72,7 +72,9 @@ impl Signed<TerminalUpdate> {
         {
             return Err(PeerError::Correlation);
         }
-        if now.saturating_add(MAX_CLOCK_SKEW_MS) < event.issued_at_ms || now.saturating_sub(event.issued_at_ms) > MAX_TERMINAL_LIFETIME_MS {
+        if now.saturating_add(MAX_CLOCK_SKEW_MS) < event.issued_at_ms
+            || now.saturating_sub(event.issued_at_ms) > MAX_TERMINAL_LIFETIME_MS
+        {
             return Err(PeerError::Expired);
         }
         let Command::Attach { request } = &call.payload.request.fields().command else {

@@ -40,8 +40,14 @@ impl Signed<Call> {
             return Err(PeerError::Expired);
         }
         let required = required_rights(&call.request.fields().command).ok_or(PeerError::Route)?;
-        call.authority
-            .authorize(origin, policy_epoch, self.signer, now, &required)?;
+        call.authority.authorize_with_skew(
+            origin,
+            policy_epoch,
+            self.signer,
+            now,
+            MAX_CLOCK_SKEW_MS,
+            &required,
+        )?;
         let mut identities = call
             .authority
             .links()

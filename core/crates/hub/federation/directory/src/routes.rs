@@ -2,7 +2,9 @@ use crate::OriginBook;
 use anyhow::Result;
 use std::{collections::BTreeMap, sync::Arc};
 use yolo_hub_identity::HubId;
-use yolo_hub_peer_protocol::{Catalogue, ExportedOrigin, FIRST_REVISION, Signed};
+use yolo_hub_peer_protocol::{
+    Catalogue, ExportedOrigin, FIRST_REVISION, MAX_CLOCK_SKEW_MS, Signed,
+};
 use yolo_hub_routing::{Grant, HubCatalog, Right, Rights, RouteAdvertisement};
 
 impl OriginBook {
@@ -59,11 +61,12 @@ impl OriginBook {
             if !origin.reachable
                 || origin
                     .authority
-                    .authorize(
+                    .authorize_with_skew(
                         current.signer,
                         current.payload.policy_epoch,
                         self.local,
                         now,
+                        MAX_CLOCK_SKEW_MS,
                         &[Right::Observe].into_iter().collect(),
                     )
                     .is_err()
