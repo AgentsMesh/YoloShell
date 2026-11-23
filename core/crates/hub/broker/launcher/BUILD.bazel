@@ -1,0 +1,21 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+load("//build_system/bazel:version.bzl", "YOLO_MARKETING_VERSION")
+package(default_visibility = ["//visibility:public"])
+
+_DEPS = [
+    "//core/crates/application/launch/contract:yolo_launch_contract",
+    "//core/crates/persistence/paths:yolo_paths",
+    "//core/crates/hub/ssh/profile/protocol:yolo_hub_ssh_profile_protocol",
+    "//core/crates/hub/state:yolo_hub_state",
+    "//core/crates/runtime/engine/process:yolo_process",
+    "//core/crates/transport/broker/launch/authority:yolo_broker_launch_authority",
+    "//core/crates/transport/broker/hub/protocol:yolo_broker_hub_protocol",
+    "//core/crates/transport/remote/broker:yolo_remote_broker",
+    "@crates//:anyhow",
+    "@crates//:tokio",
+    "@crates//:zeroize",
+]
+
+filegroup(name = "architecture_check_data", srcs = glob(["**/*.rs"]) + ["BUILD.bazel"])
+rust_library(name = "yolo_hub_broker_launcher", srcs = glob(["src/**/*.rs"]), crate_name = "yolo_hub_broker_launcher", crate_root = "src/lib.rs", edition = "2024", version = YOLO_MARKETING_VERSION, deps = _DEPS)
+rust_test(name = "unit_tests", srcs = glob(["src/**/*.rs", "unit_tests/**/*.rs"]), crate_name = "yolo_hub_broker_launcher_unit_tests", crate_root = "src/lib.rs", edition = "2024", deps = _DEPS + ["//core/crates/hub/ssh/profile/protocol:test_support", "@crates//:uuid"])

@@ -1,0 +1,9 @@
+pub const MAX_PRIVATE_CREDENTIAL_BYTES: usize = 1024 * 1024;
+pub const SETUP_OPERATION_ID_FIELD: &str = "operation_id";
+pub const SETUP_HISTORY_OWNER_FIELD: &str = "owner";
+pub const SETUP_HISTORY_CHECKPOINT_FIELD: &str = "checkpoint";
+pub const SETUP_CHECKPOINT_PHASE_TAG: &str = "phase";
+pub(crate) const PRIVATE_INPUT: &str = "[private credential input]";
+pub(crate) const INVALID_REQUEST: &str = "invalid remote Hub setup request";
+pub(crate) const INVALID_CREDENTIALS: &str = "invalid private credential input";
+pub(crate) const INVALID_HISTORY: &str = "invalid remote setup history observation";

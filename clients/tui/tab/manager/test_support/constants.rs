@@ -1,0 +1,17 @@
+pub const SECOND_NAME: &str = "Research";
+pub const THIRD_NAME: &str = "Deployment";
+pub const NEW_NAME: &str = "New project";
+pub const RENAMED_NAME: &str = "Renamed project";
+pub const UNICODE_NAME: &str = "工作区";
+pub const PADDED_UNICODE_NAME: &str = "  工作区 \u{3000}";
+pub const CONTROL_TEXT: &str = "A\n\r\0\t\x1bB";
+pub const CLEAN_TEXT: &str = "AB";
+pub const ASCII: &str = "a";
+pub const WIDE: &str = "界";
+pub const SHIFT_CHARACTER: char = 'X';
+pub const ERROR_MESSAGE: &str = "The tab name already exists";
+pub const FRAME_WIDTH: u16 = 120;
+pub const FRAME_HEIGHT: u16 = 16;
+pub const SMALL_FRAMES: &[(u16, u16)] = &[(1, 1), (1, 8), (2, 8), (3, 2), (20, 4)];
+pub const STEP: usize = 1;
+pub const MAX_NAVIGATION_ATTEMPTS: usize = 8;

@@ -1,0 +1,67 @@
+load("@rules_rust//rust:defs.bzl", "rust_library")
+load("//build_system/bazel:lifecycle_deadline_contract.bzl", "lifecycle_deadline_rust_contract")
+load("//build_system/bazel:scm_rights_descriptor_contract.bzl", "scm_rights_descriptor_rust_contract")
+load("//build_system/bazel:version.bzl", "YOLO_MARKETING_VERSION")
+load("//build_system/bazel/rust:adversarial.bzl", "adversarial_runtime_targets")
+load("//build_system/bazel/rust:component_architecture_data.bzl", "RUNTIME_COMPONENT_ARCHITECTURE_DATA")
+load("//build_system/bazel/rust:component_deps.bzl", "RUNTIME_COMPONENT_DEPS")
+load("//build_system/bazel/rust:providers.bzl", "PROVIDER_RUNTIME_COMPONENTS")
+load("//build_system/bazel/rust:components.bzl", "RUNTIME_COMPONENT_TESTS")
+load(
+    "//build_system/bazel/rust:config.bzl",
+    "RUNTIME_DEPS",
+)
+load("//build_system/bazel/rust:runtime_test_suite.bzl", "runtime_test_suite")
+
+package(default_visibility = ["//visibility:public"])
+
+filegroup(
+    name = "runtime_facade_sources",
+    srcs = glob(["src/*.rs"]),
+)
+
+
+lifecycle_deadline_rust_contract(name = "lifecycle_deadline_contract")
+
+scm_rights_descriptor_rust_contract(name = "scm_rights_descriptor_contract")
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = glob(
+        ["**/*"],
+        allow_empty = True,
+        exclude = ["BUILD.bazel"],
+    ) + RUNTIME_COMPONENT_ARCHITECTURE_DATA + [
+        "BUILD.bazel",
+        ":lifecycle_deadline_contract",
+        ":scm_rights_descriptor_contract",
+    ],
+)
+
+rust_library(
+    name = "yolo_runtime",
+    srcs = [":runtime_facade_sources"],
+    compile_data = [
+        ":lifecycle_deadline_contract",
+        ":scm_rights_descriptor_contract",
+    ],
+    crate_name = "yolo_runtime",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    version = YOLO_MARKETING_VERSION,
+    deps = RUNTIME_DEPS + RUNTIME_COMPONENT_DEPS + PROVIDER_RUNTIME_COMPONENTS,
+)
+
+alias(
+    name = "yolo",
+    actual = "//core/crates/application/yolo:yolo",
+)
+
+adversarial_runtime_targets()
+
+alias(
+    name = "yolo-adversarial",
+    actual = "//core/crates/application/yolo:yolo-adversarial",
+)
+
+runtime_test_suite(RUNTIME_COMPONENT_TESTS)
