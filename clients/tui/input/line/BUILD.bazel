@@ -1,0 +1,39 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+load("//build_system/bazel:version.bzl", "YOLO_MARKETING_VERSION")
+
+package(default_visibility = ["//visibility:public"])
+
+_DEPS = ["@crates//:crossterm", "@crates//:ratatui", "@crates//:unicode-segmentation"]
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = glob(["src/**/*.rs", "unit_tests/**/*.rs", "integration_tests/**/*.rs"]) + ["BUILD.bazel"],
+)
+
+rust_library(
+    name = "yolo_tui_line_input",
+    crate_name = "yolo_tui_line_input",
+    crate_root = "src/lib.rs",
+    srcs = glob(["src/**/*.rs"]),
+    edition = "2024",
+    version = YOLO_MARKETING_VERSION,
+    deps = _DEPS,
+)
+
+rust_test(
+    name = "unit_tests",
+    crate_name = "yolo_tui_line_input_unit_tests",
+    crate_root = "unit_tests/lib.rs",
+    srcs = glob(["unit_tests/**/*.rs"]),
+    edition = "2024",
+    deps = _DEPS + [":yolo_tui_line_input"],
+)
+
+rust_test(
+    name = "integration_tests",
+    crate_name = "yolo_tui_line_input_integration_tests",
+    crate_root = "integration_tests/lib.rs",
+    srcs = glob(["integration_tests/**/*.rs"]),
+    edition = "2024",
+    deps = _DEPS + [":yolo_tui_line_input"],
+)

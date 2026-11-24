@@ -1,0 +1,53 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+load("//build_system/bazel:version.bzl", "YOLO_MARKETING_VERSION")
+
+package(default_visibility = ["//visibility:public"])
+
+STORAGE_SOURCES = glob(["src/**/*.rs"])
+
+STORAGE_TEST_SOURCES = glob(
+    [
+        "unit_tests/**/*.rs",
+        "integration_tests/**/*.rs",
+    ],
+    allow_empty = True,
+)
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = glob(
+        ["**/*"],
+        allow_empty = True,
+        exclude = ["BUILD.bazel"],
+    ) + ["BUILD.bazel"],
+)
+
+rust_library(
+    name = "yolo_storage",
+    srcs = STORAGE_SOURCES,
+    crate_name = "yolo_storage",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    version = YOLO_MARKETING_VERSION,
+    deps = [
+        "@crates//:serde",
+        "@crates//:serde_json",
+        "@crates//:thiserror",
+        "@crates//:uuid",
+    ],
+)
+
+rust_test(
+    name = "yolo_storage_unit_tests",
+    srcs = STORAGE_TEST_SOURCES,
+    crate_name = "yolo_storage_test",
+    crate_root = "unit_tests/lib.rs",
+    edition = "2024",
+    deps = [
+        ":yolo_storage",
+        "@crates//:serde",
+        "@crates//:serde_json",
+        "@crates//:tempfile",
+        "@crates//:uuid",
+    ],
+)

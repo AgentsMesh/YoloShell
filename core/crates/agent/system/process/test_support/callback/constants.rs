@@ -1,0 +1,17 @@
+pub const ROOT: u32 = 71;
+pub const PROVIDER: u32 = 73;
+pub const LAUNCHER: u32 = 77;
+pub const PEER: u32 = 79;
+pub const UNRELATED: u32 = 83;
+pub const START_TIME: u64 = 101;
+pub const DEVICE: u64 = 3;
+pub const NO_FOREGROUND: i32 = -1;
+pub const DEPTH_PID_BASE: u32 = 1000;
+pub const STEP: u64 = 1;
+pub const EXECUTABLE: &str = "codex";
+pub const EXECUTABLE_PATH: &str = "/opt/codex";
+pub const CWD: &str = "/project";
+pub const REPLACEMENT_CWD: &str = "/other-project";
+pub const ENVIRONMENT_KEY: &str = "CODEX_HOME";
+pub const ENVIRONMENT_VALUE: &str = "/home/codex";
+pub const CHANGED_ENVIRONMENT_VALUE: &str = "/home/replaced";

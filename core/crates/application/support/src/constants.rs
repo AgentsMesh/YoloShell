@@ -1,0 +1,25 @@
+pub const SESSION_MANIFEST_SCHEMA_VERSION: u16 = 2;
+pub const RUNTIME_RECORD_SCHEMA_VERSION: u16 = 4;
+pub const WORKER_LAUNCH_SCHEMA_VERSION: u16 = 3;
+pub const RESUME_TRANSACTION_SCHEMA_VERSION: u16 = 6;
+pub const RESUME_BINDING_CLEAR_SCHEMA_VERSION: u16 = 3;
+pub const PROVIDER_RESUME_AUTHORITY_SCHEMA_VERSION: u16 = 1;
+pub const MAX_MANAGED_SESSIONS: usize = 65_536;
+pub const MAX_NAMESPACE_LOSS_PTY_HOLDERS: usize = 8_192;
+pub const HEX_DIGITS_PER_BYTE: usize = 2;
+pub const NANOSECONDS_PER_SECOND: u64 = 1_000_000_000;
+pub const MAX_RUNTIME_PATH_BYTES: usize = 4_096;
+pub const MAX_RUNTIME_BINARY_BYTES: usize = yolo_build_image::MAX_EXECUTABLE_IMAGE_BYTES as usize;
+pub const RUNTIME_EXECUTABLE_FILE_NAME: &str = yolo_launch_contract::EXECUTABLE_NAME;
+pub const RUNTIME_RELEASE_PREFIX: &str = ".yolo-release-";
+pub const RUNTIME_EXECUTABLE_MODE: u32 = 0o700;
+#[cfg(any(test, feature = "yolo-test-support"))]
+pub const TEST_HARNESS_EXACT_ARGUMENT: &str = "--exact";
+#[cfg(any(test, feature = "yolo-test-support"))]
+pub const TEST_HARNESS_NOCAPTURE_ARGUMENT: &str = "--nocapture";
+#[cfg(any(test, feature = "yolo-test-support"))]
+pub const TEST_HARNESS_QUIET_ARGUMENT: &str = "--quiet";
+#[cfg(any(test, feature = "yolo-test-support"))]
+pub const TEST_HARNESS_SINGLE_THREAD_ARGUMENT: &str = "--test-threads=1";
+#[cfg(any(test, feature = "yolo-test-support"))]
+pub const TEST_PROCESS_START_TIME: u64 = 1_000;

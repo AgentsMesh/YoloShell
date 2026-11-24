@@ -1,0 +1,17 @@
+package(default_visibility = ["//visibility:public"])
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = [
+        "BUILD.bazel",
+        "//core/crates/agent/baseline:architecture_check_data",
+        "//core/crates/agent/catalog:architecture_check_data",
+        "//core/crates/agent/cli:architecture_check_data",
+        "//core/crates/agent/contract:architecture_check_data",
+        "//core/crates/agent/input:architecture_check_data",
+        "//core/crates/agent/hooks:architecture_check_data",
+        "//core/crates/agent/runtime:architecture_check_data",
+        "//core/crates/agent/providers:architecture_check_data",
+        "//core/crates/agent/system:architecture_check_data",
+    ],
+)

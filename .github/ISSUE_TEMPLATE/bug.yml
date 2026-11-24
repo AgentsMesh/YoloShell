@@ -1,0 +1,57 @@
+name: Bug report
+description: Report a reproducible defect in Yolo.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not include tokens, private paths, credentials or live session data.
+        Report security issues through the private process in SECURITY.md.
+  - type: input
+    id: revision
+    attributes:
+      label: Revision or version
+      description: Commit, release, or `yolo --version` output.
+    validations:
+      required: true
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - macOS Apple Silicon
+        - Linux aarch64
+        - Linux x86_64
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: Include errors and relevant logs after redacting secrets.
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Does it reproduce after detach/reattach, Host restart, Hub restart or reboot?
+    validations:
+      required: false
