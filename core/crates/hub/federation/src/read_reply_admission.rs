@@ -1,6 +1,6 @@
 use crate::{Federation, node::now_ms};
 use yolo_hub_delegation::PeerIdentity;
-use yolo_hub_peer_protocol::{Call, Signed, required_rights};
+use yolo_hub_peer_protocol::{Call, MAX_CLOCK_SKEW_MS, Signed, required_rights};
 use yolo_hub_terminal_protocol::PublicError;
 
 impl Federation {
@@ -53,11 +53,12 @@ impl Federation {
         }
         call.payload
             .authority
-            .authorize(
+            .authorize_with_skew(
                 pin,
                 current.payload.policy_epoch,
                 self.state.peer_identity(),
                 now,
+                MAX_CLOCK_SKEW_MS,
                 &required,
             )
             .map_err(|_| PublicError::Unauthorized)?;

@@ -95,6 +95,45 @@ fn origin_to_relay_to_entry_reduces_rights_and_keeps_original_issuer() {
 }
 
 #[test]
+fn explicit_clock_tolerance_accepts_small_drift_without_changing_strict_authorization() {
+    let (origin, relay) = (Identity::new(), Identity::new());
+    let root = SignedGrant::issue(root_claims(&origin, &relay), &origin).unwrap();
+    let chain = DelegationChain::new(vec![root]).unwrap();
+
+    chain
+        .authorize_with_skew(
+            origin.identity,
+            FIRST_POLICY_EPOCH,
+            relay.identity,
+            BEFORE - 10,
+            10,
+            &rights(),
+        )
+        .unwrap();
+    assert_eq!(
+        chain.authorize_with_skew(
+            origin.identity,
+            FIRST_POLICY_EPOCH,
+            relay.identity,
+            BEFORE - 10,
+            9,
+            &rights(),
+        ),
+        Err(DelegationError::Expired)
+    );
+    assert_eq!(
+        chain.authorize(
+            origin.identity,
+            FIRST_POLICY_EPOCH,
+            relay.identity,
+            BEFORE - 1,
+            &rights(),
+        ),
+        Err(DelegationError::Expired)
+    );
+}
+
+#[test]
 fn each_attempted_authority_expansion_is_rejected_even_with_a_valid_signature() {
     let (origin, relay, entry) = (Identity::new(), Identity::new(), Identity::new());
     let root = SignedGrant::issue(root_claims(&origin, &relay), &origin).unwrap();

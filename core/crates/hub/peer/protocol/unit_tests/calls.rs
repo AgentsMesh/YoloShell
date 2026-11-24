@@ -35,6 +35,24 @@ fn call_is_bound_to_origin_recipient_clock_and_each_authenticated_hop() {
 }
 
 #[test]
+fn peer_call_accepts_a_remote_timestamp_within_the_shared_clock_tolerance() {
+    let fixture = Fixture::new();
+    let mut call = fixture.call().payload;
+    call.issued_at_ms += MAX_CLOCK_SKEW_MS / 2;
+    call.expires_at_ms = call.issued_at_ms + MAX_CALL_LIFETIME_MS;
+    let call = Signed::new(call, Purpose::Call, &fixture.entry).unwrap();
+
+    call.admit(
+        fixture.relay.identity.hub(),
+        fixture.entry.identity,
+        fixture.origin.identity,
+        FIRST_POLICY_EPOCH,
+        NOW,
+    )
+    .unwrap();
+}
+
+#[test]
 fn responses_cannot_be_substituted_between_calls() {
     let fixture = Fixture::new();
     let call = fixture.call();

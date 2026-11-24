@@ -6,7 +6,9 @@ use tokio::{
     time::{Instant, interval},
 };
 use yolo_hub_dispatch::TerminalSource;
-use yolo_hub_peer_protocol::{Call, FIRST_STREAM_SEQUENCE, Purpose, Signed, TerminalUpdate};
+use yolo_hub_peer_protocol::{
+    Call, FIRST_STREAM_SEQUENCE, MAX_CLOCK_SKEW_MS, Purpose, Signed, TerminalUpdate,
+};
 use yolo_hub_peer_rpc::{RemoteUpdates, RpcError, RpcFuture, Updates};
 use yolo_hub_terminal_protocol::{FIRST_OUTPUT_SEQUENCE, OutputCursor, TerminalEvent};
 
@@ -37,11 +39,12 @@ impl Federation {
                 let required =
                     yolo_hub_peer_protocol::required_rights(&call.payload.request.fields().command)
                         .ok_or_else(|| anyhow::anyhow!(LOCAL_MANAGEMENT_STREAM_DETAIL))?;
-                call.payload.authority.authorize(
+                call.payload.authority.authorize_with_skew(
                     self.state.peer_identity(),
                     self.policy_epoch,
                     call.signer,
                     now,
+                    MAX_CLOCK_SKEW_MS,
                     &required,
                 )?;
                 let terminal = event.is_terminal();
