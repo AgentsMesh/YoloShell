@@ -1,0 +1,17 @@
+pub(super) const NATIVE_BUILD: &str = "plugins/macos/Tests/NativeIntegration/BUILD.bazel";
+pub(super) const CHAT_MACRO: &str = "build_system/platform/macos/native_integration/chat_tests.bzl";
+pub(super) const LAYOUT_MACRO: &str = "build_system/platform/macos/native_integration/layout_tests.bzl";
+pub(super) const FUTURE_MACRO: &str = "build_system/platform/macos/native_integration/future_tests.bzl";
+pub(super) const NATIVE_PREFIX: &str = "//plugins/macos/Tests/NativeIntegration:";
+pub(super) const AUTOMATIC_SUITE: &str = "e2e";
+pub(super) const NESTED_SUITE: &str = "native_acceptance";
+pub(super) const NESTED_REFERENCE: &str = ":native_acceptance";
+pub(super) const CHAT: &str = "YoloNativeChatE2E";
+pub(super) const LAYOUT: &str = "YoloNativeLayoutE2E";
+pub(super) const FUTURE: &str = "YoloNativeFutureE2E";
+pub(super) const VISIBLE: &str = "YoloNativeVisibleWorkspaceE2E";
+pub(super) const POLICY_FRAGMENT: &str = "every declared inactive Native E2E";
+pub(super) const MISSING_BUILD: &str = "missing-root-build";
+pub(super) const INTERNAL_XCTEST: &str = "YoloNativeChatE2E.__internal__.xctest";
+pub(super) const SUPPORT_TARGET: &str = "YoloNativeIntegrationSupportTests";
+pub(super) const DYNAMIC_DECLARATION: &str = "macos_unit_test(name = dynamic_name)";

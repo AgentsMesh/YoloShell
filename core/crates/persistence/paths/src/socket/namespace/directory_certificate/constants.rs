@@ -1,0 +1,11 @@
+pub(super) const ATTRIBUTE_NAME: &std::ffi::CStr = c"user.yolo.namespace";
+pub(super) const ATTRIBUTE_MAX_BYTES: usize = 2_048;
+pub(super) const CERTIFICATE_SCHEMA_VERSION: u16 = 3;
+pub(super) const READ_CONTEXT: &str = "read socket directory certificate";
+pub(super) const INSTALL_CONTEXT: &str = "install socket directory certificate";
+pub(super) const INVALID_CERTIFICATE: &str = "socket directory certificate is invalid";
+pub(super) const CERTIFICATE_CHANGED: &str = "socket directory certificate changed";
+#[cfg(target_os = "macos")]
+pub(super) const ATTRIBUTE_POSITION: u32 = 0;
+#[cfg(target_os = "macos")]
+pub(super) const ATTRIBUTE_OPTIONS: libc::c_int = 0;

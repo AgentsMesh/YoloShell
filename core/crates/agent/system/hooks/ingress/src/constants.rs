@@ -1,0 +1,25 @@
+use std::time::Duration;
+
+pub const FIRST_SEQUENCE: u64 = 1;
+pub const MAX_PROVIDER_BYTES: usize = 64;
+pub const MAX_OUTBOX_EVENTS: usize = 4096;
+pub const MAX_OUTBOX_SCOPES: usize = 8;
+pub const MAX_OUTBOX_BYTES: u64 = 8 * 1024 * 1024;
+pub const MAX_HOOK_CLIENTS: usize = 16;
+pub const REQUEST_TIMEOUT: Duration = Duration::from_secs(5);
+pub const RESPONSE_TIMEOUT: Duration = Duration::from_secs(5);
+pub const DELIVERY_BUDGET: Duration = Duration::from_millis(1500);
+pub const RETRY_DELAY: Duration = Duration::from_millis(25);
+pub const OUTBOX_LOCK_TIMEOUT: Duration = Duration::from_secs(2);
+pub const OUTBOX_LOCK_RETRY: Duration = Duration::from_millis(5);
+pub const HOOK_ADMISSION_TASK: &str = "provider_hook_admission";
+pub const HOOK_CONNECTION_TASK: &str = "provider_hook_connection";
+pub const HOOK_READINESS_RETENTION_TASK: &str = "provider_hook_readiness_retention";
+pub use yolo_hook_codec::{OUTBOX_ENV, SOCKET_ENV};
+pub const OUTBOX_DIRECTORY: &str = "provider-hook";
+pub const OUTBOX_FILE: &str = "native-state.json";
+pub const INVALID: &str = "provider hook scope, admission or evidence is invalid";
+pub const ACCEPTED: &str = "accepted";
+pub const REJECTED: &str = "rejected";
+pub const NOT_READY: &str = "not_ready";
+pub const LISTENER_RETRY_DELAY: Duration = Duration::from_millis(50);

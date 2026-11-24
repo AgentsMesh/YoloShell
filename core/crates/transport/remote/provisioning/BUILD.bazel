@@ -1,0 +1,30 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+load("//build_system/bazel:version.bzl", "YOLO_MARKETING_VERSION")
+package(default_visibility = ["//visibility:public"])
+_DEPS = ["//core/crates/transport/capnp/codec", "//core/crates/transport/capnp/argument", "//core/crates/application/launch/contract:yolo_launch_contract", "//core/crates/distribution/bundle:yolo_distribution_bundle", "//core/crates/distribution/bundle/source:yolo_distribution_bundle_source", "//core/crates/distribution/publication/protocol:yolo_distribution_publication_protocol", "//core/crates/persistence/paths:yolo_paths", "//core/crates/transport/broker/hub/protocol:yolo_broker_hub_protocol", "//core/crates/transport/remote:yolo_remote", "//core/crates/transport/remote/bundle:yolo_remote_bundle", "//core/crates/transport/remote/provisioning/protocol:yolo_remote_provisioning_protocol", "@crates//:anyhow", "@crates//:serde", "@crates//:serde_json", "@crates//:tokio"]
+rust_library(name = "yolo_remote_provisioning", srcs = glob(["src/**/*.rs"]), crate_root = "src/lib.rs", crate_name = "yolo_remote_provisioning", edition = "2024", version = YOLO_MARKETING_VERSION, deps = _DEPS)
+rust_test(name = "integration_tests", srcs = glob(["integration_tests/**/*.rs", "test_support/**/*.rs"]), crate_root = "integration_tests/lib.rs", crate_name = "yolo_remote_provisioning_integration_tests", edition = "2024", deps = _DEPS + [":yolo_remote_provisioning", "//core/crates/build_image:yolo_build_image", "//core/crates/hub/remote/startup/protocol:test_support", "//core/crates/transport/remote/bundle:test_support", "@crates//:tempfile", "@crates//:uuid"])
+rust_library(name = "broker_test_support", testonly = True, srcs = glob(["src/**/*.rs"]), crate_root = "src/lib.rs", crate_name = "yolo_remote_provisioning_broker_test_support", edition = "2024", aliases = {"//core/crates/transport/remote:yolo_remote_broker_test_support": "yolo_remote", "//core/crates/transport/remote/bundle:broker_test_support": "yolo_remote_bundle"}, deps = [dep for dep in _DEPS if dep not in ["//core/crates/transport/remote:yolo_remote", "//core/crates/transport/remote/bundle:yolo_remote_bundle"]] + ["//core/crates/transport/remote:yolo_remote_broker_test_support", "//core/crates/transport/remote/bundle:broker_test_support"])
+rust_library(
+    name = "adversarial",
+    testonly = True,
+    srcs = glob(["src/**/*.rs"]),
+    crate_root = "src/lib.rs",
+    crate_name = "yolo_remote_provisioning_adversarial",
+    edition = "2024",
+    aliases = {
+        "//core/crates/persistence/paths:yolo_paths_persistence_test_support": "yolo_paths",
+        "//core/crates/transport/remote:yolo_remote_adversarial": "yolo_remote",
+        "//core/crates/transport/remote/bundle:adversarial": "yolo_remote_bundle",
+    },
+    deps = [dep for dep in _DEPS if dep not in [
+        "//core/crates/persistence/paths:yolo_paths",
+        "//core/crates/transport/remote:yolo_remote",
+        "//core/crates/transport/remote/bundle:yolo_remote_bundle",
+    ]] + [
+        "//core/crates/persistence/paths:yolo_paths_persistence_test_support",
+        "//core/crates/transport/remote:yolo_remote_adversarial",
+        "//core/crates/transport/remote/bundle:adversarial",
+    ],
+)
+filegroup(name = "architecture_check_data", srcs = glob(["**/*"], exclude = ["BUILD.bazel"]) + ["BUILD.bazel"])

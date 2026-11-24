@@ -1,0 +1,28 @@
+diff --git a/util/collect_coverage/BUILD.bazel b/util/collect_coverage/BUILD.bazel
+index 80f7cdb..51f22e9 100644
+--- a/util/collect_coverage/BUILD.bazel
++++ b/util/collect_coverage/BUILD.bazel
+@@ -5,4 +5,5 @@ rust_binary(
+     srcs = ["collect_coverage.rs"],
+     edition = "2018",
+     visibility = ["//visibility:public"],
++    deps = ["@@//build_system/coverage/collector:collector"],
+ )
+diff --git a/util/collect_coverage/collect_coverage.rs b/util/collect_coverage/collect_coverage.rs
+index 9ecb8e0..f0148bb 100644
+--- a/util/collect_coverage/collect_coverage.rs
++++ b/util/collect_coverage/collect_coverage.rs
+@@ -70,4 +70,5 @@ fn find_test_binary(execroot: &Path, runfiles_dir: &Path) -> PathBuf {
+-fn main() {
++#[allow(dead_code)]
++fn upstream_main() {
+     let coverage_dir = PathBuf::from(env::var("COVERAGE_DIR").unwrap());
+     let execroot = PathBuf::from(env::var("ROOT").unwrap());
+     let mut runfiles_dir = PathBuf::from(env::var("RUNFILES_DIR").unwrap());
+@@ -162,2 +163,6 @@ fn main() {
+     debug_log!("Success!");
+ }
++
++fn main() {
++    yolo_rust_coverage::run();
++}

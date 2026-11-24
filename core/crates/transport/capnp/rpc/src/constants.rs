@@ -1,0 +1,16 @@
+pub const MAX_CONNECTIONS: usize = 256;
+pub const MAX_IN_FLIGHT: usize = 32;
+pub const MAX_STREAMS: usize = 32;
+pub const MAX_RECEIPT_WAIT: std::time::Duration = std::time::Duration::from_secs(10);
+pub(crate) const ENGINE_QUEUE: usize = 64;
+pub(crate) const STREAM_QUEUE: usize = 1;
+pub(crate) const THREAD_NAME: &str = "yolo-capnp-rpc";
+pub(crate) const CLOSED: &str = "Cap'n Proto connection closed";
+pub(crate) const OVERLOADED: &str = "Cap'n Proto capacity exceeded";
+pub(crate) const INVALID: &str = "Cap'n Proto method or response mismatch";
+pub(crate) const DEADLINE: &str = "Cap'n Proto operation deadline elapsed";
+pub(crate) const RUNTIME: &str = "Cap'n Proto executor unavailable";
+pub(crate) const UNKNOWN: &str = "response confirmation outcome is unknown";
+pub(crate) const RECEIPT_EXPIRED: &str = "response confirmation expired before commitment";
+pub(crate) const WORD_BYTES: usize = 8;
+pub(crate) const SERVER_DRAIN_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(2);
