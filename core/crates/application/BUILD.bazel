@@ -1,0 +1,28 @@
+package(default_visibility = ["//visibility:public"])
+
+APPLICATION_ARCHITECTURE_DATA = [
+    "//core/crates/application/broker/child/custody:architecture_check_data",
+    "//core/crates/application/broker/profile/authority:architecture_check_data",
+    "//core/crates/application/broker/startup:architecture_check_data",
+    "//core/crates/application/broker/supervision:architecture_check_data",
+    "//core/crates/application/broker/supervision/state:architecture_check_data",
+    "//core/crates/application/launch/contract:architecture_check_data",
+    "//core/crates/application/yolo:architecture_check_data",
+    "//core/crates/application/workspace/cli:architecture_check_data",
+    "//core/crates/application/local/profile:architecture_check_data",
+    "//core/crates/application/trusted-plugin/cli:architecture_check_data",
+    "//core/crates/application/support:architecture_check_data",
+    "//core/crates/application/cli:architecture_check_data",
+    "//core/crates/application/host/cli:architecture_check_data",
+    "//core/crates/application/attach/cli:architecture_check_data",
+    "//core/crates/application/remote/cli:architecture_check_data",
+    "//core/crates/application/upgrade/cli:architecture_check_data",
+    "//core/crates/application/protocol/cli:architecture_check_data",
+    "//core/crates/application/socket/guard:architecture_check_data",
+    "//core/crates/application/socket/guard/process:architecture_check_data",
+]
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = APPLICATION_ARCHITECTURE_DATA + ["BUILD.bazel"],
+)

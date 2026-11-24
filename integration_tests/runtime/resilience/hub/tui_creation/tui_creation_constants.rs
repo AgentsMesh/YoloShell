@@ -1,0 +1,9 @@
+pub const NEW_SHELL: &[u8] = b"n";
+pub const DIRECTORY_PROMPT: &str = "Directory: ~";
+pub const CLEAR_DEFAULT_DIRECTORY: &[u8] = b"\x7f";
+pub const CREATED_DIRECTORY: &str = "created via TUI";
+pub const SHELL_OUTPUT: &[u8] = b"printf 'YOLO_TUI_CREATED_%s:%s\\n' SHELL \"$PWD\"\r";
+pub const SHELL_MARKER: &str = "YOLO_TUI_CREATED_SHELL";
+pub const RETURN_OUTPUT: &[u8] = b"printf 'YOLO_TUI_RETURN_%s\\n' SAME_SHELL\r";
+pub const RETURN_MARKER: &str = "YOLO_TUI_RETURN_SAME_SHELL";
+pub const BASELINE_AND_CREATED: usize = 2;

@@ -1,0 +1,31 @@
+pub const REVISION: &str = "dddddddddddddddddddddddddddddddddddddddd";
+pub const OTHER_REVISION: &str = "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
+pub const VERSION: &str = "1.2.3";
+pub const OTHER_VERSION: &str = "1.2.4";
+pub const RUNTIME_DIGEST: &str = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+pub const GOLDEN_BUILD_ID: &str =
+    "794838e5265028db7f03715564d6aa1f4f5310315d7cc8e95ee3848f65649fe4";
+pub const RUNTIME_BYTES: u64 = 64;
+pub const RETIRED_SCHEMA: u16 = 1;
+pub const RETIRED_ROLES: [&str; 3] = ["host", "hub", "file_helper"];
+pub const INSTALL_ROOT: &str = "/srv/yolo";
+pub const SCHEMA_KEY: &str = "schema_version";
+pub const REVISION_KEY: &str = "source_revision";
+pub const VERSION_KEY: &str = "version";
+pub const TARGET_KEY: &str = "target";
+pub const PLATFORM_KEY: &str = "platform";
+pub const ARCHITECTURE_KEY: &str = "architecture";
+pub const BUILD_KEY: &str = "build_id";
+pub const ARTIFACTS_KEY: &str = "artifacts";
+pub const DIGEST_KEY: &str = "sha256";
+pub const SIZE_KEY: &str = "size_bytes";
+pub const UNRECOGNIZED_KEY: &str = "extra";
+pub const PATH_KEY: &str = "path";
+pub const UNRECOGNIZED_ROLE: &str = "worker";
+pub const UNRECOGNIZED_PLATFORM: &str = "windows";
+pub const UNRECOGNIZED_ARCHITECTURE: &str = "arm64";
+pub const PATH_ESCAPE: &str = "../../elsewhere";
+pub const SINGLE_BYTE: u8 = 1;
+pub const INVALID_VERSION: &str = "1.2.3/next";
+pub const INVALID_DIGEST: &str =
+    "gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg";

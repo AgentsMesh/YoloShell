@@ -1,0 +1,26 @@
+profile = "compiler"
+change-id = 148795
+
+[build]
+build = "aarch64-apple-darwin"
+host = ["aarch64-apple-darwin"]
+target = ["aarch64-apple-darwin"]
+build-stage = 1
+docs = false
+compiler-docs = false
+profiler = true
+jobs = 4
+# The brand participates in compiler identity, crate IDs and symbol mangling.
+description = "yolo-direct-coverage-v1"
+
+[rust]
+channel = "dev"
+download-rustc = false
+incremental = true
+
+[llvm]
+download-ci-llvm = false
+assertions = false
+ninja = false
+# This experiment compiles and measures the complete native macOS target.
+targets = "AArch64"

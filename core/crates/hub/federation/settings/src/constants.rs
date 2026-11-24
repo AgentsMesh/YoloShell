@@ -1,0 +1,9 @@
+pub const MAX_PEERS: usize = 32;
+pub const MAX_ORIGINS: usize = 128;
+pub const MAX_SOCKET_PATH_BYTES: usize = 100;
+pub const MAX_SSH_TARGET_BYTES: usize = 255;
+pub const MAX_ROUTES_PER_ORIGIN: usize = 32;
+pub const MAX_PEER_ADVERTISEMENTS: usize = MAX_ORIGINS * MAX_ROUTES_PER_ORIGIN;
+pub(crate) const INVALID: &str = "invalid Hub peer configuration";
+pub(crate) const DUPLICATE: &str = "Hub peer configuration repeats or conflicts with an identity";
+pub(crate) const UNTRUSTED_ORIGIN: &str = "export policy names an unpinned origin";

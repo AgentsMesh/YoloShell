@@ -1,0 +1,41 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+load("//build_system/bazel:version.bzl", "YOLO_MARKETING_VERSION")
+
+package(default_visibility = ["//visibility:public"])
+
+_DEPS = [
+    "//core/crates/application/local/profile:yolo_local_profile",
+    "//core/crates/hub/audit:yolo_hub_audit",
+    "//core/crates/hub/client:yolo_hub_client",
+    "//core/crates/hub/identity:yolo_hub_identity",
+    "//core/crates/hub/rpc/protocol:yolo_hub_rpc_protocol",
+    "//core/crates/hub/state:yolo_hub_state",
+    "@crates//:anyhow",
+    "@crates//:libc",
+    "@crates//:serde_json",
+    "@crates//:tokio",
+]
+
+rust_library(
+    name = "yolo_tui_audit",
+    srcs = glob(["src/**/*.rs"]),
+    crate_name = "yolo_tui_audit",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    version = YOLO_MARKETING_VERSION,
+    deps = _DEPS,
+)
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = glob(["src/**/*.rs", "unit_tests/**/*.rs"]) + ["BUILD.bazel"],
+)
+
+rust_test(
+    name = "unit_tests",
+    srcs = glob(["src/**/*.rs", "unit_tests/**/*.rs"]),
+    crate_name = "yolo_tui_audit_unit_tests",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    deps = _DEPS + ["@crates//:tempfile"],
+)

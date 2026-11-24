@@ -1,0 +1,53 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+load("//build_system/bazel:version.bzl", "YOLO_MARKETING_VERSION")
+load("//build_system/bazel/rust:component_test_graph.bzl", "COMPONENT_TEST_FEATURES", "component_test_aliases", "component_test_dependencies")
+
+package(default_visibility = ["//visibility:public"])
+
+_DEPS = [
+    "//core/crates/persistence/journal:yolo_journal",
+    "//core/crates/persistence/paths:yolo_paths",
+    "//core/crates/runtime/engine/protocol:yolo_runtime_protocol",
+    "//core/crates/terminal/model:yolo_terminal_model",
+    "//core/crates/wire:yolo_wire",
+    "@crates//:base64",
+]
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = glob(["src/**/*.rs"]) + ["BUILD.bazel"],
+)
+
+rust_library(
+    name = "yolo_host_retained_history",
+    srcs = glob(["src/**/*.rs"]),
+    crate_name = "yolo_host_retained_history",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    version = YOLO_MARKETING_VERSION,
+    deps = _DEPS,
+)
+
+rust_library(
+    name = "yolo_host_retained_history_component_test_support",
+    testonly = True,
+    srcs = glob(["src/**/*.rs"]),
+    aliases = component_test_aliases(_DEPS),
+    crate_features = COMPONENT_TEST_FEATURES,
+    crate_name = "yolo_host_retained_history",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    deps = component_test_dependencies(_DEPS),
+)
+
+rust_test(
+    name = "unit_tests",
+    srcs = glob(["unit_tests/**/*.rs"]),
+    crate_root = "unit_tests/lib.rs",
+    edition = "2024",
+    deps = _DEPS + [
+        ":yolo_host_retained_history",
+        "@crates//:tempfile",
+        "@crates//:uuid",
+    ],
+)
