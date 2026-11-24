@@ -1,0 +1,14 @@
+pub const BINARY_ENV: &str = "YOLO_TUI_BOOTSTRAP_FIXTURE";
+pub const HOLD: &str = "hold";
+pub const MALFORMED: &str = "malformed";
+pub const OVERFLOW: &str = "overflow";
+pub const FAILED: &str = "failed";
+pub const PID_FILE: &str = "owned-helper";
+pub const PID_PENDING_FILE: &str = "owned-helper.pending";
+pub const RELEASE_FILE: &str = "release-helper";
+pub const HOST_HOME: &str = "host-home";
+pub const EXIT_FAILURE: i32 = 7;
+pub const OVERFLOW_BYTE: usize = 1;
+pub const ARGUMENT_PAIR_FIELDS: usize = 2;
+pub const INIT_PROCESS_ID: u32 = 1;
+pub const POLL: std::time::Duration = std::time::Duration::from_millis(10);

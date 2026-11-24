@@ -1,0 +1,36 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+load("//build_system/bazel:version.bzl", "YOLO_MARKETING_VERSION")
+
+package(default_visibility = ["//visibility:public"])
+
+RUNTIME_SOURCES = glob(["src/**/*.rs"])
+
+RUNTIME_UNIT_TEST_SOURCES = glob(["unit_tests/**/*.rs"], allow_empty = False)
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = glob(
+        ["**/*"],
+        allow_empty = True,
+        exclude = ["BUILD.bazel"],
+    ) + ["BUILD.bazel"],
+)
+
+rust_library(
+    name = "yolo_agent_runtime",
+    srcs = RUNTIME_SOURCES,
+    crate_name = "yolo_agent_runtime",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    version = YOLO_MARKETING_VERSION,
+    deps = [],
+)
+
+rust_test(
+    name = "yolo_agent_runtime_unit_tests",
+    srcs = RUNTIME_UNIT_TEST_SOURCES,
+    crate_name = "yolo_agent_runtime_test",
+    crate_root = "unit_tests/lib.rs",
+    edition = "2024",
+    deps = [":yolo_agent_runtime"],
+)
