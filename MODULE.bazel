@@ -1,6 +1,6 @@
 module(
     name = "yolo",
-    version = "0.6.1",
+    version = "0.6.2",
 )
 
 bazel_dep(name = "rules_rust", version = "0.69.0")

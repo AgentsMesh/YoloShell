@@ -2,6 +2,11 @@
 
 All notable changes to Yolo are recorded here. The project follows semantic versioning once a stable release exists.
 
+## 0.6.2 — Alpha
+
+- Federation accepts normal cross-machine clock drift during signed peer discovery, calls and terminal streams.
+- Configured Web machines show Connecting during initial discovery and distinguish stale observations from confirmed unreachable peers.
+
 ## 0.6.1 — Alpha
 
 - Configured machines appear in Hub inventory before their first authenticated catalogue is available.
