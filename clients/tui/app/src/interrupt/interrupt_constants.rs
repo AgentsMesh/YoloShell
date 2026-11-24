@@ -1,0 +1,17 @@
+pub const KEY: char = 'i';
+pub const HINT: &str = "i: Interrupt";
+pub const STATUS_SEPARATOR: &str = " | ";
+pub const SELECT_AGENT: &str = "Select an Agent to interrupt";
+pub const TAKE_CONTROL: &str = "Open the terminal and take control before interrupting";
+pub const UNAVAILABLE: &str = "Interrupt unavailable for the selected Agent";
+pub const STALE: &str = "Refresh the Agent before interrupting";
+pub const SENDING: &str = "Sending interrupt request";
+pub const ACCEPTED: &str = "Interrupt request accepted; awaiting result";
+pub const SENT: &str = "Interrupt sent";
+pub const UNKNOWN: &str = "Interrupt result unknown; check the Agent before continuing";
+pub const NOT_SENT: &str = "Interrupt not sent; press i to try again";
+pub const REJECTED: &str = "Interrupt request rejected";
+pub const PERMISSION_DENIED: &str = "Interrupt permission denied";
+pub const EXPIRED: &str = "Interrupt request expired";
+pub const CAPACITY: &str = "Resolve pending interrupt results before sending another";
+pub const MAX_TRACKED: usize = crate::constants::QUEUE_CAPACITY;

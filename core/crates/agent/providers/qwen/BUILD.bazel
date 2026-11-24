@@ -1,0 +1,56 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+load("//build_system/bazel/rust:component_test_graph.bzl", "COMPONENT_TEST_FEATURES", "component_test_aliases", "component_test_dependencies")
+load("//build_system/bazel:version.bzl", "YOLO_MARKETING_VERSION")
+
+package(default_visibility = ["//visibility:public"])
+
+_DEPS = [
+    "//core/crates/agent/contract:yolo_agent_contract",
+    "//core/crates/agent/system/adapter/contract:yolo_agent_adapter_contract",
+    "//core/crates/agent/system/core:yolo_agent_core",
+    "//core/crates/agent/system/evidence:yolo_agent_evidence",
+    "//core/crates/agent/providers/qwen/provider:yolo_qwen_identity",
+    "//core/crates/persistence/paths:yolo_paths",
+    "@crates//:anyhow",
+    "@crates//:serde_json",
+    "@crates//:uuid",
+]
+
+rust_library(
+    name = "yolo_qwen",
+    srcs = glob(["src/**/*.rs"]),
+    crate_name = "yolo_qwen",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    version = YOLO_MARKETING_VERSION,
+    deps = _DEPS,
+)
+
+rust_test(
+    name = "unit_tests",
+    srcs = glob(["src/**/*.rs", "unit_tests/**/*.rs"]),
+    crate_name = "yolo_qwen_unit_tests",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    deps = _DEPS + ["@crates//:tempfile"],
+)
+
+rust_library(
+    name = "yolo_qwen_component_test_support",
+    testonly = True,
+    srcs = glob(["src/**/*.rs"]),
+    aliases = component_test_aliases(_DEPS),
+    crate_features = COMPONENT_TEST_FEATURES,
+    crate_name = "yolo_qwen",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    deps = component_test_dependencies(_DEPS),
+)
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = glob(
+        ["**/*"],
+        exclude = ["BUILD.bazel"],
+    ) + ["BUILD.bazel"],
+)

@@ -1,0 +1,12 @@
+pub const UNKNOWN_ROLE: &str = "unknown-role";
+pub const REMOVED_DESKTOP_ROLE: &str = "hub-client";
+pub const ARGUMENT: &str = "--state";
+pub const SPACED_PATH: &str = "/a directory/state";
+pub const INVALID_UTF8: &[u8] = &[0xff];
+pub const ARGV0: &str = "/some installation/yolo";
+pub const AGENT: &str = "agent";
+pub const UPDATE: &str = "update";
+pub const LIST: &str = "list";
+pub const LOCAL_PROFILE: &str = "--local-profile";
+pub const PROFILE: &str = "profile.json";
+pub const HELP: &str = "--help";
