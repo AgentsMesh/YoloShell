@@ -1,0 +1,49 @@
+load("@rules_rust//rust:defs.bzl", "rust_library")
+load("//build_system/bazel:version.bzl", "YOLO_MARKETING_VERSION")
+
+package(default_visibility = ["//visibility:public"])
+
+_PATHS_COMPONENT = "//core/crates/persistence/paths:yolo_paths"
+
+_PATHS_TEST_SUPPORT = "//core/crates/persistence/paths:yolo_paths_persistence_test_support"
+
+_DEPS = [
+    "//core/crates/agent/contract:yolo_agent_contract",
+    "//core/crates/agent/system/adapter/contract:yolo_agent_adapter_contract",
+    _PATHS_COMPONENT,
+    "@crates//:anyhow",
+    "@crates//:serde_json",
+]
+
+rust_library(
+    name = "yolo_agent_binding_io",
+    srcs = glob(["src/**/*.rs"]),
+    crate_name = "yolo_agent_binding_io",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    version = YOLO_MARKETING_VERSION,
+    deps = _DEPS,
+)
+
+rust_library(
+    name = "yolo_agent_binding_io_test_support",
+    testonly = True,
+    srcs = glob(["src/**/*.rs"]),
+    aliases = {_PATHS_TEST_SUPPORT: "yolo_paths"},
+    crate_name = "yolo_agent_binding_io",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    deps = [
+        dependency
+        for dependency in _DEPS
+        if dependency != _PATHS_COMPONENT
+    ] + [_PATHS_TEST_SUPPORT],
+)
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = glob(
+        ["**/*"],
+        exclude = ["BUILD.bazel"],
+    ) + ["BUILD.bazel"],
+)

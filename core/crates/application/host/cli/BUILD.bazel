@@ -1,0 +1,159 @@
+load("@rules_rust//rust:defs.bzl", "rust_library")
+load("//build_system/bazel:version.bzl", "YOLO_MARKETING_VERSION")
+load("//build_system/bazel/rust:isolated_test.bzl", "isolated_rust_test")
+load(
+    "//build_system/bazel/rust:test_features.bzl",
+    "INTEGRATION_TEST_FEATURES",
+    "UNIT_TEST_FEATURES",
+)
+
+package(default_visibility = ["//visibility:public"])
+
+_RUNTIME_DEPS = [
+    "//core/crates/transport/capnp/rpc",
+    "//core/crates/transport/capnp/codec",
+    "//core/crates/application/launch/contract:yolo_launch_contract",
+    "//core:yolo_runtime",
+    "//core/crates/agent/system/hooks/installation:yolo_hook_installation",
+    "//core/crates/agent/system/providers:yolo_agent_providers",
+    "//core/crates/runtime/engine/startup/guard:yolo_startup_guard",
+    "//core/crates/transport/client:yolo_client",
+    "//core/crates/transport/remote/broker:yolo_remote_broker",
+    "@crates//:anyhow",
+    "@crates//:clap",
+    "@crates//:serde",
+    "@crates//:tokio",
+    "@crates//:tracing",
+    "@crates//:tracing-subscriber",
+    "@crates//:uuid",
+]
+
+_TEST_DEPS = _RUNTIME_DEPS + [
+    "//core/crates/agent/providers/claude/provider:yolo_claude_provider",
+    "//core/crates/agent/providers/codex/provider:yolo_codex_provider",
+    "//core/crates/agent/providers/gemini/provider:yolo_gemini_provider",
+    "//core/crates/agent/providers/grok/provider:yolo_grok_provider",
+    "//core/crates/agent/providers/qwen/provider:yolo_qwen_provider",
+    "//core/crates/transport/runtime/testing",
+    "//core/crates/application/support:yolo_application_test_fixtures",
+    "//core/crates/transport/relay:yolo_relay",
+    "@crates//:libc",
+    "@crates//:serde_json",
+    "@crates//:tempfile",
+]
+
+rust_library(
+    name = "yolo_host_cli",
+    srcs = [":runtime_sources"],
+    crate_name = "yolo_host_cli",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    version = YOLO_MARKETING_VERSION,
+    deps = _RUNTIME_DEPS,
+)
+
+rust_library(
+    name = "yolo_host_cli_adversarial",
+    testonly = True,
+    srcs = [":runtime_sources"],
+    aliases = {
+        "//core/crates/transport/client:yolo_client_adversarial": "yolo_client",
+        "//core/crates/transport/remote/broker:yolo_remote_broker_adversarial": "yolo_remote_broker",
+    },
+    crate_name = "yolo_host_cli",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    version = YOLO_MARKETING_VERSION,
+    deps = [
+        "//core/crates/transport/capnp/rpc",
+        "//core/crates/transport/capnp/codec",
+        "//core:yolo_runtime_adversarial",
+        "//core/crates/application/launch/contract:yolo_launch_contract",
+        "//core/crates/agent/system/hooks/installation:yolo_hook_installation",
+        "//core/crates/agent/system/providers:yolo_agent_providers",
+        "//core/crates/runtime/engine/startup/guard:yolo_startup_guard",
+        "//core/crates/transport/client:yolo_client_adversarial",
+        "//core/crates/transport/remote/broker:yolo_remote_broker_adversarial",
+        "@crates//:anyhow",
+        "@crates//:clap",
+        "@crates//:serde",
+        "@crates//:tokio",
+        "@crates//:tracing",
+        "@crates//:tracing-subscriber",
+        "@crates//:uuid",
+    ],
+)
+
+filegroup(
+    name = "runtime_sources",
+    srcs = glob(
+        ["src/**/*.rs"],
+        allow_empty = False,
+    ),
+)
+
+filegroup(
+    name = "unit_test_sources",
+    testonly = True,
+    srcs = glob(
+        ["unit_tests/**/*.rs"],
+        allow_empty = True,
+    ),
+)
+
+filegroup(
+    name = "test_support_sources",
+    testonly = True,
+    srcs = glob(
+        ["test_support/**/*.rs"],
+        allow_empty = False,
+    ),
+)
+
+filegroup(
+    name = "integration_test_sources",
+    testonly = True,
+    srcs = glob(
+        ["integration_tests/**/*.rs"],
+        allow_empty = True,
+    ),
+)
+
+isolated_rust_test(
+    name = "host_unit_tests",
+    srcs = [
+        ":runtime_sources",
+        ":test_support_sources",
+        ":unit_test_sources",
+    ],
+    crate_features = UNIT_TEST_FEATURES,
+    crate_name = "yolo_host_unit_test",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    deps = _TEST_DEPS,
+)
+
+isolated_rust_test(
+    name = "host_integration_tests",
+    srcs = [
+        ":integration_test_sources",
+        ":runtime_sources",
+        ":test_support_sources",
+    ],
+    crate_features = INTEGRATION_TEST_FEATURES,
+    crate_name = "yolo_host_integration_test",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    deps = _TEST_DEPS,
+)
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = glob(
+        ["**/*"],
+        allow_empty = True,
+        exclude = ["BUILD.bazel"],
+    ) + [
+        "BUILD.bazel",
+    ],
+)

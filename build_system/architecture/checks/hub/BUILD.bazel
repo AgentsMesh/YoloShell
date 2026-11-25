@@ -1,0 +1,39 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+
+package(default_visibility = ["//visibility:public"])
+
+_SOURCES = glob(["src/*.rs"])
+
+_UNIT_TEST_SOURCES = glob(["unit_tests/*.rs"])
+
+_TEST_SUPPORT_SOURCES = glob(["test_support/*.rs"])
+
+_DEPS = [
+    "//build_system/architecture/foundation:library",
+    "//build_system/architecture/contracts:library",
+    "//build_system/architecture/syntax:library",
+    "//build_system/architecture/checks/ownership:library",
+]
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = _SOURCES + _UNIT_TEST_SOURCES + _TEST_SUPPORT_SOURCES + ["BUILD.bazel"],
+)
+
+rust_library(
+    name = "library",
+    srcs = _SOURCES,
+    crate_name = "yolo_architecture_hub_policy",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    deps = _DEPS,
+)
+
+rust_test(
+    name = "unit_tests",
+    srcs = _SOURCES + _UNIT_TEST_SOURCES + _TEST_SUPPORT_SOURCES,
+    crate_name = "yolo_architecture_hub_policy_unit_tests",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    deps = _DEPS,
+)
