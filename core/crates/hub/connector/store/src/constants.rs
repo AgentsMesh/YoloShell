@@ -1,0 +1,30 @@
+pub const CONNECTOR_DIRECTORY: &str = "connectors";
+pub use yolo_hub_connector_protocol::MAX_CONNECTORS;
+pub(crate) const INDEX_FILE: &str = "index.json";
+pub(crate) const MEMBERS_DIRECTORY: &str = "members";
+pub(crate) const MEMBER_EXTENSION: &str = "json";
+pub(crate) const LOCK_FILE: &str = "connectors.lock";
+pub(crate) const LOCK_BYTES: u64 = 4_096;
+pub(crate) const MAX_DIRECTORY_ENTRIES: usize = 4_096;
+pub(crate) const SCHEMA_VERSION: u16 = 2;
+pub const REGISTRATION_PHASE_TAG: &str = "registration_phase";
+pub(crate) const ROOT_NAMESPACE: &str = "Hub connector registry";
+pub(crate) const MEMBER_NAMESPACE: &str = "Hub connector members";
+pub(crate) const SEED_DIGEST_DOMAIN: &str = "yolo.hub.connector-store.seed.v1";
+pub(crate) const BUSY: &str = "Hub connector storage is already owned";
+pub(crate) const LOST: &str = "Hub connector storage is no longer usable; reopen required";
+pub(crate) const WRONG_IDENTITY: &str = "connector storage identity or namespace does not match";
+pub(crate) const INVALID_SEED: &str = "connector seed has an invalid request or origin";
+pub(crate) const INVALID_INDEX: &str = "connector index is invalid";
+pub(crate) const REPLACED_INDEX: &str = "connector index changed outside its owner";
+pub(crate) const REPLACED_MEMBER: &str = "connector member changed outside its owner";
+pub(crate) const MEMBER_MISSING: &str = "indexed connector member is missing";
+pub(crate) const MEMBER_MISMATCH: &str = "connector member does not match its immutable index seed";
+pub(crate) const PREPARATION_MISMATCH: &str =
+    "prepared connector member differs from its initial record";
+pub(crate) const UNINDEXED_MEMBER: &str = "connector storage contains an unindexed member";
+pub(crate) const DUPLICATE: &str = "connector ID or registration request ID is already present";
+pub(crate) const CAPACITY: &str = "connector storage capacity exceeded";
+pub(crate) const NOT_PREPARING: &str = "connector registration is not preparing";
+pub(crate) const STATE_MISMATCH: &str =
+    "stored connector state differs from the requested publication";

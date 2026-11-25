@@ -1,0 +1,158 @@
+load("@rules_rust//rust:defs.bzl", "rust_library")
+load("//build_system/bazel:version.bzl", "YOLO_MARKETING_VERSION")
+load("//build_system/bazel/rust:isolated_test.bzl", "isolated_rust_test")
+load("//build_system/bazel/rust:remote_broker_deps.bzl", _BASE_DEPS = "REMOTE_BROKER_DEPS", _TEST_ALIASES = "REMOTE_BROKER_TEST_ALIASES", _TEST_DEPS = "REMOTE_BROKER_TEST_DEPS")
+load(
+    "//build_system/bazel/rust:test_features.bzl",
+    "INTEGRATION_TEST_FEATURES",
+    "SERIAL_TEST_ENVIRONMENT",
+    "UNIT_TEST_FEATURES",
+)
+
+package(default_visibility = ["//visibility:public"])
+
+_LOCAL_UNIX = "//core/crates/transport/local/unix:yolo_local_unix"
+
+filegroup(
+    name = "runtime_sources",
+    srcs = glob(
+        ["src/**/*.rs"],
+        allow_empty = False,
+    ),
+)
+
+rust_library(
+    name = "yolo_remote_broker",
+    srcs = [":runtime_sources"],
+    crate_name = "yolo_remote_broker",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    version = YOLO_MARKETING_VERSION,
+    deps = _BASE_DEPS + [_LOCAL_UNIX],
+)
+
+rust_library(
+    name = "yolo_remote_broker_adversarial",
+    testonly = True,
+    srcs = [":runtime_sources"],
+    aliases = {
+        "//core/crates/transport/remote/provisioning:adversarial": "yolo_remote_provisioning",
+        "//core/crates/transport/client:yolo_client_adversarial": "yolo_client",
+        "//core/crates/transport/remote:yolo_remote_adversarial": "yolo_remote",
+        "//core/crates/persistence/paths:yolo_paths_persistence_test_support": "yolo_paths",
+    },
+    crate_name = "yolo_remote_broker_adversarial",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    deps = [
+        "//core/crates/transport/runtime/rpc",
+        "//core/crates/transport/capnp/rpc",
+        "//core/crates/transport/capnp/codec",
+        "//core/crates/transport/capnp/schema",
+        "//core/crates/transport/capnp/sensitive",
+        "//core/crates/transport/remote/provisioning:adversarial",
+        "//core/crates/transport/remote/provisioning/protocol:yolo_remote_provisioning_protocol",
+        "//core/crates/transport/broker/hub/protocol:yolo_broker_hub_protocol",
+        "//core/crates/transport/broker/tunnel:yolo_broker_tunnel",
+        "//core/crates/application/support:yolo_application_support",
+        "//core/crates/agent/system/core:yolo_agent_core",
+        "//core/crates/persistence/lease:yolo_lease",
+        "//core/crates/persistence/maintenance:yolo_maintenance",
+        "//core/crates/runtime/engine/process:yolo_process",
+        "//core/crates/runtime/engine/protocol:yolo_runtime_protocol",
+        "//core/crates/terminal/model:yolo_terminal_model",
+        "//core/crates/transport/protocol/validation:yolo_protocol_validation",
+        "//core/crates/wire:yolo_wire",
+        "//core/crates/application/cli:yolo_cli",
+        "//core/crates/crypto:yolo_crypto",
+        "//core/crates/persistence/acl:yolo_private_acl",
+        "//core/crates/transport/client:yolo_client_adversarial",
+        "//core/crates/transport/core:yolo_transport_core",
+        "//core/crates/transport/local/unix:yolo_local_unix",
+        "//core/crates/transport/remote:yolo_remote_adversarial",
+        "//core/crates/transport/session:yolo_session_timing",
+        "//core/crates/persistence/paths:yolo_paths_persistence_test_support",
+        "@crates//:anyhow",
+        "@crates//:futures",
+        "@crates//:libc",
+        "@crates//:russh",
+        "@crates//:serde",
+        "@crates//:serde_bytes",
+        "@crates//:serde_json",
+        "@crates//:thiserror",
+        "@crates//:tokio",
+        "@crates//:tracing",
+        "@crates//:uuid",
+        "@crates//:zeroize",
+    ],
+)
+
+isolated_rust_test(
+    name = "yolo_remote_broker_unit_tests",
+    srcs = [
+        ":runtime_sources",
+        ":test_support_sources",
+        ":unit_test_sources",
+    ],
+    aliases = _TEST_ALIASES,
+    crate_features = UNIT_TEST_FEATURES,
+    crate_name = "yolo_remote_broker_unit_test",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    env = SERIAL_TEST_ENVIRONMENT,
+    deps = _TEST_DEPS,
+)
+
+isolated_rust_test(
+    name = "yolo_remote_broker_integration_tests",
+    srcs = [
+        ":integration_test_sources",
+        ":runtime_sources",
+        ":test_support_sources",
+    ],
+    aliases = _TEST_ALIASES,
+    crate_features = INTEGRATION_TEST_FEATURES,
+    crate_name = "yolo_remote_broker_integration_test",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    env = SERIAL_TEST_ENVIRONMENT,
+    deps = _TEST_DEPS,
+)
+
+filegroup(
+    name = "unit_test_sources",
+    testonly = True,
+    srcs = glob(
+        ["unit_tests/**/*.rs"],
+        allow_empty = True,
+    ),
+)
+
+filegroup(
+    name = "integration_test_sources",
+    testonly = True,
+    srcs = glob(
+        ["integration_tests/**/*.rs"],
+        allow_empty = True,
+    ),
+)
+
+filegroup(
+    name = "test_support_sources",
+    testonly = True,
+    srcs = glob(
+        ["test_support/**/*.rs"],
+        allow_empty = False,
+    ),
+)
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = glob(
+        ["**/*"],
+        allow_empty = True,
+        exclude = ["BUILD.bazel"],
+    ) + [
+        "BUILD.bazel",
+    ],
+)

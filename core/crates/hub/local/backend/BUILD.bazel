@@ -1,0 +1,114 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+load("//build_system/bazel:version.bzl", "YOLO_MARKETING_VERSION")
+load("//build_system/bazel/rust:test_features.bzl", "INTEGRATION_TEST_FEATURES")
+
+package(default_visibility = ["//visibility:public"])
+
+_DEPS = [
+    "//core/crates/conversation/protocol:yolo_conversation_protocol",
+    "//core/crates/conversation/service:yolo_conversation_service",
+    "//core/crates/presentation/protocol:yolo_presentation_protocol",
+    "//core/crates/presentation/store:yolo_presentation_store",
+    "//core/crates/hub/build/protocol:yolo_hub_build_protocol",
+    "//core/crates/hub/file/executor:yolo_hub_file_executor",
+    "//core/crates/hub/file/helper/protocol:yolo_hub_file_helper_protocol",
+    "//core/crates/runtime/engine/executable/identity:yolo_executable_identity",
+    "//core/crates/agent/contract:yolo_agent_contract",
+    "//core/crates/agent/system/control/contract:yolo_agent_control_contract",
+    "//core/crates/agent/system/provider/contract:yolo_agent_provider_contract",
+    "//core/crates/crypto:yolo_crypto",
+    "//core/crates/hub/dispatch:yolo_hub_dispatch",
+    "//core/crates/hub/agent/projection:yolo_hub_agent_projection",
+    "//core/crates/hub/audit:yolo_hub_audit",
+    "//core/crates/hub/agent/protocol:yolo_hub_agent_protocol",
+    "//core/crates/hub/agent/run/protocol:yolo_hub_agent_run_protocol",
+    "//core/crates/hub/local/agent/observe:yolo_hub_agent_observe",
+    "//core/crates/hub/local/host/catalogue:yolo_hub_host_catalogue",
+    "//core/crates/hub/local/host/connections:yolo_hub_host_connections",
+    "//core/crates/hub/local/platform:yolo_hub_local_platform",
+    "//core/crates/hub/connector/protocol:yolo_hub_connector_protocol",
+    "//core/crates/hub/connector/registry:yolo_hub_connector_registry",
+    "//core/crates/hub/delegation:yolo_hub_delegation",
+    "//core/crates/hub/file/protocol:yolo_hub_file_protocol",
+    "//core/crates/hub/file/service:yolo_hub_file_service",
+    "//core/crates/hub/identity:yolo_hub_identity",
+    "//core/crates/hub/rpc/protocol:yolo_hub_rpc_protocol",
+    "//core/crates/hub/terminal/protocol:yolo_hub_terminal_protocol",
+    "//core/crates/hub/workspace/protocol:yolo_hub_workspace_protocol",
+    "//core/crates/transport/client:yolo_client",
+    "//core/crates/persistence/paths:yolo_paths",
+    "//core/crates/persistence/lease:yolo_lease",
+    "//core/crates/transport/protocol/validation:yolo_protocol_validation",
+    "//core/crates/runtime/engine/protocol:yolo_runtime_protocol",
+    "//core/crates/terminal/model:yolo_terminal_model",
+    "//core/crates/wire:yolo_wire",
+    "@crates//:futures",
+    "@crates//:serde_json",
+    "@crates//:tracing",
+    "@crates//:uuid",
+    "@crates//:tokio",
+]
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = glob(
+        [
+            "src/**/*.rs",
+            "unit_tests/**/*.rs",
+            "integration_tests/**/*.rs",
+            "test_support/**/*.rs",
+        ],
+        allow_empty = True,
+    ) + ["BUILD.bazel"],
+)
+
+rust_library(
+    name = "yolo_hub_local_backend",
+    srcs = glob(["src/**/*.rs"]),
+    crate_name = "yolo_hub_local_backend",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    version = YOLO_MARKETING_VERSION,
+    deps = _DEPS,
+)
+
+rust_test(
+    name = "unit_tests",
+    srcs = glob(
+        [
+            "src/**/*.rs",
+            "unit_tests/**/*.rs",
+            "test_support/**/*.rs",
+        ],
+        allow_empty = True,
+    ),
+    crate_name = "yolo_hub_local_backend_unit_tests",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    deps = _DEPS + [
+        "//core:yolo_runtime",
+        "//core/crates/agent/providers/codex/provider:yolo_codex_provider",
+        "//core/crates/agent/providers/claude/provider:yolo_claude_provider",
+        "//core/crates/conversation/source:yolo_conversation_source",
+        "@crates//:serde",
+        "@crates//:tempfile",
+    ],
+)
+
+rust_test(
+    name = "integration_tests",
+    srcs = glob(["src/**/*.rs", "integration_tests/**/*.rs", "test_support/**/*.rs"]),
+    crate_name = "yolo_hub_local_backend_integration_tests",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    crate_features = INTEGRATION_TEST_FEATURES,
+    deps = _DEPS + [
+        "//core:yolo_runtime",
+        "//core/crates/agent/providers/codex/provider:yolo_codex_provider",
+        "//core/crates/agent/providers/claude/provider:yolo_claude_provider",
+        "//core/crates/conversation/source:yolo_conversation_source",
+        "//core/crates/transport/runtime/testing",
+        "@crates//:serde",
+        "@crates//:tempfile",
+    ],
+)

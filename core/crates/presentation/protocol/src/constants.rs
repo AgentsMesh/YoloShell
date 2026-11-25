@@ -1,0 +1,13 @@
+pub const FIRST_REVISION: u64 = 1;
+pub const MAX_DOCUMENTS: usize = 128;
+pub const MAX_TABS: usize = 64;
+pub const MAX_DOCUMENT_PANES: usize = 1_024;
+pub const MAX_TITLE_BYTES: usize = 128;
+pub(crate) const INVALID_ID: &str = "layout identities must be canonical and non-nil";
+pub(crate) const INVALID_TITLE: &str = "tab title must be trimmed, bounded and free of controls";
+pub(crate) const INVALID_TREE: &str = "tab tree is invalid";
+pub(crate) const LIMIT: &str = "layout document exceeds its resource limits";
+pub(crate) const DUPLICATE: &str = "tab and pane identities must be unique within a document";
+pub(crate) const REVISION: &str = "layout revision must be positive and cannot overflow";
+pub(crate) const CONFLICT: &str = "layout revision changed; read the current document";
+pub(crate) const ADDRESS: &str = "layout document belongs to another address";

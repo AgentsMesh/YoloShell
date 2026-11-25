@@ -1,0 +1,61 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+load("//build_system/bazel:version.bzl", "YOLO_MARKETING_VERSION")
+load("//build_system/bazel/rust:test_features.bzl", "UNIT_TEST_FEATURES")
+
+package(default_visibility = ["//visibility:public"])
+
+TERMINAL_MODEL_SOURCES = glob(["src/**/*.rs"])
+
+_DEPS = [
+    "//core/crates/agent/contract:yolo_agent_contract",
+    "//core/crates/crypto:yolo_crypto",
+    "//core/crates/wire:yolo_wire",
+    "//core/crates/terminal/metadata/protocol:yolo_terminal_metadata_protocol",
+    "@crates//:serde",
+    "@crates//:serde_bytes",
+    "@crates//:sha2",
+    "@crates//:thiserror",
+    "@crates//:uuid",
+]
+
+TERMINAL_MODEL_TEST_SOURCES = glob(
+    [
+        "unit_tests/**/*.rs",
+        "integration_tests/**/*.rs",
+    ],
+    allow_empty = True,
+)
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = glob(
+        ["**/*"],
+        allow_empty = True,
+        exclude = ["BUILD.bazel"],
+    ) + [
+        "BUILD.bazel",
+    ],
+)
+
+rust_library(
+    name = "yolo_terminal_model",
+    srcs = TERMINAL_MODEL_SOURCES,
+    crate_name = "yolo_terminal_model",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    version = YOLO_MARKETING_VERSION,
+    deps = _DEPS,
+)
+
+rust_test(
+    name = "yolo_terminal_model_unit_tests",
+    srcs = TERMINAL_MODEL_SOURCES + TERMINAL_MODEL_TEST_SOURCES,
+    crate_features = UNIT_TEST_FEATURES,
+    crate_name = "yolo_terminal_model_test",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    deps = _DEPS + [
+        "//core/crates/transport/capnp/value",
+        "@crates//:serde_json",
+    ],
+)
