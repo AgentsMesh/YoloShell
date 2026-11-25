@@ -1,0 +1,144 @@
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library", "rust_test")
+load("//build_system/bazel/cli_test_support:defs.bzl", "TOOL_CLI_TEST_BINARY_ENV")
+load("//build_system/bazel/rust:isolated_test.bzl", "isolated_rust_test")
+load(":broker_boundaries.bzl", "broker_dependency_boundary_test")
+load(":communication_boundaries.bzl", "communication_dependency_boundary_test")
+load(":hook_boundaries.bzl", "hook_dependency_boundary_test")
+load(":hub_boundaries.bzl", "hub_dependency_boundary_test", "hub_package_dependency_test")
+load(":client_boundary.bzl", "client_boundary_check")
+load(
+    ":policies.bzl",
+    "POLICY_CHECK_DATA",
+    "POLICY_LIBRARIES",
+    "POLICY_TEST_DEPENDENCIES",
+    "POLICY_TEST_TARGETS",
+)
+load(":integration_tests/dependency_edges.bzl", "dependency_edge_tests")
+load(":sources_core.bzl", "ARCHITECTURE_CORE_SOURCES")
+load(
+    ":sources_platform.bzl",
+    "ARCHITECTURE_PLATFORM_SOURCES",
+)
+
+package(default_visibility = ["//visibility:public"])
+
+IMPL_SRCS = ARCHITECTURE_CORE_SOURCES + ARCHITECTURE_PLATFORM_SOURCES
+
+_POLICY_DEPS = POLICY_LIBRARIES
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = glob(
+        ["**/*"],
+        allow_empty = True,
+        exclude = ["BUILD.bazel"],
+    ) + [
+        "BUILD.bazel",
+    ] + POLICY_CHECK_DATA,
+)
+
+rust_library(
+    name = "architecture_lib",
+    srcs = ["src/lib.rs"] + IMPL_SRCS,
+    crate_name = "yolo_architecture",
+    crate_root = "src/lib.rs",
+    deps = _POLICY_DEPS,
+)
+
+rust_binary(
+    name = "check",
+    srcs = ["src/main.rs"],
+    crate_name = "yolo_architecture_check",
+    crate_root = "src/main.rs",
+    data = ["//:architecture_check_data"],
+    deps = [":architecture_lib"],
+)
+
+rust_test(
+    name = "orchestrator_unit_tests",
+    timeout = "long",
+    srcs = ["src/lib.rs"] + IMPL_SRCS + glob(["unit_tests/*.rs"]),
+    crate_name = "yolo_architecture_tests",
+    crate_root = "src/lib.rs",
+    data = ["//:architecture_check_data"],
+    deps = _POLICY_DEPS + POLICY_TEST_DEPENDENCIES,
+)
+
+sh_test(
+    name = "providers_table_test",
+    srcs = ["integration_tests/providers_table.sh"],
+    args = [
+        "$(rootpath //build_system/architecture:topology.bzl)",
+        "$(rootpath //core/crates/agent/system/providers:composition_source)",
+        "$(rootpath //core/crates/plugin/provider/catalog:catalog_source)",
+        "$(rootpaths //build_system/bazel/rust:provider_table_sources)",
+    ],
+    data = [
+        "//build_system/architecture:topology.bzl",
+        "//core/crates/agent/system/providers:composition_source",
+        "//core/crates/plugin/provider/catalog:catalog_source",
+        "//build_system/bazel/rust:provider_table_sources",
+    ],
+)
+
+rust_test(
+    name = "conformance_test",
+    size = "large",
+    srcs = ["integration_tests/conformance.rs"],
+    crate_name = "yolo_architecture_conformance_test",
+    data = [
+        "//:architecture_check_data",
+        ":client_boundary",
+    ],
+    edition = "2024",
+    deps = [":architecture_lib"],
+)
+
+isolated_rust_test(
+    name = "cli_integration_tests",
+    srcs = ["integration_tests/cli.rs"],
+    coverage_objects = [":check"],
+    crate_name = "yolo_architecture_cli_integration_tests",
+    crate_root = "integration_tests/cli.rs",
+    edition = "2024",
+    env = {TOOL_CLI_TEST_BINARY_ENV: "$(rootpath :check)"},
+    deps = [
+        ":architecture_lib",
+        "//build_system/architecture/checks/source:library",
+        "//build_system/architecture/test_support:library",
+        "//build_system/bazel/cli_test_support:test_support",
+        "@crates//:tokio",
+    ],
+)
+
+hook_dependency_boundary_test()
+
+hub_dependency_boundary_test()
+
+hub_package_dependency_test()
+
+broker_dependency_boundary_test()
+
+communication_dependency_boundary_test()
+
+dependency_edge_tests()
+
+test_suite(
+    name = "tests",
+    tests = [
+        ":broker_component_boundary_tests",
+        ":broker_dependency_boundary_test",
+        ":cli_integration_tests",
+        ":communication_dependency_boundary_test",
+        ":conformance_test",
+        ":dependency_edge_tests",
+        ":hook_dependency_boundary_test",
+        ":hub_dependency_boundary_test",
+        ":hub_package_dependency_tests",
+        ":orchestrator_unit_tests",
+    ] + POLICY_TEST_TARGETS,
+)
+client_boundary_check(
+    name = "client_boundary",
+    roots = ["//core:yolo"],
+)

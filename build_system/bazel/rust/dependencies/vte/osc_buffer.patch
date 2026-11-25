@@ -1,0 +1,88 @@
+diff --git a/src/lib.rs b/src/lib.rs
+--- a/src/lib.rs
++++ b/src/lib.rs
+@@ -44,6 +44,10 @@
+ const MAX_INTERMEDIATES: usize = 2;
+ const MAX_OSC_PARAMS: usize = 16;
+ const MAX_OSC_RAW: usize = 1024;
++
++/// Maximum retained OSC payload bytes, excluding parameter separators.
++/// Larger commands are consumed to their terminator without dispatch.
++pub const MAX_OSC_RAW_BYTES: usize = 65_536;
+ 
+ /// Parser for raw _VTE_ protocol which delegates actions to a [`Perform`]
+ ///
+@@ -64,6 +68,7 @@ pub struct Parser<const OSC_RAW_BUF_SIZE: usize = MAX_OSC_RAW> {
+     osc_raw: Vec<u8>,
+     osc_params: [(usize, usize); MAX_OSC_PARAMS],
+     osc_num_params: usize,
++    osc_overflowed: bool,
+     ignoring: bool,
+     partial_utf8: [u8; 4],
+     partial_utf8_len: usize,
+@@ -372,6 +377,7 @@ impl<const OSC_RAW_BUF_SIZE: usize> Parser<OSC_RAW_BUF_SIZE> {
+             0x5D => {
+                 self.osc_raw.clear();
+                 self.osc_num_params = 0;
++                self.osc_overflowed = false;
+                 self.state = State::OscString
+             },
+             0x5E..=0x5F => self.state = State::SosPmApcString,
+@@ -421,15 +427,7 @@ impl<const OSC_RAW_BUF_SIZE: usize> Parser<OSC_RAW_BUF_SIZE> {
+                 self.reset_params();
+                 self.state = State::Escape
+             },
+-            0x3B => {
+-                #[cfg(not(feature = "std"))]
+-                {
+-                    if self.osc_raw.is_full() {
+-                        return;
+-                    }
+-                }
+-                self.action_osc_put_param()
+-            },
++            0x3B => self.action_osc_put_param(),
+             _ => self.action_osc_put(byte),
+         }
+     }
+@@ -519,6 +517,9 @@ impl<const OSC_RAW_BUF_SIZE: usize> Parser<OSC_RAW_BUF_SIZE> {
+     /// Add OSC param separator.
+     #[inline]
+     fn action_osc_put_param(&mut self) {
++        if self.osc_overflowed {
++            return;
++        }
+         let idx = self.osc_raw.len();
+ 
+         let param_idx = self.osc_num_params;
+@@ -543,9 +544,14 @@ impl<const OSC_RAW_BUF_SIZE: usize> Parser<OSC_RAW_BUF_SIZE> {
+     #[inline(always)]
+     fn action_osc_put(&mut self, byte: u8) {
++        if self.osc_overflowed || self.osc_raw.len() >= MAX_OSC_RAW_BYTES {
++            self.osc_overflowed = true;
++            return;
++        }
+         #[cfg(not(feature = "std"))]
+         {
+             if self.osc_raw.is_full() {
++                self.osc_overflowed = true;
+                 return;
+             }
+         }
+         self.osc_raw.push(byte);
+@@ -552,10 +558,13 @@ impl<const OSC_RAW_BUF_SIZE: usize> Parser<OSC_RAW_BUF_SIZE> {
+     }
+ 
+     fn osc_end<P: Perform>(&mut self, performer: &mut P, byte: u8) {
+-        self.action_osc_put_param();
+-        self.osc_dispatch(performer, byte);
++        if !self.osc_overflowed {
++            self.action_osc_put_param();
++            self.osc_dispatch(performer, byte);
++        }
+         self.osc_raw.clear();
+         self.osc_num_params = 0;
++        self.osc_overflowed = false;
+     }
+ 
+     /// Reset escape sequence parameters and intermediates.

@@ -1,0 +1,12 @@
+filegroup(
+    name = "architecture_check_data",
+    srcs = ["BUILD.bazel"],
+    visibility = ["//visibility:public"],
+)
+
+genrule(
+    name = "unavailable_runtime_bundle",
+    outs = ["manifest.json", "bin/yolo"],
+    cmd = "echo 'YoloRelease must be built through the release tooling' >&2; /usr/bin/false",
+    visibility = ["//visibility:public"],
+)

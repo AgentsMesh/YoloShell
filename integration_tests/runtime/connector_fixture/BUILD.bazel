@@ -1,0 +1,35 @@
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library", "rust_test")
+load("//build_system/bazel:version.bzl", "YOLO_MARKETING_VERSION")
+
+package(default_visibility = ["//visibility:public"])
+
+_DEPS = [
+    "//core/crates/hub/connector/client:yolo_hub_connector_client",
+    "//core/crates/hub/connector/protocol:yolo_hub_connector_protocol",
+    "//core/crates/hub/identity:yolo_hub_identity",
+    "//core/crates/hub/terminal/io:yolo_hub_terminal_io",
+    "@crates//:clap", "@crates//:libc", "@crates//:serde_json", "@crates//:tokio",
+]
+
+filegroup(name = "architecture_check_data", srcs = glob(["**/*.rs"]) + ["BUILD.bazel"])
+
+rust_library(
+    name = "library", testonly = True,
+    srcs = glob(["src/**/*.rs"], exclude = ["src/main.rs"]),
+    crate_root = "src/lib.rs", crate_name = "yolo_connector_fixture", edition = "2024",
+    version = YOLO_MARKETING_VERSION, deps = _DEPS,
+)
+
+rust_binary(
+    name = "yolo-test-connector", testonly = True,
+    srcs = ["src/main.rs"], crate_root = "src/main.rs", crate_name = "yolo_test_connector", edition = "2024",
+    version = YOLO_MARKETING_VERSION,
+    deps = [":library", "@crates//:clap", "@crates//:tokio"],
+)
+
+rust_test(
+    name = "unit_tests",
+    srcs = glob(["src/**/*.rs", "unit_tests/**/*.rs"], exclude = ["src/main.rs"]),
+    crate_root = "src/lib.rs", crate_name = "yolo_connector_fixture_unit_tests", edition = "2024",
+    deps = _DEPS,
+)

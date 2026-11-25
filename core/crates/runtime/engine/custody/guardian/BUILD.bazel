@@ -1,0 +1,193 @@
+load("@rules_rust//rust:defs.bzl", "rust_library")
+load("//build_system/bazel:version.bzl", "YOLO_MARKETING_VERSION")
+load("//build_system/bazel/rust:component_test_graph.bzl", "COMPONENT_TEST_FEATURES", "component_test_aliases", "component_test_dependencies")
+load(
+    "//build_system/bazel/rust:custody_guardian_component_deps.bzl",
+    "CUSTODY_GUARDIAN_DEPS",
+    "CUSTODY_GUARDIAN_COVERAGE_SUPPORT",
+    "CUSTODY_GUARDIAN_TEST_ALIASES",
+    "CUSTODY_GUARDIAN_TEST_DEPS",
+    "CLAUDE_CUSTODY_COMPONENT",
+    "CLAUDE_CUSTODY_RESILIENCE_COMPONENT",
+    "PERSISTENCE_CUSTODY_COMPONENT",
+    "PERSISTENCE_CUSTODY_RESILIENCE_COMPONENT",
+    "PROCESS_ADVERSARIAL_COMPONENT",
+    "PROCESS_COMPONENT",
+)
+load("//build_system/bazel/rust:isolated_test.bzl", "isolated_rust_test")
+load(
+    "//build_system/bazel/rust:test_features.bzl",
+    "INTEGRATION_TEST_FEATURES",
+    "SERIAL_TEST_ENVIRONMENT",
+    "UNIT_TEST_FEATURES",
+)
+
+package(default_visibility = ["//visibility:public"])
+
+_DEPS = CUSTODY_GUARDIAN_DEPS
+
+rust_library(
+    name = "yolo_custody_guardian",
+    srcs = glob(["src/**/*.rs"]),
+    crate_name = "yolo_custody_guardian",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    version = YOLO_MARKETING_VERSION,
+    deps = _DEPS,
+)
+
+isolated_rust_test(
+    name = "yolo_custody_guardian_unit_tests",
+    timeout = "eternal",
+    srcs = [
+        ":runtime_sources",
+        ":test_support_sources",
+        ":unit_test_sources",
+    ],
+    aliases = CUSTODY_GUARDIAN_TEST_ALIASES,
+    crate_features = UNIT_TEST_FEATURES,
+    crate_name = "yolo_custody_guardian_unit_tests",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    env = SERIAL_TEST_ENVIRONMENT,
+    deps = CUSTODY_GUARDIAN_TEST_DEPS,
+)
+
+isolated_rust_test(
+    name = "yolo_custody_guardian_integration_tests",
+    timeout = "eternal",
+    srcs = [
+        ":integration_test_sources",
+        ":runtime_sources",
+        ":test_support_sources",
+    ],
+    aliases = CUSTODY_GUARDIAN_TEST_ALIASES,
+    crate_features = INTEGRATION_TEST_FEATURES,
+    crate_name = "yolo_custody_guardian_integration_tests",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    env = SERIAL_TEST_ENVIRONMENT,
+    deps = CUSTODY_GUARDIAN_TEST_DEPS,
+)
+
+rust_library(
+    name = "yolo_custody_guardian_resilience_support",
+    testonly = True,
+    srcs = glob(["src/**/*.rs"]) + [":test_support_sources"],
+    aliases = {
+        CLAUDE_CUSTODY_RESILIENCE_COMPONENT: "yolo_claude_custody",
+        PERSISTENCE_CUSTODY_RESILIENCE_COMPONENT: "yolo_persistence_custody",
+        PROCESS_ADVERSARIAL_COMPONENT: "yolo_process",
+    },
+    crate_features = ["adversarial-test-hooks"],
+    crate_name = "yolo_custody_guardian",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    deps = [
+        dependency
+        for dependency in _DEPS
+        if dependency not in [
+            CLAUDE_CUSTODY_COMPONENT,
+            PERSISTENCE_CUSTODY_COMPONENT,
+            PROCESS_COMPONENT,
+        ]
+    ] + [
+        CLAUDE_CUSTODY_RESILIENCE_COMPONENT,
+        CUSTODY_GUARDIAN_COVERAGE_SUPPORT,
+        PERSISTENCE_CUSTODY_RESILIENCE_COMPONENT,
+        PROCESS_ADVERSARIAL_COMPONENT,
+    ],
+)
+
+rust_library(
+    name = "yolo_custody_guardian_host_test_support",
+    testonly = True,
+    srcs = glob(["src/**/*.rs"]) + [":test_support_sources"],
+    aliases = {
+        CLAUDE_CUSTODY_RESILIENCE_COMPONENT: "yolo_claude_custody",
+        PERSISTENCE_CUSTODY_RESILIENCE_COMPONENT: "yolo_persistence_custody",
+        PROCESS_ADVERSARIAL_COMPONENT: "yolo_process",
+    },
+    crate_features = [
+        "host-test-hooks",
+        "yolo-test-support",
+    ],
+    crate_name = "yolo_custody_guardian",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    deps = [
+        dependency
+        for dependency in _DEPS
+        if dependency not in [
+            CLAUDE_CUSTODY_COMPONENT,
+            PERSISTENCE_CUSTODY_COMPONENT,
+            PROCESS_COMPONENT,
+        ]
+    ] + [
+        CLAUDE_CUSTODY_RESILIENCE_COMPONENT,
+        CUSTODY_GUARDIAN_COVERAGE_SUPPORT,
+        PERSISTENCE_CUSTODY_RESILIENCE_COMPONENT,
+        PROCESS_ADVERSARIAL_COMPONENT,
+    ],
+)
+
+filegroup(
+    name = "runtime_sources",
+    srcs = glob(["src/**/*.rs"]),
+)
+
+filegroup(
+    name = "unit_test_sources",
+    testonly = True,
+    srcs = glob(
+        ["unit_tests/**/*.rs"],
+        allow_empty = True,
+    ),
+)
+
+filegroup(
+    name = "integration_test_sources",
+    testonly = True,
+    srcs = glob(
+        ["integration_tests/**/*.rs"],
+        allow_empty = True,
+    ),
+)
+
+filegroup(
+    name = "test_support_sources",
+    testonly = True,
+    srcs = glob(
+        ["test_support/**/*.rs"],
+        allow_empty = True,
+    ),
+)
+
+rust_library(
+    name = "yolo_custody_guardian_component_test_support",
+    testonly = True,
+    srcs = glob(["src/**/*.rs"]) + glob(
+        ["test_support/**/*.rs"],
+        allow_empty = True,
+    ),
+    aliases = component_test_aliases(_DEPS),
+    crate_features = COMPONENT_TEST_FEATURES + ["host-test-hooks"],
+    crate_name = "yolo_custody_guardian",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    deps = component_test_dependencies(_DEPS) + [
+        CUSTODY_GUARDIAN_COVERAGE_SUPPORT,
+        "@crates//:tempfile",
+    ],
+)
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = glob(
+        ["**/*"],
+        allow_empty = True,
+        exclude = ["BUILD.bazel"],
+    ) + [
+        "BUILD.bazel",
+    ],
+)

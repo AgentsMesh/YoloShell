@@ -1,0 +1,30 @@
+load("@rules_rust//rust:defs.bzl", "rust_test")
+load("//build_system/bazel/capnp:defs.bzl", "capnp_rust_library")
+
+package(default_visibility = ["//visibility:public"])
+
+capnp_rust_library(
+    name = "fixture",
+    srcs = ["common.capnp", "service.capnp"],
+    crate_name = "yolo_capnp_fixture",
+    testonly = True,
+)
+
+rust_test(
+    name = "generation_tests",
+    srcs = ["lib.rs"],
+    crate_root = "lib.rs",
+    edition = "2024",
+    deps = [
+        ":fixture",
+        "//build_system/bazel/capnp/integration_tests/authored:fixture",
+        "@crates//:capnp",
+        "@crates//:capnp-rpc",
+        "@crates//:futures",
+    ],
+)
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = ["BUILD.bazel", "common.capnp", "service.capnp", "lib.rs", "//build_system/bazel/capnp/integration_tests/authored:architecture_check_data"],
+)

@@ -1,0 +1,9 @@
+pub const IMAGE_BYTES: u64 = 4096;
+pub const DIGEST_CHARACTER: &str = "a";
+pub const FOREIGN_DIGEST: &str = "b";
+pub const IMAGE_FIELDS: &[&str] = &["host", "hub", "file_helper"];
+pub const UNKNOWN_FIELD: &str = "path";
+pub const UNKNOWN_VALUE: &str = "/private/host";
+pub const SCHEMA_FIELD: &str = "schema_version";
+pub const DIGEST_FIELD: &str = "sha256";
+pub const SIZE_FIELD: &str = "size_bytes";

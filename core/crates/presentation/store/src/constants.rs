@@ -1,0 +1,11 @@
+pub const LAYOUT_FILE: &str = "layouts.json";
+pub use yolo_presentation_protocol::MAX_DOCUMENTS;
+pub(crate) const LOCK_FILE: &str = "layouts.lock";
+pub(crate) const LOCK_BYTES: u64 = 4_096;
+pub(crate) const NAMESPACE: &str = "presentation-layouts";
+pub(crate) const SCHEMA_VERSION: u16 = 2;
+pub(crate) const BUSY: &str = "layout store already has a writer";
+pub(crate) const CHANGED: &str = "layout storage changed outside its owning service";
+pub(crate) const LOST: &str = "layout store lost its retained storage authority";
+pub(crate) const RECORD_INVALID: &str = "invalid layout store record";
+pub(crate) const TOO_LARGE: &str = "layout store exceeds its durable byte limit";

@@ -1,0 +1,74 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+
+package(default_visibility = ["//visibility:public"])
+
+_SOURCES = glob(["src/*.rs"])
+
+_UNIT_TEST_SOURCES = glob(["unit_tests/*.rs"])
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = _SOURCES + _UNIT_TEST_SOURCES + glob(["test_support/*.rs", "integration_tests/*.rs"]) + ["BUILD.bazel"],
+)
+
+rust_library(
+    name = "library",
+    srcs = _SOURCES,
+    crate_name = "yolo_release_archive_audit",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    deps = [
+        "//build_system/release/contracts:library",
+        "//build_system/release/foundation:library",
+        "@crates//:anyhow",
+        "@crates//:crc32fast",
+        "@crates//:libc",
+        "@crates//:sha2",
+    ],
+)
+
+rust_library(
+    name = "test_support",
+    testonly = True,
+    srcs = ["test_support/fixture.rs"],
+    crate_name = "yolo_release_archive_audit_test_support",
+    crate_root = "test_support/fixture.rs",
+    edition = "2024",
+    deps = [
+        ":library",
+        "@crates//:crc32fast",
+    ],
+)
+
+rust_test(
+    name = "unit_tests",
+    srcs = _UNIT_TEST_SOURCES,
+    crate_name = "yolo_release_archive_audit_unit_tests",
+    crate_root = "unit_tests/lib.rs",
+    edition = "2024",
+    deps = [
+        ":library",
+        ":test_support",
+        "@crates//:crc32fast",
+    ],
+)
+
+rust_test(
+    name = "integration_tests",
+    srcs = glob(["integration_tests/*.rs"]) + [
+        "test_support/ditto.rs",
+        "test_support/text_attribute_constants.rs",
+    ],
+    crate_name = "yolo_release_archive_audit_integration_tests",
+    crate_root = "integration_tests/file_tests.rs",
+    edition = "2024",
+    deps = [
+        ":library",
+        ":test_support",
+        "//build_system/release/contracts:library",
+        "//build_system/release/foundation:library",
+        "@crates//:crc32fast",
+        "@crates//:libc",
+        "@crates//:tempfile",
+    ],
+)
