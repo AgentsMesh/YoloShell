@@ -1,0 +1,40 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+load("//build_system/bazel:version.bzl", "YOLO_MARKETING_VERSION")
+
+package(default_visibility = ["//visibility:public"])
+
+_DEPS = [
+    "//core/crates/agent/contract:yolo_agent_contract",
+    "//core/crates/hub/agent/protocol:yolo_hub_agent_protocol",
+    "//core/crates/hub/dispatch:yolo_hub_dispatch",
+    "//core/crates/hub/identity:yolo_hub_identity",
+    "//core/crates/hub/rpc/protocol:yolo_hub_rpc_protocol",
+    "//core/crates/hub/terminal/protocol:yolo_hub_terminal_protocol",
+    "//core/crates/transport/client:yolo_client",
+]
+
+rust_library(
+    name = "yolo_hub_local_providers",
+    srcs = glob(["src/**/*.rs"]),
+    crate_name = "yolo_hub_local_providers",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    version = YOLO_MARKETING_VERSION,
+    deps = _DEPS,
+)
+
+rust_test(
+    name = "unit_tests",
+    srcs = glob(["src/**/*.rs", "unit_tests/**/*.rs"]),
+    crate_name = "yolo_hub_local_providers_unit_tests",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    deps = _DEPS + [
+        "//core/crates/hub/local/terminal/history:yolo_hub_local_terminal_history",
+    ],
+)
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = glob(["**/*"], exclude = ["BUILD.bazel"]) + ["BUILD.bazel"],
+)

@@ -1,0 +1,45 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+load("//build_system/bazel:version.bzl", "YOLO_MARKETING_VERSION")
+
+package(default_visibility = ["//visibility:public"])
+
+_DEPS = [
+    "//core/crates/agent/input:yolo_agent_input",
+    "//core/crates/hub/agent/run/protocol:yolo_hub_agent_run_protocol",
+    "//core/crates/hub/identity:yolo_hub_identity",
+    "//core/crates/hub/terminal/protocol:yolo_hub_terminal_protocol",
+    "@crates//:serde",
+    "@crates//:thiserror",
+    "@crates//:uuid",
+]
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = glob(["**/*"], exclude = ["BUILD.bazel"]) + ["BUILD.bazel"],
+)
+
+rust_library(
+    name = "yolo_hub_agent_protocol",
+    srcs = glob(["src/**/*.rs"]),
+    crate_name = "yolo_hub_agent_protocol",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    version = YOLO_MARKETING_VERSION,
+    deps = _DEPS,
+)
+
+rust_test(
+    name = "yolo_hub_agent_protocol_unit_tests",
+    srcs = glob(["unit_tests/**/*.rs", "test_support/**/*.rs"]),
+    crate_root = "unit_tests/lib.rs",
+    edition = "2024",
+    deps = _DEPS + [":yolo_hub_agent_protocol", "@crates//:serde_json"],
+)
+
+rust_test(
+    name = "yolo_hub_agent_protocol_integration_tests",
+    srcs = glob(["integration_tests/**/*.rs", "test_support/**/*.rs"]),
+    crate_root = "integration_tests/lib.rs",
+    edition = "2024",
+    deps = _DEPS + [":yolo_hub_agent_protocol", "@crates//:serde_json"],
+)

@@ -1,0 +1,18 @@
+use super::{creation_support, drawing_support, fixtures, panes, query_support};
+mod tab_actions;
+mod tab_close_ownership;
+mod tab_creation;
+mod tab_focus_control;
+mod tab_keyboard;
+mod tab_liveness;
+mod tab_manager;
+mod tab_manager_errors;
+mod tab_navigation;
+mod tab_navigation_errors;
+mod tab_persistence;
+mod tab_pointer;
+mod tab_pointer_fences;
+mod tab_recovery;
+mod tab_reservation;
+mod tab_strip;
+mod tab_switching;
