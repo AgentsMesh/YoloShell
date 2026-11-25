@@ -1,0 +1,13 @@
+pub(crate) const PRIMARY_DATA_HOME_ENV: &str = "CODEX_HOME";
+pub(crate) const SECONDARY_DATA_HOME_ENV: &str = "CLAUDE_CONFIG_DIR";
+pub(crate) const SETTINGS_IDENTITY_ENV: &str = "YOLO_CLAUDE_SETTINGS_IDENTITY";
+pub(crate) const PTY_CAPABILITY_ENV: &str = "YOLO_PTY_SESSION_CAPABILITY";
+pub(crate) const EXECUTABLE: &str = "yolo-test-agent";
+pub(crate) const RESUME_ARGUMENT: &str = "resume";
+pub(crate) const EXECUTABLE_NAMES: &[&str] = &[EXECUTABLE];
+pub(crate) const ABSOLUTE_EXECUTABLE: &str = "/usr/bin/yolo-test-agent";
+pub(crate) const NODE_PACKAGE_COMPONENTS: &[&str] = &["vendor", "test-agent"];
+pub(crate) const NODE_ENTRYPOINTS: &[&str] = &["test-agent.js"];
+pub(crate) const NODE_ENTRYPOINT: &str = "/pkg/vendor/test-agent/bin/test-agent.js";
+pub(crate) const OTHER_NODE_ENTRYPOINT: &str = "/pkg/vendor/other/bin/test-agent.js";
+pub(crate) const HELPER_NODE_ENTRYPOINT: &str = "/pkg/vendor/test-agent/bin/helper.js";
