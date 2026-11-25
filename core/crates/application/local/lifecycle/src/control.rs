@@ -1,0 +1,125 @@
+use crate::constants::*;
+use crate::process::StopReport;
+use anyhow::{Context, Result, ensure};
+use std::path::Path;
+use tokio::time::Instant;
+use yolo_hub_local_startup::Launch;
+use yolo_hub_state::{HubState, validate_runtime_contract};
+use yolo_local_profile::LocalProfile;
+
+pub async fn stop(profile: &LocalProfile) -> Result<StopReport> {
+    require_detached_services(profile).await?;
+    stop_detached(profile).await
+}
+
+async fn require_detached_services(profile: &LocalProfile) -> Result<()> {
+    let units = crate::service_units(profile).await?;
+    ensure!(
+        units.is_empty(),
+        "the selected profile is managed by systemd ({}); use those units to stop or activate it",
+        units
+            .iter()
+            .map(|unit| unit.name.as_str())
+            .collect::<Vec<_>>()
+            .join(", ")
+    );
+    Ok(())
+}
+
+async fn stop_detached(profile: &LocalProfile) -> Result<StopReport> {
+    let hub = crate::process::stop_socket(
+        &HubState::socket_path_for(&profile.state)?,
+        HUB_SERVICE,
+        Instant::now() + STOP_TIMEOUT,
+    )
+    .await?;
+    let host = crate::process::stop_socket(
+        &yolo_paths::Paths::new(&profile.host_home).host_socket()?,
+        HOST_SERVICE,
+        Instant::now() + STOP_TIMEOUT,
+    )
+    .await?;
+    Ok(StopReport {
+        services: vec![hub, host],
+    })
+}
+
+pub async fn start(profile: &LocalProfile, executable: &Path) -> Result<()> {
+    let launch = Launch {
+        state: profile.state.clone(),
+        host_home: profile.host_home.clone(),
+        host_executable: executable.to_path_buf(),
+        hub_executable: executable.to_path_buf(),
+    };
+    yolo_hub_local_startup::ensure_running(launch, Instant::now() + START_TIMEOUT).await?;
+    Ok(())
+}
+
+/// Checks the local state contract with the constants compiled into this
+/// process. Callers that activate a different image must run this check with
+/// that image instead; see `yolo_local_lifecycle::restart`.
+pub fn validate_state(profile: &LocalProfile) -> Result<()> {
+    if profile.state.exists() {
+        validate_runtime_contract(&profile.state).context(STATE_INCOMPATIBLE)?;
+    }
+    Ok(())
+}
+
+/// Stops and starts the local services. The caller owns the state-contract
+/// preflight because only the image that will run may decide compatibility: an
+/// older updater must validate with its installed candidate, not itself.
+pub async fn restart(profile: &LocalProfile, executable: &Path) -> Result<StopReport> {
+    let units = crate::service_units(profile).await?;
+    if !units.is_empty() {
+        return restart_managed(units, executable).await;
+    }
+    yolo_hub_local_startup::require_host_custody()?;
+    let report = stop_detached(profile).await?;
+    start(profile, executable)
+        .await
+        .context(STOPPED_NOT_STARTED)?;
+    Ok(report)
+}
+
+async fn restart_managed(units: Vec<crate::ServiceUnit>, executable: &Path) -> Result<StopReport> {
+    let hubs = units
+        .iter()
+        .filter(|unit| unit.role() == crate::ServiceRole::Hub)
+        .collect::<Vec<_>>();
+    let hosts = units
+        .iter()
+        .filter(|unit| unit.role() == crate::ServiceRole::Host)
+        .collect::<Vec<_>>();
+    ensure!(
+        hubs.len() == 1,
+        "managed profile must resolve exactly one Hub service"
+    );
+    ensure!(
+        hosts.len() == 1,
+        "managed profile must resolve exactly one Host service"
+    );
+    let hub = hubs[0];
+    let host = hosts[0];
+    for unit in &units {
+        unit.activate_image(executable).await?;
+    }
+    crate::supervision::reload_managers(&units).await?;
+    hub.stop().await?;
+    host.stop().await?;
+    host.start().await.context(STOPPED_NOT_STARTED)?;
+    hub.start().await.context(STOPPED_NOT_STARTED)?;
+    Ok(StopReport {
+        services: vec![
+            crate::process::ServiceStop {
+                service: "managed hub",
+                stopped: true,
+                pid: Some(hub.pid()),
+            },
+            crate::process::ServiceStop {
+                service: "managed host",
+                stopped: true,
+                pid: Some(host.pid()),
+            },
+        ],
+    })
+}

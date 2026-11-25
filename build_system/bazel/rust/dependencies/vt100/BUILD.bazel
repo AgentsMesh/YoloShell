@@ -1,0 +1,13 @@
+package(default_visibility = ["//visibility:public"])
+
+exports_files(["cursor_position.patch"])
+
+alias(
+    name = "cursor_position_test",
+    actual = "//clients/tui/terminal:integration_tests",
+)
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = glob(["**/*"], exclude = ["BUILD.bazel"]) + ["BUILD.bazel"],
+)

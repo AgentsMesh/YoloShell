@@ -1,0 +1,14 @@
+load("//build_system/bazel/capnp:defs.bzl", "capnp_rust_library")
+
+package(default_visibility = ["//visibility:public"])
+
+capnp_rust_library(
+    name = "schema",
+    srcs = ["value.capnp", "rpc.capnp"],
+    crate_name = "yolo_capnp_schema",
+)
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = glob(["**/*"]),
+)

@@ -1,0 +1,8 @@
+.build
+.git
+.yolo-dev
+coverage
+dist
+target
+test-results
+.verification

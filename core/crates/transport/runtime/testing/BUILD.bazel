@@ -1,0 +1,19 @@
+load("@rules_rust//rust:defs.bzl", "rust_library")
+package(default_visibility = ["//visibility:public"])
+
+rust_library(
+    name = "testing",
+    testonly = True,
+    crate_name = "yolo_runtime_rpc_testing",
+    srcs = glob(["test_support/**/*.rs"]),
+    crate_root = "test_support/lib.rs",
+    edition = "2024",
+    deps = [
+        "//core/crates/wire:yolo_wire",
+        "//core/crates/transport/capnp/codec",
+        "//core/crates/transport/capnp/rpc",
+        "@crates//:tokio",
+    ],
+)
+
+filegroup(name = "architecture_check_data", srcs = glob(["test_support/**/*.rs"]) + ["BUILD.bazel"])
