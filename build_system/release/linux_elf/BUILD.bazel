@@ -1,0 +1,45 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+
+package(default_visibility = ["//visibility:public"])
+
+_SOURCES = glob(["src/*.rs"])
+
+_INTEGRATION_TEST_SOURCES = glob(["integration_tests/*.rs"])
+
+_TEST_SUPPORT_SOURCES = glob(["test_support/*.rs"])
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = _SOURCES + _INTEGRATION_TEST_SOURCES + _TEST_SUPPORT_SOURCES + ["BUILD.bazel"],
+)
+
+rust_library(
+    name = "library",
+    srcs = _SOURCES,
+    crate_name = "yolo_release_linux_elf",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    deps = [
+        "//build_system/release/contracts:library",
+        "//build_system/release/foundation:library",
+        "@crates//:anyhow",
+        "@crates//:libc",
+        "@crates//:sha2",
+    ],
+)
+
+rust_test(
+    name = "integration_tests",
+    srcs = _SOURCES + _INTEGRATION_TEST_SOURCES + _TEST_SUPPORT_SOURCES,
+    crate_name = "yolo_release_linux_elf_integration_tests",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    deps = [
+        "//build_system/release/contracts:library",
+        "//build_system/release/foundation:library",
+        "@crates//:anyhow",
+        "@crates//:libc",
+        "@crates//:sha2",
+        "@crates//:tempfile",
+    ],
+)

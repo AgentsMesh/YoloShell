@@ -1,0 +1,41 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+package(default_visibility = ["//visibility:public"])
+_DEPS = [
+    "//core/crates/hub/connector/jsonrpc:yolo_hub_connector_jsonrpc",
+    "//core/crates/hub/jsonrpc/protocol:yolo_hub_jsonrpc_protocol",
+    "//core/crates/hub/connector/protocol:yolo_hub_connector_protocol",
+    "//core/crates/hub/local/backend:yolo_hub_local_backend",
+    "//core/crates/hub/state:yolo_hub_state",
+    "//core/crates/hub/jsonrpc/transport:yolo_hub_jsonrpc_transport",
+    "//core/crates/persistence/paths:yolo_paths",
+    "//core/crates/transport/local/unix:yolo_local_unix",
+    "@crates//:anyhow", "@crates//:libc", "@crates//:tokio",
+]
+rust_library(name = "yolo_hub_connector_service", crate_name = "yolo_hub_connector_service",
+    srcs = glob(["src/**/*.rs"]), crate_root = "src/lib.rs", edition = "2024", deps = _DEPS)
+rust_test(name = "unit_tests", crate_name = "yolo_hub_connector_service_unit_tests",
+    srcs = glob(["src/**/*.rs", "unit_tests/**/*.rs", "test_support/**/*.rs"]),
+    crate_root = "src/lib.rs", edition = "2024",
+    deps = _DEPS + [
+        "//core/crates/hub/identity:yolo_hub_identity",
+        "//core/crates/hub/agent/protocol:yolo_hub_agent_protocol",
+        "//core/crates/hub/connector/store:yolo_hub_connector_store",
+        "//core/crates/hub/connector/client:yolo_hub_connector_client",
+        "//core:yolo_runtime",
+        "//core/crates/transport/runtime/testing",
+        "@crates//:uuid", "@crates//:tempfile", "@crates//:serde_json",
+    ])
+rust_test(name = "integration_tests", crate_name = "yolo_hub_connector_service_integration_tests",
+    srcs = glob(["integration_tests/**/*.rs", "test_support/**/*.rs"]),
+    crate_root = "integration_tests/lib.rs", edition = "2024",
+    deps = _DEPS + [
+        ":yolo_hub_connector_service",
+        "//core/crates/hub/identity:yolo_hub_identity",
+        "//core/crates/hub/agent/protocol:yolo_hub_agent_protocol",
+        "//core/crates/hub/connector/store:yolo_hub_connector_store",
+        "//core/crates/hub/connector/client:yolo_hub_connector_client",
+        "//core:yolo_runtime",
+        "//core/crates/transport/runtime/testing",
+        "@crates//:uuid", "@crates//:tempfile", "@crates//:serde_json",
+    ])
+filegroup(name = "architecture_check_data", srcs = glob(["**/*.rs"]) + ["BUILD.bazel"])

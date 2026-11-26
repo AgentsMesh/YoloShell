@@ -1,0 +1,13 @@
+pub const ENROLLMENT_DIRECTORY: &str = "enrollments";
+pub(crate) const RECORD_FILE: &str = "record.json";
+pub(crate) const LOCK_SUFFIX: &str = ".lock";
+pub(crate) const LOCK_BYTES: u64 = 4096;
+pub(crate) const RECORD_SCHEMA: u16 = 2;
+pub(crate) const PARENT_NAMESPACE: &str = "enrollment Hub state";
+pub(crate) const ROOT_NAMESPACE: &str = "enrollment journal";
+pub(crate) const ENTRY_NAMESPACE: &str = "enrollment attempt";
+pub(crate) const BUSY: &str = "enrollment request is already being submitted";
+pub(crate) const CONFLICT: &str = "enrollment request identity was reused with different content";
+pub(crate) const INCOMPLETE: &str = "enrollment entry exists without a prepared record";
+pub(crate) const INVALID: &str = "enrollment record is inconsistent";
+pub(crate) const CHANGED: &str = "enrollment record or directory identity changed";

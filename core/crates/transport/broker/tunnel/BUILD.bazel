@@ -1,0 +1,40 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+load("//build_system/bazel:version.bzl", "YOLO_MARKETING_VERSION")
+
+package(default_visibility = ["//visibility:public"])
+_LOCAL_UNIX = "//core/crates/transport/local/unix:yolo_local_unix"
+_LOCAL_UNIX_TEST_SUPPORT = "//core/crates/transport/local/unix:yolo_local_unix_test_support"
+_DEPS = [
+    "//core/crates/transport/broker/hub/protocol:yolo_broker_hub_protocol",
+    _LOCAL_UNIX,
+    "@crates//:futures",
+    "@crates//:libc",
+    "@crates//:tokio",
+]
+filegroup(name = "architecture_check_data", srcs = glob(["**/*.rs"]) + ["BUILD.bazel"])
+rust_library(
+    name = "yolo_broker_tunnel",
+    srcs = glob(["src/**/*.rs"]),
+    crate_root = "src/lib.rs",
+    crate_name = "yolo_broker_tunnel",
+    edition = "2024",
+    version = YOLO_MARKETING_VERSION,
+    deps = _DEPS,
+)
+rust_library(
+    name = "yolo_broker_tunnel_test_support",
+    testonly = True,
+    srcs = glob(["src/**/*.rs"]),
+    crate_root = "src/lib.rs",
+    crate_name = "yolo_broker_tunnel_test_support",
+    edition = "2024",
+    aliases = {_LOCAL_UNIX_TEST_SUPPORT: "yolo_local_unix"},
+    deps = [dependency for dependency in _DEPS if dependency != _LOCAL_UNIX] + [_LOCAL_UNIX_TEST_SUPPORT],
+)
+rust_test(
+    name = "unit_tests",
+    srcs = glob(["src/**/*.rs", "unit_tests/**/*.rs"]),
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    deps = _DEPS + ["//core/crates/transport/broker/hub/protocol:test_support"],
+)

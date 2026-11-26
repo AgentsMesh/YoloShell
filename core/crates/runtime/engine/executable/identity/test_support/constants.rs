@@ -1,0 +1,15 @@
+pub const SOURCE: &[u8] = b"abc";
+pub const REPLACEMENT: &[u8] = b"xyz";
+pub const DIGEST: &str = "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad";
+pub const SIZE: u64 = 3;
+pub const STEP: u64 = 1;
+pub const DESCRIPTOR_FILE: &str = "image";
+pub const REPLACEMENT_FILE: &str = "replacement";
+pub const ALIAS_FILE: &str = "launch-alias";
+pub const SAVED_ALIAS_FILE: &str = "previous-alias";
+pub const PRIVATE_EXECUTABLE_MODE: u32 = 0o700;
+pub const NON_EXECUTABLE_MODE: u32 = 0o600;
+pub const CHANGED_TIMESTAMP_SECONDS: u64 = 10_000;
+pub const IO_FAILURE: &str = "executable stream unavailable";
+pub const POST_HASH_VERIFICATION: usize = 2;
+pub const TEST_BUFFER_BYTES: usize = 8 * 1024;

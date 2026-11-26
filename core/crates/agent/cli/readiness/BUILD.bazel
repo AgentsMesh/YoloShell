@@ -1,0 +1,19 @@
+load("@rules_rust//rust:defs.bzl", "rust_library")
+load("//build_system/bazel:version.bzl", "YOLO_MARKETING_VERSION")
+
+package(default_visibility = ["//visibility:public"])
+
+rust_library(
+    name = "yolo_agent_cli_readiness",
+    srcs = ["src/lib.rs"],
+    crate_name = "yolo_agent_cli_readiness",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    version = YOLO_MARKETING_VERSION,
+    deps = ["//core/crates/hub/agent/protocol:yolo_hub_agent_protocol"],
+)
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = glob(["src/**/*.rs"]) + ["BUILD.bazel"],
+)
