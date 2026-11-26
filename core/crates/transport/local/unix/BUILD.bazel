@@ -1,0 +1,121 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+load("//build_system/bazel:version.bzl", "YOLO_MARKETING_VERSION")
+load("//build_system/bazel/rust:source_paths.bzl", "canonical_source_path_flags")
+load("//build_system/bazel/rust:test_features.bzl", "TEST_SUPPORT_FEATURE", "UNIT_TEST_FEATURES")
+
+package(default_visibility = ["//visibility:public"])
+
+_PROCESS_SPAWN = "//core/crates/process/spawn:yolo_process_spawn"
+
+_PROCESS_SPAWN_TEST_SUPPORT = "//core/crates/process/spawn:yolo_process_spawn_test_support"
+
+_COMMON_DEPS = [
+    "@crates//:libc",
+    "@crates//:tokio",
+]
+
+_DEPS = [_PROCESS_SPAWN] + _COMMON_DEPS
+
+_TEST_SUPPORT_DEPS = [_PROCESS_SPAWN_TEST_SUPPORT] + _COMMON_DEPS
+
+_CONTRACT = ["//core:scm_rights_descriptor_contract"]
+
+_APPLICATION_TEST_SUPPORT = "//core/crates/application/support:yolo_application_support_test_support"
+
+_SOURCES = glob(["src/**/*.rs"], allow_empty = False)
+
+filegroup(
+    name = "runtime_sources",
+    srcs = _SOURCES,
+)
+
+rust_library(
+    name = "yolo_local_unix",
+    srcs = [":runtime_sources"],
+    compile_data = _CONTRACT,
+    crate_name = "yolo_local_unix",
+    crate_root = "src/mod.rs",
+    edition = "2024",
+    rustc_flags = canonical_source_path_flags(_SOURCES),
+    version = YOLO_MARKETING_VERSION,
+    deps = _DEPS,
+)
+
+rust_library(
+    name = "yolo_local_unix_test_support",
+    testonly = True,
+    srcs = [
+        ":runtime_sources",
+        ":test_support_sources",
+    ],
+    aliases = {_PROCESS_SPAWN_TEST_SUPPORT: "yolo_process_spawn"},
+    compile_data = _CONTRACT,
+    crate_features = [TEST_SUPPORT_FEATURE],
+    crate_name = "yolo_local_unix_test_support",
+    crate_root = "src/mod.rs",
+    edition = "2024",
+    rustc_flags = canonical_source_path_flags(_SOURCES),
+    deps = _TEST_SUPPORT_DEPS,
+)
+
+rust_test(
+    name = "yolo_local_unix_unit_tests",
+    srcs = [
+        ":runtime_sources",
+        ":unit_test_sources",
+        ":test_support_sources",
+    ],
+    aliases = {_APPLICATION_TEST_SUPPORT: "yolo_application_support"},
+    compile_data = _CONTRACT,
+    crate_features = UNIT_TEST_FEATURES,
+    crate_name = "yolo_local_unix_unit_test",
+    crate_root = "src/mod.rs",
+    edition = "2024",
+    rustc_flags = canonical_source_path_flags(_SOURCES),
+    deps = _DEPS + [_APPLICATION_TEST_SUPPORT],
+)
+
+rust_test(
+    name = "yolo_local_unix_integration_tests",
+    srcs = ["integration_tests/test_support_consumer.rs"],
+    crate_name = "yolo_local_unix_integration_test",
+    crate_root = "integration_tests/test_support_consumer.rs",
+    edition = "2024",
+    target_compatible_with = ["@platforms//os:macos"],
+    deps = [":yolo_local_unix_test_support"],
+)
+
+filegroup(
+    name = "unit_test_sources",
+    testonly = True,
+    srcs = glob(
+        ["unit_tests/**/*.rs"],
+        allow_empty = True,
+    ),
+)
+
+filegroup(
+    name = "test_support_sources",
+    testonly = True,
+    srcs = glob(["test_support/**/*.rs"]),
+)
+
+filegroup(
+    name = "integration_test_sources",
+    testonly = True,
+    srcs = glob(
+        ["integration_tests/**/*.rs"],
+        allow_empty = True,
+    ),
+)
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = glob(
+        ["**/*"],
+        allow_empty = True,
+        exclude = ["BUILD.bazel"],
+    ) + [
+        "BUILD.bazel",
+    ],
+)

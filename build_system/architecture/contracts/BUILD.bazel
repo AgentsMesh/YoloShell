@@ -1,0 +1,18 @@
+load("@rules_rust//rust:defs.bzl", "rust_library")
+
+package(default_visibility = ["//visibility:public"])
+
+_SOURCES = glob(["src/*.rs"])
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = _SOURCES + ["BUILD.bazel"],
+)
+
+rust_library(
+    name = "library",
+    srcs = _SOURCES,
+    crate_name = "yolo_architecture_policy_contracts",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+)

@@ -1,0 +1,16 @@
+use super::super::constants::{
+    MAX_FOREGROUND_PROCESS_IDS, MAX_PROCESS_ENVIRONMENT_KEYS, MAX_PROCESS_EVIDENCE_PATHS,
+};
+
+pub(super) const PROCESS_SNAPSHOT_SCHEMA_VERSION: u16 = 1;
+pub(super) const MAX_PROCESS_SNAPSHOT_ERROR_BYTES: usize = 4 * 1_024;
+pub(super) const PROCESS_SNAPSHOT_ERROR_FALLBACK: &str = "agent process scan failed without detail";
+pub(super) const MAX_PROCESS_SNAPSHOT_FRAME_BYTES: usize = crate::protocol::MAX_FRAME_BYTES;
+pub(super) const MAX_PROCESS_SNAPSHOT_NESTING_DEPTH: usize = 16;
+pub(super) const MAX_PROCESS_SNAPSHOT_PROCESSES: usize = MAX_FOREGROUND_PROCESS_IDS;
+pub(super) const MAX_PROCESS_SNAPSHOT_ARGV_ITEMS: usize = 256;
+pub(super) const MAX_PROCESS_SNAPSHOT_ENVIRONMENT_ITEMS: usize = MAX_PROCESS_ENVIRONMENT_KEYS;
+pub(super) const MAX_PROCESS_SNAPSHOT_EVIDENCE_ITEMS: usize = MAX_PROCESS_EVIDENCE_PATHS;
+pub(super) const MAX_PROCESS_SNAPSHOT_TOTAL_ARGV_ITEMS: usize = 32 * 1_024;
+pub(super) const MAX_PROCESS_SNAPSHOT_TOTAL_ENVIRONMENT_ITEMS: usize = 8 * 1_024;
+pub(super) const MAX_PROCESS_SNAPSHOT_TOTAL_EVIDENCE_ITEMS: usize = 8 * 1_024;

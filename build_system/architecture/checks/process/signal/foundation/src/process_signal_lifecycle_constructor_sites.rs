@@ -1,0 +1,87 @@
+use crate::process_signal_authority_sites::{QualifiedSite, qualified, retained_operation};
+use crate::process_signal_guardian_constants as guardian;
+use yolo_architecture_policy_contracts::process_signal as contract;
+use yolo_architecture_policy_contracts::process_signal_retained as retained;
+
+pub const SITES: &[QualifiedSite] = &[
+    qualified(
+        contract::RETAINED_EXACT_PROCESS,
+        contract::CAPTURE,
+        guardian::PATH,
+        Some(guardian::TARGET_OWNER),
+        contract::CAPTURE,
+    ),
+    retained_operation(
+        contract::BEGIN_CONTAINMENT,
+        guardian::PATH,
+        guardian::TARGET_OWNER,
+        guardian::GRACEFUL_FUNCTION,
+    ),
+    retained_operation(
+        contract::ENFORCE_CONTAINMENT,
+        guardian::PATH,
+        guardian::TARGET_OWNER,
+        guardian::FORCE_FUNCTION,
+    ),
+    retained_operation(
+        guardian::OBSERVE_OPERATION,
+        guardian::PATH,
+        guardian::TARGET_OWNER,
+        guardian::OBSERVATION_FUNCTION,
+    ),
+    retained_operation(
+        guardian::OBSERVE_OPERATION,
+        contract::EXACT_TERMINATION_PATH,
+        contract::RETAINED_EXACT_PROCESS,
+        contract::IS_RUNNING,
+    ),
+    qualified(
+        contract::RETAINED_EXACT_PROCESS,
+        guardian::OBSERVE_OPERATION,
+        contract::RETAINED_EXACT_DOUBLE_FORK_TESTS_PATH,
+        None,
+        retained::PTY_PROOF_WITHOUT_OBJECT_LEASE_FUNCTION,
+    ),
+    qualified(
+        contract::RETAINED_EXACT_PROCESS,
+        guardian::OBSERVE_OPERATION,
+        contract::RETAINED_EXACT_DOUBLE_FORK_TESTS_PATH,
+        None,
+        retained::PTY_EXACT_OBSERVER_REFRESH_FAILURE_FUNCTION,
+    ),
+    qualified(
+        contract::RETAINED_EXACT_PROCESS,
+        guardian::OBSERVE_OPERATION,
+        contract::RETAINED_EXACT_DOUBLE_FORK_TESTS_PATH,
+        None,
+        retained::LATE_ESCAPED_DESCENDANT_FUNCTION,
+    ),
+    qualified(
+        contract::RETAINED_EXACT_PROCESS,
+        guardian::OBSERVE_OPERATION,
+        contract::RETAINED_EXACT_DOUBLE_FORK_TESTS_PATH,
+        None,
+        retained::ASSERT_REFRESH_FAILURE_FUNCTION,
+    ),
+    qualified(
+        contract::RETAINED_EXACT_PROCESS,
+        contract::ENFORCE_CONTAINMENT,
+        contract::EXACT_TERMINATION_PATH,
+        Some(contract::PROCESS_IDENTITY),
+        retained::ENFORCE_EXACT_TEST_CLEANUP_FUNCTION,
+    ),
+    qualified(
+        contract::RETAINED_EXACT_PROCESS,
+        contract::BEGIN_CONTAINMENT,
+        contract::RETAINED_EXACT_DOUBLE_FORK_TESTS_PATH,
+        None,
+        retained::PTY_PROOF_WITHOUT_OBJECT_LEASE_FUNCTION,
+    ),
+    qualified(
+        contract::RETAINED_EXACT_PROCESS,
+        contract::ENFORCE_CONTAINMENT,
+        contract::RETAINED_EXACT_DOUBLE_FORK_TESTS_PATH,
+        None,
+        retained::PTY_PROOF_WITHOUT_OBJECT_LEASE_FUNCTION,
+    ),
+];

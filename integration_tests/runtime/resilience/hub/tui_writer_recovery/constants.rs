@@ -1,0 +1,12 @@
+pub(super) const BASELINE_INPUT: &[u8] = b"before-control-interruption";
+pub(super) const OUTAGE_INPUT: &[u8] = b"must-not-arrive-after-reconnect";
+pub(super) const RECOVERED_INPUT: &[u8] = b"fresh-input-after-recovery";
+pub(super) const CONTESTED_INPUT: &[u8] = b"must-not-steal-competing-writer";
+pub(super) const RECONNECTED_OUTPUT: &[u8] = b"\r\nYOLO_WRITER_RECOVERY_OUTPUT\r\n";
+pub(super) const RECONNECTED_MARKER: &str = "YOLO_WRITER_RECOVERY_OUTPUT";
+pub(super) const HUB_RECONNECTING: &str = "Hub reconnecting";
+pub(super) const INPUT_HELD: &str = "Read Only · held by ";
+pub(super) const COMPETING_HOLDER: &str = "writer-recovery-competing-client";
+pub(super) const RECOVERY_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(30);
+pub(super) const RELEASE_INPUT: &[u8] = b"\x02r";
+pub(super) const ACQUIRE_INPUT: &[u8] = b"\x02a";

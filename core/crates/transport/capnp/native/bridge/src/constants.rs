@@ -1,0 +1,14 @@
+pub(crate) const OK: i32 = 0;
+pub(crate) const INVALID: i32 = 1;
+pub(crate) const PANIC: i32 = 2;
+pub(crate) const NULL: u32 = 0;
+pub(crate) const BOOLEAN: u32 = 1;
+pub(crate) const SIGNED: u32 = 2;
+pub(crate) const UNSIGNED: u32 = 3;
+pub(crate) const FLOAT: u32 = 4;
+pub(crate) const TEXT: u32 = 5;
+pub(crate) const DATA: u32 = 6;
+pub(crate) const LIST: u32 = 7;
+pub(crate) const MAP: u32 = 8;
+pub(crate) const INVALID_TAG: u32 = 255;
+pub(crate) const MAX_CONTAINER_ITEMS: usize = 256 * 1024;

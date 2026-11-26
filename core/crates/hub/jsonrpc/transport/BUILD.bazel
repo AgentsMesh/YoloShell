@@ -1,0 +1,36 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+load("//build_system/bazel:version.bzl", "YOLO_MARKETING_VERSION")
+
+package(default_visibility = ["//visibility:public"])
+
+_DEPS = [
+    "//core/crates/hub/jsonrpc/protocol:yolo_hub_jsonrpc_protocol",
+    "@crates//:serde",
+    "@crates//:serde_json",
+    "@crates//:tokio",
+    "@crates//:thiserror",
+]
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = glob(["src/**/*.rs", "unit_tests/**/*.rs", "integration_tests/**/*.rs"], allow_empty = True) + ["BUILD.bazel"],
+)
+
+rust_library(
+    name = "yolo_hub_jsonrpc_transport",
+    srcs = glob(["src/**/*.rs"]),
+    crate_root = "src/lib.rs",
+    crate_name = "yolo_hub_jsonrpc_transport",
+    edition = "2024",
+    version = YOLO_MARKETING_VERSION,
+    deps = _DEPS,
+)
+
+rust_test(
+    name = "unit_tests",
+    srcs = glob(["unit_tests/**/*.rs"]),
+    crate_root = "unit_tests/lib.rs",
+    crate_name = "yolo_hub_jsonrpc_transport_unit_tests",
+    edition = "2024",
+    deps = _DEPS + [":yolo_hub_jsonrpc_transport"],
+)
