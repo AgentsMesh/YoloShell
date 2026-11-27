@@ -1,0 +1,18 @@
+INTEGRATION_TEST_FEATURE = "yolo-integration-tests"
+TEST_SUPPORT_FEATURE = "yolo-test-support"
+UNIT_TEST_FEATURE = "yolo-unit-tests"
+SERIAL_TEST_ENVIRONMENT = {"RUST_TEST_THREADS": "1"}
+TEST_CONFIGURATION_RUSTC_FLAGS = [
+    "--cfg=test",
+    "-Aexplicit_builtin_cfgs_in_flags",
+]
+
+INTEGRATION_TEST_FEATURES = [
+    INTEGRATION_TEST_FEATURE,
+    TEST_SUPPORT_FEATURE,
+]
+
+UNIT_TEST_FEATURES = [
+    UNIT_TEST_FEATURE,
+    TEST_SUPPORT_FEATURE,
+]

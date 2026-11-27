@@ -1,0 +1,57 @@
+diff --git a/src/lib.rs b/src/lib.rs
+--- a/src/lib.rs
++++ b/src/lib.rs
+@@ -184,6 +184,7 @@
+             State::Escape => self.advance_esc(performer, byte),
+             State::EscapeIntermediate => self.advance_esc_intermediate(performer, byte),
+             State::OscString => self.advance_osc_string(performer, byte),
++            State::OscEscape => self.advance_osc_escape(performer, byte),
+             State::SosPmApcString => self.anywhere(performer, byte),
+             State::Ground => unreachable!(),
+         }
+@@ -418,14 +419,13 @@
+                 self.state = State::Ground
+             },
+             0x18 | 0x1A => {
++                self.osc_overflowed = true;
+                 self.osc_end(performer, byte);
+                 performer.execute(byte);
+                 self.state = State::Ground
+             },
+             0x1B => {
+-                self.osc_end(performer, byte);
+-                self.reset_params();
+-                self.state = State::Escape
++                self.state = State::OscEscape
+             },
+             0x3B => self.action_osc_put_param(),
+             _ => self.action_osc_put(byte),
+@@ -433,6 +433,20 @@
+     }
+ 
+     #[inline(always)]
++    fn advance_osc_escape<P: Perform>(&mut self, performer: &mut P, byte: u8) {
++        if byte == b'\\' {
++            self.osc_end(performer, byte);
++            self.state = State::Ground;
++        } else {
++            self.osc_overflowed = true;
++            self.osc_end(performer, byte);
++            self.reset_params();
++            self.state = State::Escape;
++            self.advance_esc(performer, byte);
++        }
++    }
++
++    #[inline(always)]
+     fn anywhere<P: Perform>(&mut self, performer: &mut P, byte: u8) {
+         match byte {
+             0x18 | 0x1A => {
+@@ -752,6 +766,7 @@
+     Escape,
+     EscapeIntermediate,
+     OscString,
++    OscEscape,
+     SosPmApcString,
+     #[default]
+     Ground,

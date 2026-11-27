@@ -1,0 +1,73 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+load("//build_system/bazel:version.bzl", "YOLO_MARKETING_VERSION")
+load("//build_system/bazel/rust:test_features.bzl", "INTEGRATION_TEST_FEATURES")
+
+package(default_visibility = ["//visibility:public"])
+
+_DEPS = [
+    "//core/crates/agent/system/adapter/contract:yolo_agent_adapter_contract",
+    "//core/crates/agent/baseline:yolo_agent_baseline",
+    "//core/crates/agent/cli/readiness:yolo_agent_cli_readiness",
+    "//core/crates/agent/catalog:yolo_agent_catalog",
+    "//core/crates/application/local/profile:yolo_local_profile",
+    "//core/crates/conversation/protocol:yolo_conversation_protocol",
+    "//core/crates/hub/agent/protocol:yolo_hub_agent_protocol",
+    "//core/crates/hub/agent/run/protocol:yolo_hub_agent_run_protocol",
+    "//core/crates/hub/client:yolo_hub_client",
+    "//core/crates/hub/conversation/client:yolo_hub_conversation_client",
+    "//core/crates/hub/identity:yolo_hub_identity",
+    "//core/crates/hub/rpc/protocol:yolo_hub_rpc_protocol",
+    "//core/crates/hub/state:yolo_hub_state",
+    "//core/crates/hub/terminal/protocol:yolo_hub_terminal_protocol",
+    "@crates//:anyhow",
+    "@crates//:clap",
+    "@crates//:serde",
+    "@crates//:serde_json",
+    "@crates//:tokio",
+    "@crates//:uuid",
+]
+
+_TEST_DEPS = _DEPS + [
+    "//core/crates/crypto:yolo_crypto",
+    "//core/crates/hub/jsonrpc/protocol:yolo_hub_jsonrpc_protocol",
+    "//core/crates/hub/jsonrpc/transport:yolo_hub_jsonrpc_transport",
+    "@crates//:tempfile",
+]
+
+rust_library(
+    name = "yolo_agent_cli",
+    srcs = glob(["src/**/*.rs"]),
+    crate_name = "yolo_agent_cli",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    version = YOLO_MARKETING_VERSION,
+    deps = _DEPS,
+)
+
+rust_test(
+    name = "unit_tests",
+    srcs = glob(["src/**/*.rs", "unit_tests/**/*.rs"]),
+    crate_name = "yolo_agent_cli_unit_tests",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    deps = _TEST_DEPS,
+)
+
+rust_test(
+    name = "integration_tests",
+    srcs = glob([
+        "src/**/*.rs",
+        "integration_tests/**/*.rs",
+        "test_support/**/*.rs",
+    ]),
+    crate_features = INTEGRATION_TEST_FEATURES,
+    crate_name = "yolo_agent_cli_integration_tests",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    deps = _TEST_DEPS,
+)
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = glob(["**/*.rs"]) + ["BUILD.bazel"],
+)

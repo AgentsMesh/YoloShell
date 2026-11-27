@@ -1,0 +1,26 @@
+pub const TERMINALS_LABEL: &str = "Terminals";
+pub const AGENT_RUNS_LABEL: &str = "Agent runs";
+pub const STARTING_LABEL: &str = "Starting";
+pub const RUNNING_LABEL: &str = "Running";
+pub const FINALIZING_LABEL: &str = "Finishing";
+pub const OUTPUT_BLOCKED_LABEL: &str = "Output blocked";
+pub const ENDED_LABEL: &str = "Ended";
+pub const LOST_LABEL: &str = "Lost";
+pub const ARCHIVED_LABEL: &str = "Archived";
+pub const UNAVAILABLE_LABEL: &str = "Not running";
+pub const UNREACHABLE_LABEL: &str = "Terminal unreachable";
+pub const HUB_RECONNECTING_LABEL: &str = "Hub reconnecting";
+pub const TERMINAL_RECONNECTING_LABEL: &str = "Terminal reconnecting";
+pub const READ_ONLY_LABEL: &str = "Read Only";
+pub const WRITING_LABEL: &str = "●";
+pub const SYNCING_LABEL: &str = "Syncing";
+pub const ENDED_ACTION: &str = "Ctrl-b c: new terminal";
+pub const OUTPUT_BLOCKED_ACTION: &str = "State retained · Ctrl-b R: terminal recovery";
+pub const ENDED_HINT: &str = "Terminal ended; Ctrl-b c creates a new terminal";
+pub const LOST_HINT: &str =
+    "Terminal process was lost; inspect recovery before creating a new terminal";
+pub const OUTPUT_BLOCKED_HINT: &str = "Output blocked; state retained. Ctrl-b R: terminal recovery";
+pub const STARTING_HINT: &str = "Terminal is starting; waiting for its shell";
+pub const FINALIZING_HINT: &str = "Terminal is finishing; waiting for final output";
+pub const UNREACHABLE_HINT: &str = "Terminal unavailable; its exit has not been confirmed";
+pub const UNAVAILABLE_HINT: &str = "No running terminal; Ctrl-b c creates one";
