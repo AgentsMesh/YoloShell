@@ -1,0 +1,10 @@
+pub(crate) const PROFILE_ENV: &str = "LLVM_PROFILE_FILE";
+pub(crate) const CONTINUOUS_TOKEN: &str = "%c";
+pub(crate) const MAX_CONTINUOUS_MARKERS: usize = 1;
+pub(crate) const HOST_TOKEN: &str = "%h";
+pub(crate) const PID_TOKEN: &str = "%p";
+pub(crate) const MODULE_TOKEN: &str = "%m";
+pub(crate) const FORMAT_MARKER: char = '%';
+pub(crate) const MODULE_SEPARATOR: char = '_';
+pub(crate) const HOSTNAME_BYTES: usize = 1024;
+pub(crate) const INVALID_PATTERN: &str = "unsupported process-specific LLVM profile pattern";

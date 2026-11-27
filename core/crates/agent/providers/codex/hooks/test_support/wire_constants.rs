@@ -1,0 +1,16 @@
+pub const HOME_DIRECTORY: &str = "state";
+pub const MODEL: &str = "gpt-test";
+pub const PROMPT: &str = "test prompt";
+pub const TOOL_NAME: &str = "Bash";
+pub const TOOL_USE_ID: &str = "tool-1";
+pub const AGENT_ID: &str = "agent-1";
+pub const AGENT_TYPE: &str = "default";
+pub const UNKNOWN_EVENT: &str = "FutureHook";
+pub const UNDOCUMENTED_INTERRUPT_EVENT: &str = "Interrupt";
+pub const UNKNOWN_FIELD: &str = "future_field";
+pub const UNKNOWN_INTAKE_FIELD: &str = "foreign_field";
+pub const PROVIDER_EVENT_ID_FIELD: &str = "event_id";
+pub const UNKNOWN_PERMISSION_MODE: &str = "futurePermission";
+pub const UNKNOWN_SNAPSHOT_FIELD: &str = "future_snapshot_field";
+pub const UNKNOWN_SOURCE: &str = "future_source";
+pub const UNKNOWN_REASON: &str = "future_reason";
