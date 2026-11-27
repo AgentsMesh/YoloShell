@@ -1,0 +1,58 @@
+use crate::constants::{HUB_ID_FIELD, PUBLIC_KEY_FIELD};
+use anyhow::Result;
+use yolo_hub_delegation::PeerIdentity;
+use yolo_hub_federation_settings::Peer;
+use yolo_hub_identity::HubId;
+use yolo_hub_management_protocol::ConfigurationSnapshot;
+
+pub(crate) fn machine_json(snapshot: &ConfigurationSnapshot, hub: HubId) -> Result<String> {
+    Ok(serde_json::to_string_pretty(&serde_json::json!({
+        "revision": snapshot.state.revision,
+        "applied": snapshot.applied,
+        "machine": snapshot.state.configuration.peer(hub).map(machine_document),
+    }))?)
+}
+
+pub(crate) fn list_json(snapshot: &ConfigurationSnapshot) -> Result<String> {
+    Ok(serde_json::to_string_pretty(&serde_json::json!({
+        "revision": snapshot.state.revision,
+        "applied": snapshot.applied,
+        "machines": snapshot.state.configuration.peers.iter().map(machine_document).collect::<Vec<_>>(),
+    }))?)
+}
+
+pub(crate) fn identity_json(identity: yolo_hub_delegation::PeerIdentity, peer_socket: &std::path::Path) -> String {
+    serde_json::json!({
+        (HUB_ID_FIELD): identity.hub().to_string(),
+        (PUBLIC_KEY_FIELD): key_text(identity),
+        "peer_socket": peer_socket,
+    })
+    .to_string()
+}
+
+fn machine_document(peer: &Peer) -> serde_json::Value {
+    serde_json::json!({
+        "hub": peer.identity.hub().to_string(),
+        "direction": "machine",
+        (PUBLIC_KEY_FIELD): key_text(peer.identity),
+        "dial": peer.dial.as_ref().map(|dial| serde_json::json!({
+            "ssh": dial.ssh_target(),
+            "profile": dial.profile_id(),
+            "socket": dial.socket(),
+        })),
+        "imports": peer.consume,
+        "exports": peer.exports.iter().map(|policy| serde_json::json!({
+            "origin": policy.origin.to_string(),
+            "rights": policy.rights,
+            "remaining_reexports": policy.remaining_reexports,
+        })).collect::<Vec<_>>(),
+    })
+}
+
+pub(crate) fn key_text(identity: PeerIdentity) -> String {
+    identity
+        .key()
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect()
+}

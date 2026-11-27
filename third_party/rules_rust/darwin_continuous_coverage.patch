@@ -1,0 +1,36 @@
+diff --git a/rust/private/rustc.bzl b/rust/private/rustc.bzl
+--- a/rust/private/rustc.bzl
++++ b/rust/private/rustc.bzl
+@@ -14,5 +14,6 @@
+ """Functionality for constructing actions that invoke the Rust compiler"""
+ 
++load("@@//build_system/coverage/instrumentation:defs.bzl", "profile_link_flags")
+ load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
+ load(
+     "@bazel_tools//tools/build_defs/cc:action_names.bzl",
+@@ -1166,6 +1167,7 @@
+     if toolchain.llvm_cov and ctx.configuration.coverage_enabled:
+         # https://doc.rust-lang.org/rustc/instrument-coverage.html
+         rustc_flags.add("--codegen=instrument-coverage")
++        rustc_flags.add_all(profile_link_flags(toolchain.target_os, ld_is_direct_driver))
+ 
+     if toolchain._experimental_link_std_dylib:
+         rustc_flags.add("--codegen=prefer-dynamic")
+diff --git a/rust/private/rust.bzl b/rust/private/rust.bzl
+--- a/rust/private/rust.bzl
++++ b/rust/private/rust.bzl
+@@ -14,5 +14,6 @@
+ """Rust rule implementations"""
+ 
++load("@@//build_system/coverage/instrumentation:defs.bzl", "profile_environment")
+ load("@bazel_skylib//lib:paths.bzl", "paths")
+ load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
+ load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
+@@ -542,6 +543,7 @@
+ 
+         env["RUST_LLVM_COV"] = llvm_cov_path
+         env["RUST_LLVM_PROFDATA"] = llvm_profdata_path
++        env.update(profile_environment(toolchain.target_os))
+     components = "{}/{}".format(ctx.label.workspace_root, ctx.label.package).split("/")
+     env["CARGO_MANIFEST_DIR"] = "/".join([c for c in components if c])
+     providers.append(RunEnvironmentInfo(

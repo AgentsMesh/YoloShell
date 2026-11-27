@@ -1,0 +1,10 @@
+pub const PROVIDER: &str = "codex";
+pub const NETWORK_TEST_ROOT: &str = "/tmp";
+pub const NETWORK_TEST_SOCKET: &str = "ui.sock";
+pub const NETWORK_TEST_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(3);
+pub const QUEUE_OVERFLOW: usize = 1;
+pub const AGENT_WORKING_DIRECTORY: &str = "/agent/project";
+pub const NEXT_AGENT_WORKING_DIRECTORY: &str = "/agent/next";
+pub const ADDRESS_SCHEME: &str = "yolo";
+pub const REMOVED_TERMINAL_RESOURCE: &str = "sessions";
+pub const QWEN_KIND: &str = "qwen_code";

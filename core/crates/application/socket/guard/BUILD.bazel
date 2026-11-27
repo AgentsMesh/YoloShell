@@ -1,0 +1,107 @@
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library", "rust_test")
+load(
+    "//build_system/bazel/rust:test_features.bzl",
+    "INTEGRATION_TEST_FEATURES",
+    "SERIAL_TEST_ENVIRONMENT",
+    "UNIT_TEST_FEATURES",
+)
+
+package(default_visibility = ["//visibility:public"])
+
+_ADVERSARIAL_FEATURES = ["adversarial-test-hooks"]
+
+_DEPENDENCIES = [
+    "//core/crates/application/support:yolo_application_support",
+    "//core/crates/application/support:yolo_application_test_fixtures",
+    "//core/crates/persistence/paths:yolo_paths_adversarial",
+    "//core/crates/runtime/engine/process:yolo_process_adversarial",
+    "@crates//:anyhow",
+    "@crates//:libc",
+    "@crates//:uuid",
+]
+
+rust_binary(
+    name = "socket_root_guard",
+    testonly = True,
+    srcs = [":test_support_sources"],
+    crate_features = _ADVERSARIAL_FEATURES,
+    crate_name = "socket_root_guard",
+    crate_root = "test_support/socket_root_guard_main.rs",
+    edition = "2024",
+    deps = _DEPENDENCIES,
+)
+
+rust_library(
+    name = "yolo_socket_guard_fault_contract",
+    testonly = True,
+    srcs = ["test_support/fault_contract.rs"],
+    crate_name = "yolo_socket_guard_fault_contract",
+    crate_root = "test_support/fault_contract.rs",
+    edition = "2024",
+)
+
+filegroup(
+    name = "test_support_sources",
+    testonly = True,
+    srcs = glob(
+        ["test_support/**/*.rs"],
+        allow_empty = False,
+    ),
+)
+
+filegroup(
+    name = "unit_test_sources",
+    testonly = True,
+    srcs = glob(
+        ["unit_tests/**/*.rs"],
+        allow_empty = True,
+    ),
+)
+
+filegroup(
+    name = "integration_test_sources",
+    testonly = True,
+    srcs = glob(
+        ["integration_tests/**/*.rs"],
+        allow_empty = True,
+    ),
+)
+
+rust_test(
+    name = "socket_root_guard_unit_tests",
+    srcs = [
+        ":test_support_sources",
+        ":unit_test_sources",
+    ],
+    crate_features = _ADVERSARIAL_FEATURES + UNIT_TEST_FEATURES,
+    crate_name = "socket_root_guard_unit_test",
+    crate_root = "test_support/socket_root_guard_main.rs",
+    edition = "2024",
+    env = SERIAL_TEST_ENVIRONMENT,
+    deps = _DEPENDENCIES + ["@crates//:tempfile"],
+)
+
+rust_test(
+    name = "socket_root_guard_integration_tests",
+    srcs = [
+        ":integration_test_sources",
+        ":test_support_sources",
+    ],
+    crate_features = _ADVERSARIAL_FEATURES + INTEGRATION_TEST_FEATURES,
+    crate_name = "socket_root_guard_integration_test",
+    crate_root = "test_support/socket_root_guard_main.rs",
+    edition = "2024",
+    env = SERIAL_TEST_ENVIRONMENT,
+    deps = _DEPENDENCIES + ["@crates//:tempfile"],
+)
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = glob(
+        ["**/*"],
+        allow_empty = True,
+        exclude = ["BUILD.bazel"],
+    ) + [
+        "BUILD.bazel",
+    ],
+)
