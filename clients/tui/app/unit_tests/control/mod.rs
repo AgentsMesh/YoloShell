@@ -1,0 +1,10 @@
+use super::{control_recovery_support, fixtures, initial_control_late_grants, panes, query_support, terminal_input_ordering};
+mod control_admission;
+mod control_chrome;
+mod control_failure_recovery;
+mod control_observation;
+mod control_recovery;
+mod control_recovery_fences;
+mod control_status;
+mod control_takeover;
+mod control_takeover_cancellation;

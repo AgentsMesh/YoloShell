@@ -1,0 +1,31 @@
+use std::time::Duration;
+
+pub const HELPER_BINARY_ENV: &str = "YOLO_FILE_HELPER_TEST_BINARY";
+pub const TEST_DEADLINE: Duration = Duration::from_secs(5);
+pub const UNKNOWN_HELPER_NAME: &str = "missing-file-helper";
+pub const FAULT_BINARY_ENV: &str = "YOLO_FILE_HELPER_FAULT_BINARY";
+pub const PROOF_FILE: &str = "helper-proof.json";
+pub const POLL_INTERVAL: Duration = Duration::from_millis(5);
+pub const SHORT_DEADLINE: Duration = Duration::from_secs(1);
+pub const MINIMUM_HEARTBEATS: usize = 3;
+pub const HANG: &str = "hang";
+pub const BUILD: &str = "build";
+pub const LAUNCHER: &str = "launcher";
+pub const FAIL_EXIT: &str = "fail-exit";
+pub const BAD_ID: &str = "bad-id";
+pub const BAD_ORIGIN: &str = "bad-origin";
+pub const BAD_SCHEMA: &str = "bad-schema";
+pub const OMIT_ROOT: &str = "omit-root";
+pub const DUPLICATE: &str = "duplicate";
+pub const TRUNCATED: &str = "truncated";
+pub const EMPTY: &str = "empty";
+pub const OVERSIZED: &str = "oversized";
+pub const CLOSED_CONTROL: &str = "closed-control";
+pub const INVALID_OWNER_DATA: &[u8] = b"unexpected owner data";
+pub const GATED_READ: &str = "gated-read";
+pub const READ_READY_FILE: &str = "file-read-ready.json";
+pub const READ_RELEASE_FILE: &str = "file-read-release";
+pub const VERSION_ARGUMENT: &str = "--version";
+pub const ABORTED_PROFILE_CLEANUP: &str = "discard deliberately aborted file-helper test profile";
+pub const INVALID_LAUNCH_ARGUMENTS: &str =
+    "file helper requires the explicit internal process role";

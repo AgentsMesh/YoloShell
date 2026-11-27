@@ -1,0 +1,9 @@
+pub const CPR: &[u8] = b"\x1b[6n";
+pub const DSR: &[u8] = b"\x1b[5n";
+pub const STATUS_REPLY: &[u8] = b"\x1b[0n";
+pub const PARTIAL_CPR: &[u8] = b"\x1b[6";
+pub const CPR_FINAL: &[u8] = b"n";
+pub const SNAPSHOT_CURSOR_REPLY: &[u8] = b"\x1b[1;6R";
+pub const ORIGIN_QUERY: &[u8] = b"\x1b[2;4r\x1b[?6h\x1b[2;3H\x1b[6n";
+pub const ORIGIN_REPLY: &[u8] = b"\x1b[2;3R";
+pub const QUERY_GAP: u64 = 2;
