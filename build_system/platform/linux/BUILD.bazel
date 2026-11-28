@@ -1,0 +1,17 @@
+filegroup(
+    name = "architecture_check_data",
+    srcs = [
+        "BUILD.bazel",
+        "MODULE.bazel",
+        "//build_system/platform/linux/amd64:architecture_check_data",
+        "//build_system/platform/linux/arm64:architecture_check_data",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+genrule(
+    name = "unavailable_manifest",
+    outs = ["manifest.json"],
+    cmd = "echo 'YoloRelease must be built through the release tooling' >&2; /usr/bin/false",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,88 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+
+package(default_visibility = ["//visibility:public"])
+
+_SOURCES = glob(["src/*.rs"])
+
+_RULE_TEST_SOURCE = "unit_tests/repository_rules_tests.rs"
+
+_LAYOUT_TEST_SOURCE = "unit_tests/component_layout_tests.rs"
+
+_POLICY_TEST_SOURCE = "unit_tests/repository_policy_tests.rs"
+
+
+_INCLUDE_ALLOWLIST_TEST_SOURCE = "unit_tests/include_allowlist_tests.rs"
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = _SOURCES + [
+        "BUILD.bazel",
+        _POLICY_TEST_SOURCE,
+        _INCLUDE_ALLOWLIST_TEST_SOURCE,
+        _RULE_TEST_SOURCE,
+        _LAYOUT_TEST_SOURCE,
+        "unit_tests/communication_tests.rs",
+        "unit_tests/component_deps_tests.rs",
+        "unit_tests/module_scope_tests.rs",
+        "unit_tests/provider_policy_tests.rs",
+    ],
+)
+
+rust_library(
+    name = "library",
+    srcs = _SOURCES,
+    crate_name = "yolo_architecture_repository",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    deps = [
+        "//build_system/architecture/foundation:library",
+        "//build_system/architecture/syntax:library",
+    ],
+)
+
+rust_test(
+    name = "rule_unit_tests",
+    srcs = [_RULE_TEST_SOURCE, _LAYOUT_TEST_SOURCE, "unit_tests/communication_tests.rs", "unit_tests/component_deps_tests.rs", "unit_tests/provider_policy_tests.rs"],
+    crate_name = "yolo_architecture_repository_unit_tests",
+    crate_root = "unit_tests/repository_rules_tests.rs",
+    edition = "2024",
+    deps = [
+        ":library",
+        "//build_system/architecture/foundation:library",
+    ],
+)
+
+rust_test(
+    name = "policy_unit_tests",
+    srcs = [_POLICY_TEST_SOURCE],
+    crate_name = "yolo_architecture_repository_policy_unit_tests",
+    crate_root = _POLICY_TEST_SOURCE,
+    edition = "2024",
+    deps = [
+        ":library",
+        "//build_system/architecture/foundation:library",
+        "//build_system/architecture/test_support:library",
+    ],
+)
+
+rust_test(
+    name = "include_allowlist_unit_tests",
+    srcs = [_INCLUDE_ALLOWLIST_TEST_SOURCE, "unit_tests/module_scope_tests.rs"],
+    crate_name = "yolo_architecture_repository_include_allowlist_unit_tests",
+    crate_root = _INCLUDE_ALLOWLIST_TEST_SOURCE,
+    edition = "2024",
+    deps = [
+        ":library",
+        "//build_system/architecture/foundation:library",
+        "//build_system/architecture/test_support:library",
+    ],
+)
+
+test_suite(
+    name = "unit_tests",
+    tests = [
+        ":include_allowlist_unit_tests",
+        ":policy_unit_tests",
+        ":rule_unit_tests",
+    ],
+)

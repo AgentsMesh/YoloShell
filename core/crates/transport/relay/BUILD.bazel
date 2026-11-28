@@ -1,0 +1,154 @@
+load("@rules_rust//rust:defs.bzl", "rust_library")
+load("//build_system/bazel:version.bzl", "YOLO_MARKETING_VERSION")
+load("//build_system/bazel/rust:isolated_test.bzl", "isolated_rust_test")
+load(
+    "//build_system/bazel/rust:test_features.bzl",
+    "INTEGRATION_TEST_FEATURES",
+    "SERIAL_TEST_ENVIRONMENT",
+    "UNIT_TEST_FEATURES",
+)
+
+package(default_visibility = ["//visibility:public"])
+
+_DEPS = [
+    "//core/crates/runtime/engine/process:yolo_process",
+    "//core/crates/runtime/engine/protocol:yolo_runtime_protocol",
+    "//core/crates/terminal/model:yolo_terminal_model",
+    "//core/crates/transport/protocol/validation:yolo_protocol_validation",
+    "//core/crates/wire:yolo_wire",
+    "//core/crates/application/cli:yolo_cli",
+    "//core/crates/persistence/lease:yolo_lease",
+    "//core/crates/transport/client:yolo_client",
+    "//core/crates/transport/core:yolo_transport_core",
+    "//core/crates/transport/remote/broker:yolo_remote_broker",
+    "@crates//:anyhow",
+    "@crates//:libc",
+    "@crates//:serde",
+    "@crates//:thiserror",
+    "@crates//:tokio",
+    "@crates//:uuid",
+]
+
+_TEST_DEPS = _DEPS + [
+    "//core/crates/transport/capnp/value",
+    "//core/crates/transport/runtime/testing",
+    "@crates//:serde_json",
+    "@crates//:tempfile",
+]
+
+filegroup(
+    name = "runtime_sources",
+    srcs = glob(
+        ["src/**/*.rs"],
+        allow_empty = False,
+    ),
+)
+
+rust_library(
+    name = "yolo_relay",
+    srcs = [":runtime_sources"],
+    crate_name = "yolo_relay",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    version = YOLO_MARKETING_VERSION,
+    deps = _DEPS,
+)
+
+rust_library(
+    name = "yolo_relay_adversarial",
+    testonly = True,
+    srcs = [":runtime_sources"],
+    aliases = {
+        "//core/crates/transport/client:yolo_client_adversarial": "yolo_client",
+        "//core/crates/transport/remote/broker:yolo_remote_broker_adversarial": "yolo_remote_broker",
+    },
+    crate_name = "yolo_relay_adversarial",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    deps = [
+        "//core/crates/runtime/engine/process:yolo_process",
+        "//core/crates/runtime/engine/protocol:yolo_runtime_protocol",
+        "//core/crates/terminal/model:yolo_terminal_model",
+        "//core/crates/transport/protocol/validation:yolo_protocol_validation",
+        "//core/crates/wire:yolo_wire",
+        "//core/crates/application/cli:yolo_cli",
+        "//core/crates/persistence/lease:yolo_lease",
+        "//core/crates/transport/client:yolo_client_adversarial",
+        "//core/crates/transport/core:yolo_transport_core",
+        "//core/crates/transport/remote/broker:yolo_remote_broker_adversarial",
+        "@crates//:anyhow",
+        "@crates//:libc",
+        "@crates//:serde",
+        "@crates//:thiserror",
+        "@crates//:tokio",
+        "@crates//:uuid",
+    ],
+)
+
+isolated_rust_test(
+    name = "yolo_relay_unit_tests",
+    srcs = [
+        ":runtime_sources",
+        ":test_support_sources",
+        ":unit_test_sources",
+    ],
+    crate_features = UNIT_TEST_FEATURES,
+    crate_name = "yolo_relay_unit_test",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    env = SERIAL_TEST_ENVIRONMENT,
+    deps = _TEST_DEPS,
+)
+
+isolated_rust_test(
+    name = "yolo_relay_integration_tests",
+    srcs = [
+        ":integration_test_sources",
+        ":runtime_sources",
+        ":test_support_sources",
+    ],
+    crate_features = INTEGRATION_TEST_FEATURES,
+    crate_name = "yolo_relay_integration_test",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    env = SERIAL_TEST_ENVIRONMENT,
+    deps = _TEST_DEPS,
+)
+
+filegroup(
+    name = "unit_test_sources",
+    testonly = True,
+    srcs = glob(
+        ["unit_tests/**/*.rs"],
+        allow_empty = True,
+    ),
+)
+
+filegroup(
+    name = "integration_test_sources",
+    testonly = True,
+    srcs = glob(
+        ["integration_tests/**/*.rs"],
+        allow_empty = True,
+    ),
+)
+
+filegroup(
+    name = "test_support_sources",
+    testonly = True,
+    srcs = glob(
+        ["test_support/**/*.rs"],
+        allow_empty = False,
+    ),
+)
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = glob(
+        ["**/*"],
+        allow_empty = True,
+        exclude = ["BUILD.bazel"],
+    ) + [
+        "BUILD.bazel",
+    ],
+)

@@ -1,0 +1,174 @@
+use crate::{
+    LocalBackend, connector_catalogue::ObservationScope, native_diagnostics::ObservationStage,
+};
+use futures::StreamExt;
+use std::future::Future;
+use std::time::Duration;
+use tokio::sync::MutexGuard;
+use yolo_agent_control_contract::NativeControlObservation;
+use yolo_hub_agent_protocol::AgentSnapshot;
+use yolo_hub_connector_registry::Catalogue;
+use yolo_hub_identity::TerminalId;
+use yolo_hub_terminal_protocol::PublicError;
+use yolo_terminal_model::TerminalView;
+
+/// A stalled Worker contributes no advisory capability.
+pub(crate) const NATIVE_OBSERVATION_TIMEOUT: Duration = Duration::from_secs(1);
+/// Bound a Host read so a stalled Host cannot hold the sweep gate.
+pub(crate) const CATALOGUE_READ_TIMEOUT: Duration = Duration::from_secs(2);
+pub(crate) const MAX_OBSERVATION_CONCURRENCY: usize = 16;
+
+/// How a failed Host catalogue read affects the projection.
+#[derive(Clone, Copy)]
+pub(crate) enum SweepPolicy {
+    /// Agent reads keep unreachable rows and forget missing sessions.
+    ObserveAgents(Option<TerminalId>),
+    /// Catalogue reads report Host failure to the caller.
+    Catalogue,
+}
+
+/// One Host catalogue read and its observations.
+pub(crate) struct ObservationSweep {
+    pub(crate) views: Result<Vec<TerminalView>, yolo_client::ClientError>,
+    pub(crate) native: Vec<Result<NativeControlObservation, ObservationStage>>,
+    pub(crate) connectors: Catalogue,
+}
+
+pub(crate) struct AppliedCatalogue {
+    pub(crate) views: Result<Vec<TerminalView>, yolo_client::ClientError>,
+    pub(crate) projected: Vec<Option<AgentSnapshot>>,
+    pub(crate) agents: Vec<AgentSnapshot>,
+    pub(crate) connectors: Catalogue,
+}
+
+impl LocalBackend {
+    /// The caller holds the sweep gate through any durable run reconciliation.
+    pub(crate) async fn apply_complete_catalogue(
+        &self,
+        include_archived: bool,
+        policy: SweepPolicy,
+    ) -> Result<AppliedCatalogue, PublicError> {
+        let sweep = self
+            .observe_catalogue(ObservationScope::Complete, include_archived)
+            .await;
+        self.apply_catalogue(
+            sweep,
+            matches!(policy, SweepPolicy::ObserveAgents(_)),
+            policy,
+        )
+        .await
+    }
+
+    /// Live terminal-to-execution joins.
+    pub(crate) async fn observed_targets(
+        &self,
+    ) -> Vec<(TerminalId, yolo_hub_identity::AgentTarget)> {
+        let mut targets = match &self.agents {
+            Some(projection) => projection.lock().await.active_targets().unwrap_or_default(),
+            None => Vec::new(),
+        };
+        let native: std::collections::BTreeSet<_> =
+            targets.iter().map(|(terminal, _)| *terminal).collect();
+        if let Some(registry) = &self.connectors
+            && let Ok(connector_targets) = registry.lock().await.observed_targets()
+        {
+            targets.extend(
+                connector_targets.into_iter()
+                    .filter(|(terminal, _)| !native.contains(terminal)),
+            );
+        }
+        targets
+    }
+
+    /// Serialize observation, projection and run reconciliation for a sweep.
+    pub(crate) async fn begin_observation(&self) -> MutexGuard<'_, ()> {
+        self.observation_gate.lock().await
+    }
+
+    /// Bound Host reads taken during a sweep.
+    pub(crate) async fn bounded_host_read<T>(
+        &self,
+        future: impl Future<Output = Result<T, yolo_client::ClientError>>,
+    ) -> Result<T, yolo_client::ClientError> {
+        match tokio::time::timeout(CATALOGUE_READ_TIMEOUT, future).await {
+            Ok(result) => result,
+            Err(_) => Err(yolo_client::ClientError::Deadline),
+        }
+    }
+
+    /// Gather the catalogue, connectors, and native observations.
+    pub(crate) async fn observe_catalogue(
+        &self,
+        scope: ObservationScope,
+        include_archived: bool,
+    ) -> ObservationSweep {
+        let deadline = tokio::time::Instant::now() + CATALOGUE_READ_TIMEOUT;
+        let (views, connectors) = {
+            let _connector_observation = self.connector_observation().await;
+            let views = match scope {
+                ObservationScope::Complete => {
+                    self.bounded_host_read(self.catalogue_views(include_archived))
+                        .await
+                }
+                ObservationScope::Terminal(address) => self
+                    .bounded_host_read(self.client.get_session(address.terminal_id.as_uuid()))
+                    .await
+                    .map(|view| vec![view]),
+            };
+            let connectors = self.connector_catalogue(views.as_deref().ok(), scope).await;
+            (views, connectors)
+        };
+        let native = match &views {
+            Ok(views) => self.capture_native(views, deadline).await,
+            Err(_) => Vec::new(),
+        };
+        ObservationSweep {
+            views,
+            native,
+            connectors,
+        }
+    }
+
+    /// Capture observations concurrently under one shared budget.
+    async fn capture_native(
+        &self,
+        views: &[TerminalView],
+        sweep_deadline: tokio::time::Instant,
+    ) -> Vec<Result<NativeControlObservation, ObservationStage>> {
+        let Some(projection) = &self.agents else {
+            return views
+                .iter()
+                .map(|_| Err(ObservationStage::CapabilityUnavailable))
+                .collect();
+        };
+        let reusable: Vec<Option<NativeControlObservation>> = {
+            let projection = projection.lock().await;
+            views
+                .iter()
+                .map(|view| projection.reusable_idle_observation(view).ok().flatten())
+                .collect()
+        };
+        let deadline =
+            (tokio::time::Instant::now() + NATIVE_OBSERVATION_TIMEOUT).min(sweep_deadline);
+        let captures = views
+            .iter()
+            .cloned()
+            .zip(reusable)
+            .map(|(view, reusable)| async move {
+                if let Some(observation) = reusable {
+                    return Ok(observation);
+                }
+                // One absolute budget prevents queued terminals from stretching a stall.
+                match tokio::time::timeout_at(deadline, self.classify_native_observation(&view))
+                    .await
+                {
+                    Ok(result) => result,
+                    Err(_) => Err(ObservationStage::WorkerDeadline),
+                }
+            });
+        futures::stream::iter(captures)
+            .buffered(MAX_OBSERVATION_CONCURRENCY)
+            .collect()
+            .await
+    }
+}

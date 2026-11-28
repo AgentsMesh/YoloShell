@@ -1,0 +1,9 @@
+pub const ROOT_NAME: &str = "Workspace";
+pub const ROOT_PATH: &str = "/srv/project";
+pub const PROTECTED_PATH: &str = "/srv/private";
+pub const FILE_PATH: &str = "src/main.rs";
+pub const PAYLOAD: &[u8] = b"hello";
+pub const SCHEMA_FIELD: &str = "schema_version";
+pub const EXTRA_FIELD: &str = "unexpected";
+pub const REPEAT_CHARACTER: &str = "a";
+pub const BUILD_BYTES: u64 = 4096;
