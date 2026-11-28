@@ -1,0 +1,10 @@
+pub const LEASE_TTL_MS: u64 = 500;
+pub const LEASE_RENEW_MS: u64 = 250;
+pub const PREVIOUS_PEER_VERSION: u16 = 4;
+pub const PREVIOUS_RPC_VERSION: u16 = 5;
+pub const REQUEST_FIELD: &str = "request";
+pub const PAYLOAD_FIELD: &str = "payload";
+pub const COMMAND_FIELD: &str = "command";
+pub const CONTROL_METHOD: &str = "agent_control";
+pub const SIGNATURE_FIELD: &str = "signature";
+pub const INTERACTION_CHOICE: &str = "allow";

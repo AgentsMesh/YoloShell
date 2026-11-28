@@ -1,0 +1,14 @@
+pub const A_STATE: &str = "a";
+pub const B_STATE: &str = "b";
+pub const C_STATE: &str = "c";
+pub const A_FILES: &str = "files-a";
+pub const B_FILES: &str = "files-b";
+pub const C_FILES: &str = "files-c";
+pub const OLD_FILES: &str = "retained-c";
+pub const ROOT_NAME: &str = "Workspace";
+pub const RELATIVE_FILE: &str = "agent.json";
+pub const A_CONTENT: &[u8] = b"origin-a";
+pub const B_CONTENT: &[u8] = b"origin-b";
+pub const C_CONTENT: &[u8] = b"origin-c";
+pub const REPLACED_CONTENT: &[u8] = b"replacement-c";
+pub const READ_LENGTH: u32 = 128;

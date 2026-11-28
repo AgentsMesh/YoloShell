@@ -1,0 +1,8 @@
+package(default_visibility = ["//visibility:public"])
+
+exports_files(["config.bzl"])
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = ["BUILD.bazel", "config.bzl"],
+)

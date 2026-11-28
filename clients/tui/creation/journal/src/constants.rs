@@ -1,0 +1,30 @@
+pub const MAX_PENDING_CREATIONS: usize = 64;
+pub const JOURNAL_FILE: &str = "pending-finalizations.json";
+pub const JOURNAL_SCHEMA_VERSION: u16 = 3;
+pub(crate) const FIRST_REVISION: u64 = 1;
+pub(crate) const LOCK_FILE: &str = "pending-finalizations.lock";
+pub(crate) const LOCK_BYTES: u64 = 4096;
+pub(crate) const NAMESPACE: &str = "TUI confirmed creation journal";
+pub(crate) const BUSY: &str = "confirmed creation journal is already open";
+pub(crate) const LOST: &str = "confirmed creation journal is no longer usable";
+pub(crate) const CHANGED: &str = "confirmed creation journal was replaced or changed";
+pub(crate) const INVALID_RECORD: &str = "invalid confirmed creation journal record";
+pub(crate) const WRONG_OWNER: &str =
+    "confirmed creation journal belongs to another entry or directory";
+pub(crate) const CONFLICT: &str =
+    "confirmed creation request or result conflicts with retained evidence";
+pub(crate) const CAPACITY: &str = "confirmed creation journal capacity is exhausted";
+pub(crate) const REVISION_EXHAUSTED: &str = "confirmed creation journal revision is exhausted";
+pub(crate) const DEBUG_NAME: &str = "PendingFinalization";
+pub(crate) const DEBUG_ORIGIN: &str = "origin";
+pub(crate) const DEBUG_REQUEST_ID: &str = "request_id";
+pub(crate) const DEBUG_ADDRESS: &str = "address";
+pub(crate) const DEBUG_INTENT: &str = "CreationIntent";
+pub(crate) const DEBUG_DOCUMENT: &str = "CreationJournalDocument";
+pub(crate) const FIELD_SCHEMA: &str = "schema_version";
+pub(crate) const FIELD_ENTRY: &str = "entry_hub";
+pub(crate) const FIELD_DIRECTORY: &str = "directory";
+pub(crate) const FIELD_REVISION: &str = "revision";
+pub(crate) const FIELD_PENDING: &str = "pending";
+pub(crate) const FIELD_INTENTS: &str = "intents";
+pub(crate) const CURRENT_FIELD_COUNT: usize = 6;

@@ -1,0 +1,178 @@
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_test")
+load("//build_system/bazel/rust:adversarial.bzl", "ADVERSARIAL_TEST_FEATURES")
+load("//build_system/bazel/rust:runtime_resilience.bzl", "RESILIENCE_ALIASES", "RESILIENCE_BINARIES", "RESILIENCE_COVERAGE", "RESILIENCE_DEPS", "RESILIENCE_ENV")
+load("//build_system/bazel/rust:isolated_test.bzl", "isolated_rust_test")
+load("//build_system/bazel/rust:creation_recovery_tests.bzl", "CREATION_RECOVERY_AUDIT_UNIT_DEPS", "CREATION_RECOVERY_AUDIT_UNIT_SRCS")
+load("//build_system/bazel/rust:config.bzl", "FAKE_AGENT_DEPS", "FAKE_CLAUDE_CONTRACT_SRCS", "RUNTIME_ARCHITECTURE_DATA", "TEST_ENVIRONMENT")
+load("//build_system/bazel/rust:native_interrupt_driver_tests.bzl", "NATIVE_INTERRUPT_DRIVER_UNIT_SRCS")
+load("//build_system/bazel/rust:runtime_hub_integration.bzl", "CONNECTOR_FIXTURE_ARCHITECTURE_DATA", "native_hub_probe_data")
+load(
+    "//build_system/bazel/rust:relay_dimensions_tests.bzl",
+    "RELAY_DIMENSIONS_UNIT_ALIASES",
+    "RELAY_DIMENSIONS_UNIT_DEPS",
+    "RELAY_DIMENSIONS_UNIT_SRCS",
+)
+load("//build_system/bazel/rust:test_features.bzl", "SERIAL_TEST_ENVIRONMENT", "UNIT_TEST_FEATURES")
+
+rust_binary(
+    name = "yolo-test-codex",
+    testonly = True,
+    srcs = glob(["fake_agent/**/*.rs"]),
+    crate_name = "yolo_test_codex",
+    crate_root = "fake_agent/main.rs",
+    edition = "2024",
+    visibility = [
+        "//core:__pkg__",
+        "//plugins/macos:__pkg__",
+        "//plugins/macos/Tests/NativeIntegration:__pkg__",
+    ],
+    deps = FAKE_AGENT_DEPS,
+)
+
+rust_binary(
+    name = "yolo-test-claude",
+    testonly = True,
+    srcs = glob(["fake_agent/**/*.rs"]),
+    crate_name = "yolo_test_claude",
+    crate_root = "fake_agent/main.rs",
+    edition = "2024",
+    visibility = [
+        "//core:__pkg__",
+        "//plugins/macos:__pkg__",
+        "//plugins/macos/Tests/NativeIntegration:__pkg__",
+    ],
+    deps = FAKE_AGENT_DEPS,
+)
+
+rust_test(
+    name = "fake_agent_unit_tests",
+    srcs = glob(["fake_agent/**/*.rs"]),
+    crate_name = "yolo_test_codex_test",
+    crate_root = "fake_agent/main.rs",
+    edition = "2024",
+    visibility = ["//core:__pkg__"],
+    deps = FAKE_AGENT_DEPS + [
+        "//core/crates/agent/system/hooks/installation:yolo_hook_installation",
+        "@crates//:tempfile",
+    ],
+)
+
+rust_test(
+    name = "fake_claude_contract_test",
+    srcs = FAKE_CLAUDE_CONTRACT_SRCS,
+    crate_name = "fake_claude_contract_test",
+    crate_root = "fake_claude_contract.rs",
+    data = [":yolo-test-claude"],
+    edition = "2024",
+    env = {"YOLO_TEST_CLAUDE_BINARY": "$(rootpath :yolo-test-claude)"},
+    visibility = ["//core:__pkg__"],
+    deps = [
+        "//core:yolo_runtime",
+        "@crates//:libc",
+        "@crates//:serde",
+        "@crates//:serde_json",
+        "@crates//:tempfile",
+        "@crates//:uuid",
+    ],
+)
+
+rust_test(
+    name = "relay_dimensions_unit_tests",
+    srcs = RELAY_DIMENSIONS_UNIT_SRCS,
+    aliases = RELAY_DIMENSIONS_UNIT_ALIASES,
+    crate_features = UNIT_TEST_FEATURES,
+    crate_name = "relay_dimensions_unit_tests",
+    crate_root = "resilience/relay/unit_tests/lib.rs",
+    edition = "2024",
+    env = SERIAL_TEST_ENVIRONMENT,
+    visibility = ["//:__pkg__", "//core:__pkg__"],
+    deps = RELAY_DIMENSIONS_UNIT_DEPS,
+)
+
+rust_test(
+    name = "native_interrupt_driver_unit_tests",
+    srcs = NATIVE_INTERRUPT_DRIVER_UNIT_SRCS,
+    crate_features = UNIT_TEST_FEATURES,
+    crate_name = "native_interrupt_driver_unit_tests",
+    crate_root = "resilience/hub/native/native_control_tui/unit_tests/lib.rs",
+    edition = "2024",
+    visibility = ["//:__pkg__", "//core:__pkg__"],
+)
+
+NATIVE_HUB_PROBE_DATA = native_hub_probe_data()
+rust_test(
+    name = "creation_recovery_audit_unit_tests",
+    srcs = CREATION_RECOVERY_AUDIT_UNIT_SRCS,
+    crate_name = "creation_recovery_audit_unit_tests",
+    crate_root = "resilience/hub/tui_creation/tui_creation_recovery/unit_tests/lib.rs",
+    edition = "2024",
+    visibility = ["//:__pkg__", "//core:__pkg__"],
+    deps = CREATION_RECOVERY_AUDIT_UNIT_DEPS,
+)
+
+rust_test(
+    name = "tui_chat_driver_unit_tests",
+    srcs = glob(["resilience/hub/tui_chat/unit_tests/*.rs"]) + [
+        "resilience/hub/tui_chat/test_support/submissions.rs",
+    ],
+    crate_name = "tui_chat_driver_unit_tests",
+    crate_root = "resilience/hub/tui_chat/unit_tests/lib.rs",
+    edition = "2024",
+    visibility = ["//:__pkg__", "//core:__pkg__"],
+    deps = ["@crates//:serde_json"],
+)
+
+isolated_rust_test(
+    name = "runtime_resilience_test",
+    srcs = [
+        "fake_agent/constants.rs",
+        "fake_agent/invocation.rs",
+        "resilience.rs",
+    ] + glob(["resilience/**/*.rs"], exclude = ["resilience/**/unit_tests/**/*.rs"]),
+    aliases = RESILIENCE_ALIASES,
+    crate_name = "runtime_resilience_test",
+    crate_root = "resilience.rs",
+    coverage_objects = RESILIENCE_COVERAGE,
+    crate_features = ADVERSARIAL_TEST_FEATURES,
+    data = RESILIENCE_BINARIES + [NATIVE_HUB_PROBE_DATA],
+    deps = RESILIENCE_DEPS,
+    edition = "2024",
+    env = RESILIENCE_ENV,
+    env_inherit = TEST_ENVIRONMENT,
+    tags = ["exclusive", "no-sandbox"],
+    timeout = "eternal",
+    visibility = ["//:__pkg__", "//core:__pkg__"],
+)
+
+isolated_rust_test(
+    name = "terminal_environment_test",
+    srcs = [
+        "terminal_environment.rs",
+        "fake_agent/constants.rs",
+        "resilience/process_groups.rs",
+        "resilience/support_imports.rs",
+    ] + glob(["resilience/support/**/*.rs", "resilience/terminal_environment/**/*.rs"]),
+    aliases = RESILIENCE_ALIASES,
+    crate_name = "terminal_environment_test",
+    crate_root = "terminal_environment.rs",
+    coverage_objects = RESILIENCE_COVERAGE,
+    crate_features = ADVERSARIAL_TEST_FEATURES,
+    data = RESILIENCE_BINARIES + [NATIVE_HUB_PROBE_DATA],
+    deps = RESILIENCE_DEPS,
+    edition = "2024",
+    env = RESILIENCE_ENV,
+    env_inherit = TEST_ENVIRONMENT,
+    tags = ["exclusive", "no-sandbox"],
+    timeout = "eternal",
+    visibility = ["//:__pkg__", "//core:__pkg__"],
+)
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = glob(
+        ["**/*"],
+        allow_empty = True,
+        exclude = ["BUILD.bazel"],
+    ) + RUNTIME_ARCHITECTURE_DATA + CONNECTOR_FIXTURE_ARCHITECTURE_DATA,
+    visibility = ["//visibility:public"],
+)

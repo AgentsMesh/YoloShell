@@ -1,0 +1,38 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+load("//build_system/bazel:version.bzl", "YOLO_MARKETING_VERSION")
+
+package(default_visibility = ["//visibility:public"])
+
+_DEPS = [
+    "@crates//:tokio",
+]
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = glob(
+        [
+            "src/**/*.rs",
+            "unit_tests/**/*.rs",
+        ],
+        allow_empty = True,
+    ) + ["BUILD.bazel"],
+)
+
+rust_library(
+    name = "yolo_hub_peer_io",
+    srcs = glob(["src/**/*.rs"]),
+    crate_name = "yolo_hub_peer_io",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    version = YOLO_MARKETING_VERSION,
+    deps = _DEPS,
+)
+
+rust_test(
+    name = "unit_tests",
+    srcs = glob(["src/**/*.rs", "unit_tests/**/*.rs"]),
+    crate_name = "yolo_hub_peer_io_unit_tests",
+    crate_root = "src/lib.rs",
+    edition = "2024",
+    deps = _DEPS,
+)

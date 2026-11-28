@@ -1,0 +1,28 @@
+load("@rules_rust//rust:defs.bzl", "rust_test")
+
+package(default_visibility = [
+    "//core:__pkg__",
+    "//integration_tests/runtime:__pkg__",
+])
+
+rust_test(
+    name = "socket_root_configuration_test",
+    srcs = ["socket_root.rs"],
+    crate_name = "socket_root_configuration_test",
+    edition = "2024",
+    env = {"RUST_TEST_THREADS": "1"},
+    deps = [
+        "//core:yolo_runtime",
+        "@crates//:tempfile",
+        "@crates//:uuid",
+    ],
+)
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = glob(
+        ["**/*"],
+        exclude = ["BUILD.bazel"],
+    ) + ["BUILD.bazel"],
+    visibility = ["//visibility:public"],
+)

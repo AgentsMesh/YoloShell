@@ -1,0 +1,36 @@
+package(default_visibility = ["//visibility:public"])
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = [
+        "BUILD.bazel",
+        "README.md",
+        "//build_system/coverage/compiler:architecture_check_data",
+        "//build_system/coverage/collector:architecture_check_data",
+        "//build_system/coverage/gate:architecture_check_data",
+        "//build_system/coverage/protocol:architecture_check_data",
+        "//build_system/coverage/runner:architecture_check_data",
+        "//build_system/coverage/source_contract:architecture_check_data",
+        "//build_system/coverage/profile_test_support:architecture_check_data",
+        "//build_system/coverage/instrumentation:architecture_check_data",
+    ],
+)
+
+test_suite(
+    name = "tests",
+    tests = [
+        "//build_system/coverage/compiler:integration_tests",
+        "//build_system/coverage/collector:integration_tests",
+        "//build_system/coverage/collector:unit_tests",
+        "//build_system/coverage/gate:integration_tests",
+        "//build_system/coverage/gate:unit_tests",
+        "//build_system/coverage/protocol:unit_tests",
+        "//build_system/coverage/runner:unit_tests",
+        "//build_system/coverage/source_contract:unit_tests",
+        "//build_system/coverage/profile_test_support:unit_tests",
+        "//build_system/coverage/instrumentation:unit_tests",
+        "//build_system/coverage/instrumentation:integration_tests",
+        "//build_system/coverage/instrumentation:layout_unit_tests",
+        "//build_system/coverage/instrumentation:layout_integration_tests",
+    ],
+)
