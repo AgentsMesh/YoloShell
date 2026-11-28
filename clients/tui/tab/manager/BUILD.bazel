@@ -1,0 +1,33 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+load("//build_system/bazel:version.bzl", "YOLO_MARKETING_VERSION")
+
+package(default_visibility = ["//visibility:public"])
+
+_DEPS = [
+    "//clients/tui/input/line:yolo_tui_line_input",
+    "//clients/tui/tab:yolo_tui_tab",
+    "@crates//:uuid",
+    "@crates//:crossterm",
+    "@crates//:ratatui",
+]
+
+filegroup(name = "architecture_check_data", srcs = glob(["**/*"]))
+
+rust_library(
+    name = "yolo_tui_tab_manager",
+    srcs = glob(["src/**/*.rs"]),
+    crate_root = "src/lib.rs",
+    crate_name = "yolo_tui_tab_manager",
+    edition = "2024",
+    version = YOLO_MARKETING_VERSION,
+    deps = _DEPS,
+)
+
+rust_test(
+    name = "unit_tests",
+    srcs = glob(["src/**/*.rs", "unit_tests/**/*.rs", "test_support/**/*.rs"]),
+    crate_root = "src/lib.rs",
+    crate_name = "yolo_tui_tab_manager_unit_tests",
+    edition = "2024",
+    deps = _DEPS,
+)

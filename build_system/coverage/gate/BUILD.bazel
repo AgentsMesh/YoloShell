@@ -1,0 +1,53 @@
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_test")
+
+package(default_visibility = ["//visibility:public"])
+
+PRODUCTION_SOURCES = glob(["src/*.rs"])
+
+UNIT_TEST_SOURCES = glob(["unit_tests/*.rs"])
+
+TEST_SUPPORT_SOURCES = glob(["test_support/*.rs"])
+
+filegroup(
+    name = "architecture_check_data",
+    srcs = glob(
+        ["**/*"],
+        exclude = ["BUILD.bazel"],
+    ) + ["BUILD.bazel"],
+)
+
+rust_binary(
+    name = "gate",
+    srcs = PRODUCTION_SOURCES,
+    crate_name = "yolo_rust_coverage_gate",
+    crate_root = "src/main.rs",
+    edition = "2024",
+    deps = ["//build_system/coverage/protocol"],
+)
+
+rust_test(
+    name = "unit_tests",
+    srcs = PRODUCTION_SOURCES + UNIT_TEST_SOURCES + TEST_SUPPORT_SOURCES,
+    crate_name = "yolo_rust_coverage_gate_unit_tests",
+    crate_root = "src/main.rs",
+    edition = "2024",
+    deps = ["//build_system/coverage/protocol"],
+)
+
+rust_test(
+    name = "integration_tests",
+    # Keep the auxiliary gate's sources in Bazel's merged coverage manifest.
+    srcs = PRODUCTION_SOURCES + glob(["integration_tests/*.rs"]) + TEST_SUPPORT_SOURCES,
+    crate_name = "yolo_rust_coverage_gate_integration_tests",
+    crate_root = "integration_tests/scoped_gate.rs",
+    data = [":gate"],
+    edition = "2024",
+    env = {
+        "YOLO_ADDITIONAL_COVERAGE_OBJECTS": "[\"$(rootpath :gate)\"]",
+        "YOLO_COVERAGE_GATE_EXECUTABLE": "$(rootpath :gate)",
+    },
+    deps = [
+        "//build_system/coverage/protocol",
+        "@crates//:tempfile",
+    ],
+)

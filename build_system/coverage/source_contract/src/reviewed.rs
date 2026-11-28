@@ -1,0 +1,41 @@
+// Source edits need review before these declaration-only fingerprints can be renewed.
+pub const DECLARATION_SOURCE_SETS: &[&[(&str, &str)]] = &[
+    &[
+        (
+            "build_system/release/contracts/src/container.rs",
+            "ee52349b09297d57fb942fda06f6e69124129b0374e5bed4c0a330ed102a1c63",
+        ),
+        (
+            "build_system/release/contracts/src/delivery.rs",
+            "24794e137892b4f3a9a22f2f7ec3d9657995ae884799cbe85eb4c38e702fd1fb",
+        ),
+        (
+            "build_system/release/contracts/src/lib.rs",
+            "76065046dbf47659e406676edf42d8e1ce73d42b872d607e6388a043b4bcaa00",
+        ),
+        (
+            "build_system/release/contracts/src/linux.rs",
+            "ff5b569e7e7b6471375dae487707203c8b45306257bf4161ed000fce32b5885f",
+        ),
+        (
+            "build_system/release/contracts/src/process.rs",
+            "4dea4af1d1cd3889d57d21d5cb21d526a36bf9baa0a02666955c793f9fa0d0b8",
+        ),
+        (
+            "build_system/release/contracts/src/snapshot.rs",
+            "915abddbd3bf20386fbd37a2cac9a8e09e4fb77f475e1f69697081f209ffefcf",
+        ),
+    ],
+    &[(
+        "build_system/release/evidence_model/src/lib.rs",
+        "098389cc6a17ec2563cb756d0f2b8b76552a4e873cb9ac4fef3a302100e97cc8",
+    )],
+    &[(
+        "core/crates/persistence/maintenance/contract/src/lib.rs",
+        "7b8dd1bad6a2ad63e9aa1ee85d580054220b48dbcc5943a7cb4e4e3860fd8406",
+    )],
+    &[(
+        "core/crates/transport/session/src/mod.rs",
+        "a2e78a286f9c5abb3947bcc9a941f430b816e9c89fff32245d0b748a83aa8bad",
+    )],
+];
